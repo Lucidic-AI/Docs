@@ -1,0 +1,180 @@
+---
+title: Sessions
+description: Understand the lifecycle, structure, and analysis of a Session – a single run of your AI agent.
+---
+
+import Callout from '@components/callout'
+
+# 📦 Sessions
+
+A **Session** represents a single run of an AI agent as it attempts to complete a task. It captures the full trace of the agent’s behavior — from initial state to final outcome — and provides deep visibility into each decision, action, and outcome along the way.
+
+---
+
+## 🧠 What is a Session?
+
+A Session is a top-level unit of observability. It begins when an agent starts a task and ends when the task is either completed, failed, or interrupted.
+
+Within each Session, you’ll find:
+
+- A **timeline of Steps** (agent states and transitions)
+- Fine-grained **Events** (e.g. LLM calls, API responses) inside each Step
+- A **workflow graph** visualizing the session’s trajectory
+- A **GIF/video replay** of the agent’s interaction (if available)
+- Evaluation scores, cost metrics, metadata, and more
+
+<Callout type="info">
+Sessions are non-deterministic by nature. Re-running the same task may lead to different outcomes due to the agent’s autonomy and stochasticity.
+</Callout>
+
+---
+
+## 🧬 Session Structure
+
+### Data Model Overview
+
+```python
+class Session(models.Model):
+    id = UUID
+    agent = ForeignKey(Agent)
+    name = str
+    task = str
+    start_time = datetime
+    last_updated = datetime
+    num_steps = int
+    is_finished = bool
+    is_successful = bool
+    cost = float
+    has_gif = bool
+    mass_sim = ForeignKey(MassSim)
+    graph_data = OneToOne(GraphData)
+```
+
+### Step and Event Hierarchy
+
+A Session is composed of ordered **Steps**, each representing a unique state and action taken by the agent. Each Step contains multiple **Events**, representing granular atomic operations like LLM calls or API hits.
+
+```python
+Session
+└── Step
+    ├── Event
+    ├── Event
+    └── ...
+```
+
+<Callout type="note">
+Steps and Events are documented [here →](/steps) and [here →](/events) respectively.
+</Callout>
+
+---
+
+## 📺 Session Dashboard
+
+Each Session in the dashboard includes:
+
+- **Overview metrics**: duration, step count, cost, completion status
+- **Visual replay**: full session video or GIF (if captured)
+- **Interactive workflow graph**: clickable nodes for each step
+- **Step-by-step explorer**: deep dive into state/action/event logs
+- **Evaluation scores**: human or LLM-generated
+
+> 📷 _**[Insert screenshot of full Session dashboard UI here]**_
+
+> 📷 _**[Insert example of a workflow graph visualization here]**_
+
+> 📷 _**[Insert replay gif or video preview section here]**_
+
+---
+
+## 📊 Evaluation and Scoring
+
+Sessions can be evaluated via multiple systems:
+
+### 1. **User-Provided Eval Score**
+Passed in at runtime using the Python SDK. Useful for customized or domain-specific scoring.
+
+```python
+session.log_eval(score=0.8, description="Task succeeded but was slow.")
+```
+
+### 2. **Rubric-Based Evaluation**
+Define structured, weighted rubrics with multiple criteria and score definitions.
+
+```yaml
+criteria:
+  - name: "Repeated Site Visits"
+    weights: 0.4
+    scores:
+      10: "Never visited a site twice"
+      1: "Frequently revisited pages"
+
+  - name: "Average Step Time"
+    weight: 0.6
+    ...
+```
+
+These rubrics produce both per-criterion and composite scores.
+
+### 3. **Default Evaluation**
+Our built-in system outputs:
+- A score (0, 0.5, or 1) based on task completion
+- A list of “wrong” or suboptimal steps (automatically identified)
+- Graph highlights of failure points
+
+> 📷 _**[Insert example of rubric editor UI or evaluation result table here]**_
+
+---
+
+## 🕵️‍♂️ Debugging with Sessions
+
+Sessions give you rich insight into how your agent operates and where it goes wrong:
+
+- **Replay stuck behavior** via video
+- **Identify high-cost operations**
+- **Trace decision-making** back to specific prompts or events
+- **Group failing steps** into unified nodes in the graph
+- **Track revisited states** and looping patterns
+
+Coming soon:
+
+- **Time Travel Debugging**: pause at any step and try alternate prompt modifications
+- **Prompt DB integration**: live-edit prompts your agent uses at runtime
+
+> 📷 _**[Insert UI mock of Time Travel or prompt retry feature here]**_
+
+---
+
+## 📁 Metadata and Tagging
+
+Each Session contains rich metadata including:
+
+- Task description
+- Agent identity and version
+- Cost
+- Timestamps
+- Link to parent Mass Simulation (if applicable)
+- Replay data and graph reference
+
+Planned: **semantic tagging**, **search**, and **session filtering** based on LLM-labeled themes.
+
+---
+
+## 🔄 Compare Sessions
+
+To study differences in agent behavior, use our [**Compare Sims**](/compare-sims) feature (beta):
+
+- Compare sets of Sessions from different models, prompts, or versions
+- Visualize structural differences in graph flows
+- View evaluation and cost deltas side-by-side
+
+---
+
+## 🧪 Related Concepts
+
+- [Steps](/steps)
+- [Events](/events)
+- [Mass Simulations](/mass-simulations)
+- [Compare Sims](/compare-sims)
+- [Prompt DB](/prompt-db)
+
+---
