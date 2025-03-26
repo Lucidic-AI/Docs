@@ -1,0 +1,135 @@
+---
+title: Events
+description: Understand Events as the fine-grained atomic operations that occur within each Step.
+---
+
+import Callout from '@components/callout'
+
+# ⚙️ Events
+
+An **Event** is the most granular unit of action in your agent's execution trace. Events represent atomic operations — like LLM calls, API requests, or tool invocations — that occur *within* a [Step](/steps).
+
+If a **Step** is the macro decision (“go to a new site”), then an **Event** is the micro-action (“run an LLM call to decide the next URL”).
+
+---
+
+## 🧬 Event Structure
+
+Each Event includes:
+
+- A description of the event (e.g., “LLM: What site should I go to next?”)
+- The result (e.g., model output, API response, return value)
+- A summary (optional, often LLM-generated)
+- Timestamps
+- Cost and success/failure metadata
+- Model name (for LLM events)
+
+```python
+class Event(models.Model):
+    step = ForeignKey(Step)
+    description = str
+    result = str
+    summary = str (optional)
+    start_time = datetime
+    last_updated = datetime
+    is_finished = bool
+    is_successful = bool
+    model = str (optional)
+    cost = float
+```
+
+---
+
+## 🔍 What Counts as an Event?
+
+Events can include:
+
+- 🤖 **LLM call** (e.g. reasoning about what action to take)
+- 🌐 **API call** (e.g. fetching data from a third-party tool)
+- 🛠️ **Tool invocation** (e.g. web scraping, search)
+- 🧮 **Internal computations** (e.g. custom heuristics or logic)
+- 💡 **Agent “thoughts”** captured from internal logs
+
+Your agent determines what gets logged as an Event. The more fine-grained, the better your observability.
+
+> 📷 _**[Insert UI screenshot of an expanded step showing a list of nested events here]**_
+
+---
+
+## 🧠 Why Events Matter
+
+Events help you:
+
+- Debug *inside* a step
+- Understand why an action was chosen
+- View raw outputs from models or tools
+- Measure cost attribution at the finest level
+- Identify timing bottlenecks
+- Analyze failure causes (e.g. bad model output, timeout, incorrect API usage)
+
+---
+
+## 🕵️‍♀️ Debugging Example
+
+```text
+Step: Visit Stanford site
+├── Event: LLM call → "Which university website should I go to?"
+│   └── Result: "Stanford.edu"
+├── Event: Visit URL → "https://stanford.edu"
+└── Event: DOM scrape → "Extract list of faculty"
+```
+
+Each event gives you a breadcrumb trail of micro-decisions that led to the step's result.
+
+> 📷 _**[Insert graphical view of the above example from the dashboard UI]**_
+
+---
+
+## 💸 Cost and Performance
+
+Each Event tracks its **cost**, **duration**, and **model identity** (for LLMs). This lets you:
+
+- Break down session cost by step or event
+- Track model usage across different sessions
+- Optimize high-cost actions
+
+<Callout type="note">
+We recommend logging Events for every tool or model your agent uses to maximize observability.
+</Callout>
+
+---
+
+## 📈 Event Summary Fields
+
+You can optionally pass or generate:
+
+- `summary`: a short one-line TL;DR of what the event did
+- `description`: a raw string of what the agent attempted (human- or agent-written)
+- `result`: the returned content or output
+
+These fields help contextualize what happened without reading full logs.
+
+> 📷 _**[Insert UI snippet showing raw and summarized event info side-by-side]**_
+
+---
+
+## ✨ Coming Soon
+
+- Event categorization (LLM vs tool vs API)
+- Event-type specific stats and filters
+- Visual cost bars and latency heatmaps
+- Tagging and semantic search over events
+- Graph overlays showing event types or bottlenecks
+
+---
+
+## 🔗 Related Docs
+
+- [Steps](/steps)
+- [Sessions](/sessions)
+- [Mass Simulations](/mass-simulations)
+- [Prompt DB](/prompt-db)
+- [Compare Sims](/compare-sims)
+```
+
+---
