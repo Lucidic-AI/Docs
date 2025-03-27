@@ -1,0 +1,112 @@
+---
+title: Workflow Trajectory
+description: Visualize your agent’s decision space across many runs with the Workflow Trajectory graph.
+---
+
+import Callout from '@components/callout'
+
+# 🧭 Workflow Trajectory
+
+The **Workflow Trajectory** graph is a core visualization in every [Mass Simulation](/mass-simulations). It merges all agent behavior across multiple Sessions into a single, clustered graph — giving you a bird’s-eye view of the **decision space** your agent explores.
+
+It reveals not just what happened, but what *could* happen — and how often.
+
+---
+
+## 🧠 What It Shows
+
+Each node in the Workflow Trajectory represents a **grouped state** the agent reached (e.g., same web page, same state string, or same screenshot).
+
+Each edge represents a **transition** (an action) the agent took between states.
+
+- **Node size** = how many sessions visited that state
+- **Edge thickness** = how frequently that transition occurred
+- **Graph shape** = the structural behavior of your agent (linear, branching, looping, etc.)
+
+> 📷 _**[Insert full view of a Workflow Trajectory graph from your UI here]**_
+
+---
+
+## 🔄 How It’s Built
+
+1. **Each Session** has its own step-wise graph of states and transitions
+2. **As Sessions run**, they’re incrementally merged into the Mass Sim's Workflow Trajectory
+3. **Steps** from different sessions are **clustered** if they match by state
+4. Transitions between these clustered states are recorded with **frequency counts**
+
+```text
+Session 1: A → B → C
+Session 2: A → B → D
+
+Workflow Trajectory:
+A
+├── B
+│   ├── C (50%)
+│   └── D (50%)
+```
+
+> 📷 _**[Insert small diagram showing this kind of state merge and fork]**_
+
+---
+
+## 🎯 Why It Matters
+
+This graph helps you answer critical questions:
+
+- What are the most **common trajectories** the agent follows?
+- Where does the agent **branch** or act inconsistently?
+- Are there **failure-prone paths** that show up repeatedly?
+- Do sessions **loop**, revisit states, or get stuck?
+
+By visualizing all possible paths, you gain a statistical view of your agent's decision-making.
+
+<Callout type="warning">
+If a task is supposed to be deterministic, any branching in this graph reveals instability in your agent’s behavior.
+</Callout>
+
+---
+
+## 🔍 Interacting with the Graph
+
+- **Click a node** to inspect all sessions that passed through that state
+- **Click an edge** to view sessions that made that specific transition
+- **Zoom in** to see local behavior or **zoom out** for overall flow
+- Use **highlighting tools** (coming soon) to emphasize successful vs failed paths
+
+> 📷 _**[Insert UI screenshot of a node being clicked, showing side panel with session list]**_
+
+---
+
+## 🔢 Probabilistic Insights
+
+You can think of this graph as a **probabilistic model** of your agent’s behavior:
+
+- It reveals which transitions are **dominant** and which are **rare**
+- It helps you estimate **failure rates** in certain trajectories
+- It surfaces **unexpected branches** and **edge cases**
+
+> 📷 _**[Insert graph with % labels or color-coded edge probabilities]**_
+
+---
+
+## 🔮 Planned Upgrades
+
+- **Auto-tagging of suspicious patterns** (e.g. loops, frequent revisits)
+- **Overlay evaluation scores** on nodes
+- **Compare trajectory graphs** across different simulations
+- **Graph diffs** for prompt/model comparisons
+- **Custom clustering strategies** beyond just state equivalence
+
+---
+
+## 🧩 Related Concepts
+
+- [Mass Simulations](/mass-simulations)
+- [Sessions](/sessions)
+- [Steps](/steps)
+- [Prompt DB](/prompt-db)
+- [Compare Sims](/compare-sims)
+
+```
+
+---
