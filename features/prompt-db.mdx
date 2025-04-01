@@ -1,0 +1,141 @@
+---
+title: Prompt DB
+description: Manage, version, and fetch prompts dynamically to accelerate agent iteration and experimentation.
+---
+
+# 🧾 Prompt DB
+
+**Prompt DB** is your centralized, versioned store for managing agent prompts — without needing to redeploy code or edit files in a repo.
+
+It allows you to:
+
+- Create and version prompts in the UI
+- Dynamically fetch them at runtime
+- Templatize with variables
+- Rapidly iterate on prompt design
+- Swap prompts without touching your codebase
+
+---
+
+## 🚀 Why Prompt DB?
+
+Tuning an AI agent often means tweaking its prompts. But doing that through your codebase slows everything down.
+
+With Prompt DB, you can:
+
+- Change a prompt in the dashboard → rerun your agent instantly
+- Test prompt performance across Sessions or Mass Sims
+- Diff, compare, and experiment — without redeploying anything
+
+> 📷 _**[Insert screenshot of the Prompt DB UI: version history + label management]**_
+
+---
+
+## 🧬 How It Works
+
+### Prompt
+
+A **Prompt** is a named entity that stores one or more **Prompt Versions**.
+
+```text
+Prompt: "summarize_page"
+├── Version 1: "Summarize this webpage: {{page_text}}"
+├── Version 2: "You are a helpful assistant. Please summarize: {{page_text}}"
+└── ...
+```
+
+### Prompt Version
+
+Each **Prompt Version** is:
+
+- **Immutable**
+- A plain string, optionally with `{{variables}}`
+- Tagged with **labels** (like `production`, `latest`, or custom)
+
+---
+
+## 🏷️ Labels
+
+Labels attach to a single prompt version and allow flexible, dynamic fetches.
+
+| Label       | Behavior                                              |
+|-------------|-------------------------------------------------------|
+| `latest`    | Always points to the most recent version              |
+| `production`| The "live" version used by default                    |
+| Custom      | Any user-defined label for testing or segmentation   |
+
+Only one version can hold a given label at a time.
+
+---
+
+## ⚙️ Fetching Prompts in Python
+
+```python
+prompt = prompt_db.fetch_prompt(
+    name="summarize_page",
+    label="production",  # optional, defaults to "production"
+    variables={"page_text": "Stanford University is a top..."},  # optional
+    cache_ttl=60  # optional (in seconds)
+)
+```
+
+### Parameters
+
+- `name`: Prompt name
+- `label`: Label to fetch (defaults to `production`)
+- `variables`: Dictionary of string key/values to interpolate
+- `cache_ttl`: 
+  - `0` = no cache  
+  - `-1` = cache forever  
+  - `n` = cache for `n` seconds
+
+> 📘 Prompt strings with missing variables throw a warning; extra user vars throw an error.
+
+---
+
+## 🧪 Versioning and Iteration
+
+When you update a prompt in the UI:
+
+- A new **Prompt Version** is created
+- The `latest` label is moved to the new version
+- You can optionally move the `production` label to the new version
+
+Because agents fetch prompts dynamically, the next run of your agent will use the updated prompt automatically — no deploy needed.
+
+---
+
+## 🔍 Planned Observability
+
+Coming soon:
+
+- Track which prompt version was used in each [Event](/events)
+- See prompt lineage across [Sessions](/sessions)
+- View impact of prompt changes on [Mass Simulations](/mass-simulations)
+
+This will allow you to debug failures all the way back to the prompt that caused them.
+
+---
+
+## 🧠 Future Features
+
+We’re actively building:
+
+- **Prompt diffing and version comparison**
+- **Prompt performance tracking**
+- **Prompt A/B testing with [Compare Sims](/compare-sims)**
+- **Prompt analytics and failure heatmaps**
+
+We also envision Prompt DB as evolving into a way to manage **agent strategies** — a modular building block for how agents behave, reason, and act.
+
+---
+
+## 🔗 Related Concepts
+
+- [Sessions](/sessions)
+- [Events](/events)
+- [Mass Simulations](/mass-simulations)
+- [Workflow Trajectory](/features/workflow-trajectory)
+- [Compare Sims](/compare-sims)
+
+---

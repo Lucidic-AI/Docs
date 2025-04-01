@@ -1,0 +1,133 @@
+---
+title: Rubrics
+description: Build flexible, structured evaluation rubrics to score and compare your agent's behavior across sessions.
+---
+
+# 📏 Rubrics
+
+**Rubrics** let you define structured evaluation criteria for your agents — turning your domain knowledge into consistent, explainable scoring systems.
+
+Instead of relying on a single pass/fail outcome or ad hoc scores, rubrics help you **quantify agent quality** across dimensions you care about.
+
+---
+
+## 🧠 Why Use Rubrics?
+
+Agents don’t just succeed or fail — they:
+
+- Take longer or shorter paths
+- Repeat actions
+- Visit the wrong pages
+- Succeed inconsistently
+
+Rubrics let you **capture those nuances** and **standardize how you evaluate** an agent’s session. They’re perfect for comparing sessions, identifying regressions, or measuring improvement across prompt or model changes.
+
+---
+
+## 🧬 Rubric Anatomy
+
+A rubric contains:
+
+- One or more **Criteria**
+- Optional **weights** for each criterion
+- **Score Definitions** (what a score of 1 or 10 means for each criterion)
+
+### Example
+
+```yaml
+Rubric: "Browser Navigation Quality"
+
+Criteria:
+  - name: "Revisiting Sites"
+    weight: 2
+    scores:
+      10: "Never visited a site more than once"
+      5: "Occasionally revisited"
+      1: "Frequently revisited the same sites"
+
+  - name: "Step Efficiency"
+    weight: 1
+    scores:
+      10: "Completed task in under 10 steps"
+      5: "11–15 steps"
+      1: "More than 15 steps"
+```
+
+> 📷 _**[Insert screenshot of UI rubric creation: 2+ criteria with score definitions]**_
+
+---
+
+## 📊 Scoring and Weights
+
+Each criterion is scored independently (typically from 1–10) and then combined into a **composite score**:
+
+- If no weights are defined, all criteria are weighted equally
+- If weights are set, we compute a **weighted average** using their relative values
+
+> 📷 _**[Insert UI mockup: rubric score breakdown per criterion + final score bar]**_
+
+---
+
+## ⚙️ Defining and Applying Rubrics
+
+### In the UI
+
+- Navigate to the **Rubrics** tab on any Agent
+- Create, name, and configure a rubric
+- Attach it to Sessions manually or automatically
+
+### In Python (optional)
+
+```python
+session.log_eval(rubric="browser_navigation_quality")
+```
+
+You can apply rubrics at runtime or in post-processing via the dashboard.
+
+---
+
+## 🧪 Comparing Sessions with Rubrics
+
+Rubrics allow you to:
+
+- Compare sessions side-by-side by **dimension**
+- Track **regressions** after changing a prompt or model
+- Evaluate agents across **Mass Simulations** in a structured way
+
+> 📷 _**[Insert session comparison UI with rubric score table]**_
+
+---
+
+## 🧠 Design Philosophy
+
+- **You** decide what matters
+- **We** provide the structure to score it consistently
+- Rubrics let teams align on shared definitions of "good agent behavior"
+
+<Callout type="info">
+Rubrics are reusable, attach to Agents, and can be applied to any Session — now or later.
+</Callout>
+
+---
+
+## 🔮 What’s Next
+
+Coming soon:
+
+- Rubric analytics across Mass Sims
+- Graph overlays colored by rubric score
+- Rubric diffing across prompt or model changes
+- Export/import rubrics across teams
+- LLM-assisted rubric scoring
+
+---
+
+## 🔗 Related Features
+
+- [Session Evaluation](/sessions#evaluation-and-scoring)
+- [Mass Simulations](/mass-simulations)
+- [Workflow Trajectory](/features/workflow-trajectory)
+- [Prompt DB](/features/prompt-db)
+- [Compare Sims](/compare-sims)
+
+---
