@@ -1,0 +1,122 @@
+---
+title: LangChain Integration
+description: Automatically track LangChain LLM calls by attaching Lucidic to your agent — even if it's deeply nested.
+---
+
+# 🔗 LangChain Integration
+
+Lucidic integrates seamlessly with **LangChain** agents and chains — no need to rewrite your code or restructure your logic.
+
+---
+
+## ⚙️ How It Works
+
+When you use `provider="langchain"` with Lucidic, you can attach a special handler that will:
+
+- **Recursively search** your agent for LangChain LLMs
+- **Automatically attach itself** as a callback handler
+- Capture LLM usage as **Lucidic Events**, grouped under the correct Step
+
+This means you get full observability into your agent's reasoning — with zero boilerplate instrumentation.
+
+---
+
+## 🧪 Setup Instructions
+
+### 1. Initialize Lucidic
+
+```python
+import lucidicai as lai
+
+lai.init(
+    session_name="langchain_agent_run",
+    agent_id="your-agent-id",
+    lucidic_api_key="your-api-key",
+    provider="langchain"
+)
+```
+
+### 2. Attach to Your Agent
+
+```python
+handler = lai.LucidicLangchainHandler()
+handler.attach_to_llms(agent)
+```
+
+✅ That’s it — even if your LLMs are deeply nested inside custom wrappers or chains, we’ll find and attach to them automatically.
+
+---
+
+## 🧠 What Gets Captured
+
+For every LangChain LLM call, we’ll log:
+
+- `description`: LLM method or chain origin
+- `model`: if available (e.g. `gpt-4`)
+- `cost`: if token counts are available
+- `result`: response text or summary
+- Timing and success metadata
+
+> 📷 _**[Insert screenshot of LangChain-generated event in the step view]**_
+
+---
+
+## 🔍 Under the Hood
+
+Here’s a simplified view of what’s happening when you call `attach_to_llms()`:
+
+```python
+def attach_to_llms(self, llm_or_chain_or_agent):
+    if hasattr(obj, 'callbacks'):
+        obj.callbacks.append(self)
+    for attr in dir(obj):
+        if hasattr(attr, 'callbacks'):
+            attr.callbacks.append(self)
+```
+
+Your agent might be deeply nested — but Lucidic recursively walks through the object and **attaches itself to any LLMs it finds**.
+
+> 📘 You don’t need to dig into `.llm_chain.llm` or manually insert the handler. We do that for you.
+
+---
+
+## 🧪 Full Example
+
+```python
+import lucidicai as lai
+from my_agent import MyLangChainAgent
+
+lai.init(
+    session_name="langchain_test",
+    agent_id="agent-123",
+    provider="langchain"
+)
+
+agent = MyLangChainAgent()
+
+handler = lai.LucidicLangchainHandler()
+handler.attach_to_llms(agent)
+
+agent.run("Search for Stanford University")
+```
+
+---
+
+## 🛠️ Requirements
+
+- `langchain` installed
+- Works with `BaseLanguageModel`, `LLMChain`, `AgentExecutor`, and custom toolchains
+- You must call `attach_to_llms()` before executing the agent
+- Events are attached to the **currently active Step**
+
+---
+
+## 🔗 Related Docs
+
+- [Events](/events)
+- [Using the Python SDK](/getting-started/python)
+- [Workflow Sandbox](/features/workflow-sandbox)
+- [OpenAI Integration](/integrations/openai)
+- [Anthropic Integration](/integrations/anthropic)
+
+---

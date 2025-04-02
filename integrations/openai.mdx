@@ -1,0 +1,100 @@
+---
+title: OpenAI Integration
+description: Automatically capture OpenAI LLM calls in your sessions with one line of setup.
+---
+
+# 🤝 OpenAI Integration
+
+Lucidic makes it easy to **automatically track OpenAI completions** as part of your agent's behavior — no code changes required.
+
+---
+
+## ⚙️ How It Works
+
+When you set:
+
+```python
+lai.init(..., provider="openai")
+```
+
+Lucidic will:
+
+- **Monkey patch** `openai.ChatCompletion.create`
+- Automatically log each LLM call as an **Event**
+- Attach the call to the currently active Step
+
+This means:
+
+- You don’t need to call `create_event()` or `end_event()` manually
+- You get full observability into prompt, model, cost, result, and more — out of the box
+
+---
+
+## ✅ What Gets Captured
+
+Each OpenAI call is tracked with:
+
+- `description`: e.g. `"OpenAI call to gpt-4"`
+- `model`: the model name (e.g. `gpt-4`, `gpt-3.5-turbo`)
+- `cost`: calculated based on token usage
+- `result`: truncated summary of the response
+
+> 📷 _**[Insert screenshot of an OpenAI event inside the Workflow Sandbox or timeline]**_
+
+---
+
+## 🧠 Why This Matters
+
+LLM calls are a core part of most agent workflows — but without visibility, it’s impossible to debug or optimize:
+
+- Which call caused the failure?
+- Which step was it part of?
+- How much did it cost?
+- What was the actual response?
+
+This integration gives you full transparency, with **zero boilerplate**.
+
+---
+
+## 🧪 Example
+
+```python
+import lucidicai as lai
+import openai
+
+lai.init(
+    session_name="chatbot_run",
+    agent_id="your-agent-id",
+    lucidic_api_key="your-api-key",
+    provider="openai"
+)
+
+lai.create_step(state="Intro", goal="Ask user for name")
+
+# This call is automatically tracked!
+response = openai.ChatCompletion.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "What's your name?"}]
+)
+
+lai.end_step(is_successful=True, action="Generated greeting")
+```
+
+---
+
+## 🛠️ Notes
+
+- Only `openai.ChatCompletion.create` is currently patched
+- You must have an active session and step for events to be attached
+- You can always override or add custom events using `create_event()` if needed
+
+---
+
+## 🔗 Related
+
+- [Using the Python SDK](/getting-started/python)
+- [Events](/events)
+- [Workflow Sandbox](/features/workflow-sandbox)
+- [Prompt DB](/features/prompt-db)
+
+---

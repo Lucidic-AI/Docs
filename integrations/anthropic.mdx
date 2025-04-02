@@ -1,0 +1,100 @@
+---
+title: Anthropic Integration
+description: Automatically track Claude completions in your agent sessions with a single line of setup.
+---
+
+# 🤝 Anthropic Integration
+
+Lucidic supports automatic tracking of **Anthropic Claude** completions in your agent sessions — with no extra instrumentation needed.
+
+---
+
+## ⚙️ How It Works
+
+When you initialize the SDK with:
+
+```python
+lai.init(..., provider="anthropic")
+```
+
+Lucidic will:
+
+- **Monkey patch** `anthropic.Client().messages.create`
+- Automatically capture each Claude completion as an **Event**
+- Attach the LLM call to the **current active Step**
+
+---
+
+## ✅ What Gets Captured
+
+Each Claude call is logged with:
+
+- `description`: e.g. `"Claude call to claude-3-opus"`
+- `model`: the Claude version used
+- `cost`: estimated based on input/output tokens
+- `result`: a summarized or truncated response
+- Metadata like latency, success status, etc.
+
+> 📷 _**[Insert screenshot of a Claude event captured in the step timeline]**_
+
+---
+
+## 🧠 Why This Matters
+
+Claude is powerful — but debugging its outputs without traceability is painful.
+
+With automatic Anthropic integration, you can:
+
+- Trace LLM calls back to their context
+- Measure cost and performance over time
+- Identify which responses worked (and which failed)
+- View model usage at a step-by-step level
+
+---
+
+## 🧪 Example
+
+```python
+import lucidicai as lai
+import anthropic
+
+lai.init(
+    session_name="claude_task",
+    agent_id="your-agent-id",
+    lucidic_api_key="your-api-key",
+    provider="anthropic"
+)
+
+client = anthropic.Anthropic()
+
+lai.create_step(state="Planning", goal="Generate research questions")
+
+# This call is automatically tracked!
+response = client.messages.create(
+    model="claude-3-opus",
+    max_tokens=500,
+    messages=[{"role": "user", "content": "What are 5 research ideas about climate change?"}]
+)
+
+lai.end_step(is_successful=True, action="Generated ideas")
+```
+
+---
+
+## 🛠️ Notes
+
+- Requires `anthropic` Python SDK installed (`pip install anthropic`)
+- Only `Client().messages.create` is currently patched
+- You must have an active session and step for automatic event logging
+- You can still manually use `create_event()` or `update_event()` as needed
+
+---
+
+## 🔗 Related
+
+- [Using the Python SDK](/getting-started/python)
+- [OpenAI Integration](/integrations/openai)
+- [Events](/events)
+- [Workflow Sandbox](/features/workflow-sandbox)
+
+---

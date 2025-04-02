@@ -1,0 +1,118 @@
+---
+title: Dashboard Setup
+description: Learn how to set up your project, agent, and API key in the Lucidic dashboard.
+---
+
+# 🖥️ Getting Started in the Dashboard
+
+Before you can track your agent’s sessions in code, you’ll need to set up your environment in the **Lucidic web dashboard**.
+
+---
+
+## 🔐 1. Create an Account or Sign In
+
+Go to [app.lucidic.ai](https://app.lucidic.ai) and sign in:
+
+- Use **Google login** or
+- Create an account with your email + password
+
+> 📷 _**[Insert screenshot of sign-in screen]**_
+
+---
+
+## 📁 2. Create a Project
+
+Projects are high-level containers for your work — usually one per app, workflow, or team.
+
+- Click **"New Project"**
+- Name it something meaningful (e.g. `wikipedia-agent`, `finetuning-dashboard`, etc.)
+
+> 📷 _**[Insert screenshot of project creation modal]**_
+
+---
+
+## 🤖 3. Create an Agent
+
+Inside your project:
+
+- Go to the **"Agents"** tab
+- Click **"New Agent"**
+- Provide a name and description
+
+Agents represent individual autonomous systems (e.g. a browser agent, a research assistant, a planner).
+
+---
+
+## 🔑 4. Generate an API Key
+
+You’ll need an API key to authenticate your SDK.
+
+- Go to the **"API Keys"** tab under your project
+- Click **"Create API Key"**
+- Copy the key somewhere safe
+
+> 📷 _**[Insert screenshot showing where to copy the API key and Agent ID]**_
+
+---
+
+## ⚙️ 5. Plug Into Python
+
+Once you’ve got:
+
+- ✅ **API Key**
+- ✅ **Agent ID**
+
+You’re ready to run sessions from code.
+
+Paste them into:
+
+```python
+lai.init(
+    agent_id="your-agent-id",
+    lucidic_api_key="your-api-key",
+    session_name="test_run"
+)
+```
+
+Or set them as environment variables:
+
+```bash
+export LUCIDIC_API_KEY=your-api-key
+export LUCIDIC_AGENT_ID=your-agent-id
+```
+
+---
+
+## 📈 6. (Optional) Create a Mass Simulation
+
+If you want to run many sessions as part of a single evaluation:
+
+- Go to the **"Mass Sims"** tab inside your Agent
+- Click **"New Mass Sim"**
+- Copy the **Mass Sim ID** into your SDK:
+
+```python
+lai.init(
+    session_name="run_37",
+    mass_sim_id="abc123"
+)
+```
+
+This will link that run to your high-level simulation — perfect for testing prompt changes, model swaps, or behavior analysis at scale.
+
+---
+
+## ✅ You’re Ready!
+
+Now that your dashboard is set up, head to [Using the Python SDK](/getting-started/python) to run your first session.
+
+---
+
+## 🔗 Related Docs
+
+- [Install the SDK](/getting-started/installation)
+- [Using the Python SDK](/getting-started/python)
+- [Mass Simulations](/mass-simulations)
+- [Rubric Evaluation](/features/rubrics)
+
+---

@@ -1,0 +1,137 @@
+---
+title: Workflow Sandbox
+description: Dive into a full breakdown of one agent run — replay, inspect, evaluate, and debug every decision.
+---
+
+# 🧪 Workflow Sandbox
+
+The **Workflow Sandbox** is your deep-dive view into a single agent run — also known as a [Session](/sessions).
+
+It’s where observability meets usability: you can **replay the session**, **inspect every step**, **explore the underlying events**, and **evaluate performance** using rubrics — all in one place.
+
+---
+
+## 🧠 What It Shows
+
+At the top of the Workflow Sandbox, you’ll see:
+
+### 1. 📝 Task Overview
+- The task string supplied to the agent at the start of the session
+
+### 2. 📊 Session Stats
+- Completion status
+- Time taken
+- Step count
+- Cost
+- Eval score (from [Rubrics](/features/rubrics) or [default Lucidic scoring](/sessions#default-evaluation))
+
+> 📷 _**[Insert screenshot of task and overview panel with stats + Lucidic score]**_
+
+---
+
+## 🧮 Rubric Evaluations
+
+Below the overview, you’ll find any evaluation rubrics attached to this session.
+
+- Each criterion is scored and explained
+- The **Lucidic default rubric** runs on every session automatically
+- Custom rubrics can be attached per Agent or manually in post-analysis
+
+> 📷 _**[Insert UI image of rubric panel with per-criterion scores]**_
+
+---
+
+## 🎬 Session Replay
+
+Replay the agent’s full run using:
+
+- A **GIF or video** of the session
+- Step-by-step visualization
+- Optional LLM call preview
+
+This gives you a literal frame-by-frame look at how the agent behaved.
+
+> 📷 _**[Insert screenshot or placeholder for replay section]**_
+
+---
+
+## 📚 Quick Access: Prompt DB
+
+You can open the [Prompt DB](/features/prompt-db) directly from the session:
+
+- Quickly view which prompt was used
+- Test changes or view version history
+- Future: See prompt lineage and performance impact
+
+> 📷 _**[Insert screenshot of Prompt DB modal or access link]**_
+
+---
+
+## 🧭 Step Trajectory Graph
+
+Next, you’ll see a **Session-specific graph** — a mini version of the [Workflow Trajectory](/features/workflow-trajectory), scoped to just this one session.
+
+- **Nodes** = states visited
+- **Edges** = actions taken
+- **Grouped** = similar states are clustered (e.g. looping or retrying)
+
+Clicking a node opens a full breakdown of that **Step** below the graph.
+
+> 📷 _**[Insert flowchart/graph of a single session’s trajectory]**_
+
+---
+
+## 🕰 Timeline Navigation
+
+Two synced timelines appear below:
+
+### 🪜 Step Timeline
+- Shows the ordered sequence of Steps
+- Clicking a step:
+  - Advances the graph to that state
+  - Opens the step detail panel
+
+### ⚙️ Event Timeline (within Step)
+- Shows all [Events](/events) that occurred in that step (e.g. LLM calls, tool invocations)
+- Clicking an event shows:
+  - Request/response
+  - Cost
+  - Model used
+  - Any errors or retries
+
+> 📷 _**[Insert split-view image of step + event timeline interaction]**_
+
+---
+
+## 🧰 Use Cases
+
+The Workflow Sandbox is where you:
+
+- Debug a failed run
+- Investigate edge cases
+- Replay odd behavior
+- Evaluate agent consistency
+- Identify root causes of errors
+- Understand how a prompt or model change affected logic
+
+---
+
+## 🔮 Future Features
+
+- Annotate steps or events
+- Inline prompt diffing
+- Add “Time Travel” from any step to re-try logic with modified prompts
+- Attach notes to runs for team reviews or QA
+
+---
+
+## 🔗 Related Docs
+
+- [Sessions](/sessions)
+- [Steps](/steps)
+- [Events](/events)
+- [Rubrics](/features/rubrics)
+- [Prompt DB](/features/prompt-db)
+- [Workflow Trajectory](/features/workflow-trajectory)
+
+---

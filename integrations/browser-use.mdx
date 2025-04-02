@@ -1,0 +1,107 @@
+---
+title: Browser Use Integration
+description: Use our pre-integrated fork of Browser Use to track browser agent sessions with full Lucidic observability.
+---
+
+# 🌐 Browser Use Integration
+
+[Browser Use](https://github.com/openaccess-ai-collective/browser-agent) is a popular open-source **browser agent** built on LangChain. We’ve created a **Lucidic-integrated fork** so you can track and debug your browser agent workflows with full session replay, step timelines, event logging, and prompt evaluation — right out of the box.
+
+---
+
+## 🚀 What We’ve Added
+
+In our fork of the Browser Use agent:
+
+- Lucidic calls like `lai.create_step()` and `lai.end_step()` are automatically inserted into the agent logic
+- LLM and tool interactions are tracked as **Events**
+- Support for Mass Sims, Prompt DB, and Rubric evaluations is built in
+- Works with LangChain handler for full call graph coverage
+
+---
+
+## 🧭 How to Use It
+
+### 1. Clone the Lucidic Fork
+
+```bash
+git clone https://github.com/lucidic-ai/browser-use-lai.git
+cd browser-use
+```
+
+> 📘 This is a fork of the official repo with added observability.
+
+---
+
+### 2. Install Locally
+
+```bash
+pip install -e .
+```
+
+This installs the agent in editable mode so you can tweak it if needed.
+
+---
+
+### 3. Use the LangChain Handler
+
+Since Browser Use is built on LangChain, you still need to attach the Lucidic handler manually.
+
+In your script:
+
+```python
+import lucidicai as lai
+from browser_use.agent import BrowserAgent
+
+# Initialize Lucidic
+lai.init(
+    session_name="browser_run",
+    agent_id="your-agent-id",
+    provider="langchain"
+)
+
+# Create agent and attach LangChain handler
+agent = BrowserAgent()
+handler = lai.LucidicLangchainHandler()
+handler.attach_to_llms(agent)
+
+# Run as usual
+agent.run("Find the capital of Japan and report its population.")
+```
+
+---
+
+## 🔍 What You’ll Get
+
+With Lucidic integration, every run is:
+
+- Logged as a **Session**
+- Broken down into **Steps** (e.g. page navigation, tool usage)
+- Populated with **Events** (e.g. LLM completions, actions)
+- Replayable as a video or gif in the [Workflow Sandbox](/features/workflow-sandbox)
+- Evaluated with custom or default [Rubrics](/features/rubrics)
+
+> 📷 _**[Insert screenshot of a browser session replay + step graph]**_
+
+---
+
+## 🧠 Why This Matters
+
+Browser agents are complex — they:
+
+- Navigate pages
+- Interact with forms and tools
+- Call LLMs with changing context
+
+Lucidic helps you see **why they failed**, **how they acted**, and **what to improve** — across individual sessions or full-scale Mass Simulations.
+
+---
+
+## 🔗 Links
+
+- 🔗 [Lucidic Fork of Browser Use](https://github.com/lucidic-ai/browser-use-lai)
+- 📘 [LangChain Integration](/integrations/langchain)
+- ⚙️ [Using the Python SDK](/getting-started/python)
+- 🔬 [Workflow Sandbox](/features/workflow-sandbox)
+
+---
