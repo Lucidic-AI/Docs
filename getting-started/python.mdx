@@ -5,7 +5,7 @@ description: Learn how to instrument your agent with Lucidic using the Python SD
 
 # 🐍 Using the Python SDK
 
-Once you've [installed Lucidic](/getting-started/installation), you're ready to start recording your agent's behavior, step by step.
+Once you've [installed Lucidic](/getting-started/installation) and [connected it to the dashboard](/getting-started/dashboard), you're ready to start recording your agent's behavior, step by step.
 
 This guide walks you through how to initialize a session, track steps and events, and optionally pull prompts from our [Prompt DB](/features/prompt-db).
 
@@ -13,23 +13,43 @@ This guide walks you through how to initialize a session, track steps and events
 
 ## 🚀 Step 1: Import & Initialize
 
+Theere are 4 things you need to provide to initialize a session:
+
+- `session_name`: A name for your session #Whatever you want to name it
+- `lucidic_api_key`: Your Lucidic API key #You should have this copied somewhere safe 
+- `agent_id`: Your Lucidic Agent ID #You can get this from the dashboard
+- `provider`: The LLM provider you're using #OpenAI, Anthropic, or LangChain
+
+Full version of init:
+
 ```python
 import lucidicai as lai
-
 lai.init(
     session_name="search_wikipedia",
     lucidic_api_key="your-api-key",   # Or use env var: LUCIDIC_API_KEY
     agent_id="your-agent-id",         # Or use env var: LUCIDIC_AGENT_ID
     task="Search Wikipedia for Elon Musk's biography",
-    provider="openai",                # "openai", "anthropic", or "langchain"
+    provider="openai",                # "openai", "anthropic", if "langchain" you can leave this blank checkout [LangChain Integration](/integrations/langchain)
     mass_sim_id="your-mass-sim-id",   # Optional
     rubrics=["default", "custom_score"]  # Optional
 )
 ```
+Shorter/more common version of init:
 
-### ⚙️ Environment Variable Support
-
-You can skip `lucidic_api_key` and `agent_id` if you set:
+```python
+import lucidicai as lai
+lai.init(
+    session_name="search_wikipedia",
+    provider = "openai",                
+)
+```
+Ideally you move the `lucidic_api_key` and `agent_id` to environment variables. The way to do this is create a `.env` file in the root of your project and add the following. Most of you will have these where you keep your API keys:
+```python
+LUCIDIC_API_KEY=your-api-key
+LUCIDIC_AGENT_ID=your-agent-id
+```
+OR 
+`lucidic_api_key` and `agent_id` if you set:
 
 ```bash
 export LUCIDIC_API_KEY=your-api-key
@@ -52,10 +72,16 @@ lai.end_step(is_successful=True, action="Clicked search")
 
 > Only **one step can be active at a time**, so be sure to end a step before creating a new one.
 
-Optional fields include:
-- `state`, `action`, `goal`
-- `eval_score`, `eval_description`
-- `screenshot` or `screenshot_path`
+### ⚙️ Optional Fields You Can Attach to a Step
+
+You can enrich any step with the following optional fields to improve debugging, evaluation, and traceability:
+
+* **`state`** – A short description of the current environment or UI (e.g., page title, visible content, or system state).
+* **`action`** – What the agent did in this step (e.g., “clicked submit”, “filled out form”).
+* **`goal`** – What the agent *intended* to accomplish (e.g., “navigate to checkout”, “extract user name”).
+* **`eval_score`** – A step-level rating (like `"5"` or `"pass"`) to assess performance at that point.
+* **`eval_description`** – An explanation justifying the `eval_score`, useful for audits or structured reviews.
+* **`screenshot`** or **`screenshot_path`** – Visual context for this step, either as a base64-encoded image or a file path.
 
 ---
 
@@ -102,16 +128,46 @@ prompt = lai.get_prompt(
 - `{{variable}}` placeholders will be replaced using your dictionary
 - Missing keys will raise an error
 - Unreplaced variables will trigger a warning
+- Read more at [Prompt DB](/features/prompt-db)
 
 ---
 
 ## 🧼 Session Cleanup
 
-Your session will automatically end gracefully when the script exits (via `atexit` handler), but you can also end it explicitly:
+
+Your session will automatically end when the script exits (via an `atexit` handler), but you can also end it manually if you would like to add in evals:
 
 ```python
-lai.end_session(is_successful=True)
+lai.end_session(
+    is_successful=True,
+    is_successful_reason="Completed all steps",
+    session_eval="5",
+    session_eval_reason="Accurate and efficient"
+)
 ```
+
+**All fields are optional — if you don’t provide them, Lucidic will automatically evaluate the session for you.**
+
+---
+
+### 🧠 Why Both `is_successful` and `session_eval`?
+
+We support two types of evaluations so you can keep things simple or add more detail:
+
+* `is_successful`: A binary flag — did the agent complete the task?
+* `session_eval`: A more detailed score (e.g. 1–5) showing *how well* the agent did.
+
+If you only want to pass in one value (like a numeric score), you can compute the other yourself:
+
+```python
+score = 5
+lai.end_session(
+    is_successful=score >= 4,
+    session_eval=str(score),
+)
+```
+
+This gives you full control and lets you keep your logic consistent with your own success criteria.
 
 ---
 

@@ -41,7 +41,8 @@
               "features/mass-simulation-overview",
               "features/workflow-trajectory",
               "features/rubrics",
-              "features/prompt-db"
+              "features/prompt-db",
+              "features/time-travel"
             ]
           },
           {

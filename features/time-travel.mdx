@@ -1,0 +1,82 @@
+---
+
+title: Time Travel
+description: Freeze time and checkout the past, literally. 
+---
+# ⏳ Time Travel
+
+**Time Travel** lets you freeze time at any point in an agent run and replay that exact moment — as many times as you want.
+
+Whether your agent failed halfway through a task or made an unexpected decision, you can zoom into that event, rerun it across multiple simulations, and debug it in isolation. Modify the model, adjust your prompt, or tweak instructions — no need to rerun the whole session or regenerate brittle, one-off states.
+
+This is your tool for:
+
+* **Isolating failures** without starting over
+* **Debugging variability** in model outputs
+* **Fixing bad decisions** by adjusting prompts at critical steps
+* **Creating reproducible replays** from fragile, real-world sessions
+
+You’re not guessing anymore — you’re traveling back to the exact moment things broke and fixing it.
+
+## ✍️ How to Create One
+
+1. Select any event
+2. Click the time travel button
+3. When the screen loads, you will automatically be in a new time travel. We have froze time for right before your event i.e we have captured your exact LLM call and the state of your agent (with all the images). You can then modify any of this information and tweak it to debug your agent.
+4. Write a name for your time travel
+5. Choose a model and number of simulations (optionally adjust temperature and other parameters)
+6. Click preview to see the raw input to make sure this is the event you want to debug
+7. Click run time travel simulations (bottom right)
+> 📷 _![event timeline](/images/tt1.png)_
+---
+
+---
+
+## 🧠 What It Shows
+
+### How to access the results
+
+- Click the results tab to see the results of your time travel.
+- It takes 30 seconds to a minute to run (we are simulating a lot of your inputs haha)
+
+### Output style 
+- The outputs will include both the raw responses from the LLM and intelligently organized groupings of those responses.
+
+- Each group features a descriptive summary of the agent’s typical actions, along with a clickable name to easily access the underlying raw responses.
+
+The results are grouped by behavior category — so you can instantly see dominant, fringe, and problematic outcomes. These groups are a best interpretation of the raw responses so check each response to make sure it is what you expect.
+
+> 📷 ***\[Insert bar chart screenshot here showing behavior categories]***
+
+---
+
+
+## 🧮 What’s in the Output
+
+Each simulation returns a full JSON response including:
+
+* `evaluation_previous_goal` – Did the last step succeed?
+* `memory` – Internal reasoning/state summary
+* `next_goal` – What it’s trying to do next
+* `action` – The actual move (e.g., click, type, navigate)
+
+We cluster these outputs into **categories**, so you can:
+
+* Identify dominant vs edge-case behaviors
+* Spot inconsistencies
+* Diagnose incorrect decisions
+
+> 📷 ***\[Insert JSON output and groupings view]***
+
+---
+
+## Variables - Be clean about systematically iterating on your prompt
+---
+
+## 🧩 Related Concepts
+
+* [Workflow Trajectory](/workflow-trajectory)
+* [Sessions](/sessions)
+* [Prompt DB](/prompt-db)
+* [Mass Simulations](/mass-simulations)
+* [Compare Sims](/compare-sims)

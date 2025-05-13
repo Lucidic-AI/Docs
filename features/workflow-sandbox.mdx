@@ -19,39 +19,30 @@ At the top of the Workflow Sandbox, you’ll see:
 - The task string supplied to the agent at the start of the session
 
 ### 2. 📊 Session Stats
-- Completion status
-- Time taken
-- Step count
+- Session Evaluation (read more about it [here](/sessions#evaluation-and-scoring))
+- Is Successful (read more about it [here](/sessions#evaluation-and-scoring))
 - Cost
-- Eval score (from [Rubrics](/features/rubrics) or [default Lucidic scoring](/sessions#default-evaluation))
-
-> 📷 _**[Insert screenshot of task and overview panel with stats + Lucidic score]**_
+- Time 
+- Total Steps
+- Repeated Steps
+- Average Steps per node 
+> 📷 _![api key2](/images/ws1.png)_
 
 ---
+🧠 **Pro tip:** Hover over the session evaluation or the success/failure flag to see a the description!! 
+
 
 ## 🧮 Rubric Evaluations
 
-Below the overview, you’ll find any evaluation rubrics attached to this session.
+Below the overview, you’ll find any evaluation rubrics attached to this session. Read more about rubrics [here](/features/rubrics).
 
 - Each criterion is scored and explained
 - The **Lucidic default rubric** runs on every session automatically
-- Custom rubrics can be attached per Agent or manually in post-analysis
+- Custom rubrics can be attached per Agent when running a session
 
-> 📷 _**[Insert UI image of rubric panel with per-criterion scores]**_
+🧠 **Pro tip:**: The description of why you got a certain score for a given criterion is below the score, so you can actually see why each of your criteria got a certain score! 
 
----
-
-## 🎬 Session Replay
-
-Replay the agent’s full run using:
-
-- A **GIF or video** of the session
-- Step-by-step visualization
-- Optional LLM call preview
-
-This gives you a literal frame-by-frame look at how the agent behaved.
-
-> 📷 _**[Insert screenshot or placeholder for replay section]**_
+> 📷 _![rubric](/images/ws2.png)_
 
 ---
 
@@ -61,13 +52,12 @@ You can open the [Prompt DB](/features/prompt-db) directly from the session:
 
 - Quickly view which prompt was used
 - Test changes or view version history
-- Future: See prompt lineage and performance impact
+- Add tags to quickly iterate on prompts
 
-> 📷 _**[Insert screenshot of Prompt DB modal or access link]**_
+
 
 ---
-
-## 🧭 Step Trajectory Graph
+## 🧭 Session Replay: Step Trajectory Graph
 
 Next, you’ll see a **Session-specific graph** — a mini version of the [Workflow Trajectory](/features/workflow-trajectory), scoped to just this one session.
 
@@ -75,9 +65,9 @@ Next, you’ll see a **Session-specific graph** — a mini version of the [Workf
 - **Edges** = actions taken
 - **Grouped** = similar states are clustered (e.g. looping or retrying)
 
-Clicking a node opens a full breakdown of that **Step** below the graph.
+🧠 **Pro tip:**: Clicking a node opens a full breakdown of that **Step** below the graph!
 
-> 📷 _**[Insert flowchart/graph of a single session’s trajectory]**_
+> 📷 _![trajectory](/images/ws3.png)_
 
 ---
 
@@ -90,16 +80,30 @@ Two synced timelines appear below:
 - Clicking a step:
   - Advances the graph to that state
   - Opens the step detail panel
+- Step detail panel shows:
+  - Basic Information: Start time, duration, Cost
+  - Evaluation: Status, step eval score, eval description
+  - State overview: Goal, Action, State
+  - Image of state
+
+> 📷 _![step detail](/images/ws4.png)_
+
+🧠 **Pro tip:**: Use arrow keys to quickly go from one step to the next.
 
 ### ⚙️ Event Timeline (within Step)
 - Shows all [Events](/events) that occurred in that step (e.g. LLM calls, tool invocations)
 - Clicking an event shows:
   - Request/response
+  - Images used (if any)
   - Cost
   - Model used
   - Any errors or retries
+  - Time travels (read more about them [here](/features/time-travel))
+  - Pretty vs raw request/response
 
-> 📷 _**[Insert split-view image of step + event timeline interaction]**_
+> 📷 _![event timeline](/images/ws5.png)_
+
+🧠 **Pro tip:**: If your LLM calls are super cluttered, use our pretty text which is built in! It's the wand and will show you your text in a readable format. 
 
 ---
 
@@ -120,7 +124,6 @@ The Workflow Sandbox is where you:
 
 - Annotate steps or events
 - Inline prompt diffing
-- Add “Time Travel” from any step to re-try logic with modified prompts
 - Attach notes to runs for team reviews or QA
 
 ---
