@@ -46,7 +46,6 @@ class Step(models.Model):
     node = ForeignKey(Node)
 ```
 
-> 📷 _**[Insert screenshot of step details panel from your dashboard UI here]**_
 
 ---
 
@@ -58,7 +57,6 @@ class Step(models.Model):
 
 If provided, you can supply these fields manually through your agent SDK. Otherwise, summaries can be automatically generated via LLMs if raw text is available.
 
-> 📷 _**[Insert UI showing state/goal/action strings + summaries on a single step]**_
 
 ---
 
@@ -104,7 +102,6 @@ In your dashboard’s **Workflow Graph**, Steps are:
 - Clustered automatically when the state is repeated (e.g. looping or retries)
 - Connected by labeled edges that represent the agent’s actions
 
-> 📷 _**[Insert example of workflow graph with clustered or looping states]**_
 
 ---
 
@@ -128,7 +125,6 @@ Each Step may contain multiple [Events](/events) — fine-grained units of work 
 - DOM scraping
 - etc.
 
-> 📷 _**[Insert collapsed/expanded view of a Step with Events nested inside]**_
 
 ---
 

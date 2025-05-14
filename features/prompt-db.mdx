@@ -27,7 +27,7 @@ With Prompt DB, you can:
 - Test prompt performance across Sessions or Mass Sims
 - Diff, compare, and experiment — without redeploying anything
 
-> 📷 _**[Insert screenshot of the Prompt DB UI: version history + label management]**_
+> 📷 _![promptdb](/images/promptdb.png)_
 
 ---
 
@@ -71,7 +71,7 @@ Only one version can hold a given label at a time.
 ## ⚙️ Fetching Prompts in Python
 
 ```python
-prompt = prompt_db.fetch_prompt(
+prompt = lai.get_prompt(
     name="summarize_page",
     label="production",  # optional, defaults to "production"
     variables={"page_text": "Stanford University is a top..."},  # optional
