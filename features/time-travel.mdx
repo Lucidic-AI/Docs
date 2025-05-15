@@ -28,11 +28,13 @@ You’re not guessing anymore — you’re traveling back to the exact moment th
 6. Click preview to see the raw input to make sure this is the event you want to debug
 7. Click run time travel simulations (bottom right)
 > 📷 _![event timeline](/images/tt1.png)_
----
+8. Optional: If you have an image you can test your input with and without the image by clicking the checkbox. 
+---> 📷 _![event timeline](/images/tt3.png)_
+
 
 ---
 
-## 🧠 What It Shows
+## 🧮 What’s in the Output
 
 ### How to access the results
 
@@ -48,30 +50,44 @@ The results are grouped by behavior category — so you can instantly see domina
 
 > 📷 _![event timeline](/images/tt2.png)_
 
----
-
-
-## 🧮 What’s in the Output
-
-Each simulation returns a full JSON response including:
-
-* `evaluation_previous_goal` – Did the last step succeed?
-* `memory` – Internal reasoning/state summary
-* `next_goal` – What it’s trying to do next
-* `action` – The actual move (e.g., click, type, navigate)
-
-We cluster these outputs into **categories**, so you can:
-
-* Identify dominant vs edge-case behaviors
-* Spot inconsistencies
-* Diagnose incorrect decisions
-
-
 
 ---
 
-## Variables - Be clean about systematically iterating on your prompt
+## ⏳ Variables - Be clean about systematically iterating on your prompt
+
+
+Time Travel lets you modify any part of your agent’s state — but sometimes, you want to be *systematic* about it.
+
+That’s where **variables** come in. Variables let you mark specific parts of your input as "changeable," so you can experiment cleanly while keeping the rest of the input constant.
+
+Use variables to:
+
+* 🔁 **Isolate changes** in prompts, instructions, or environment
+* 🔒 **Lock critical context** that shouldn’t change between runs
+
+### How it works
+
+1. **Click the variables button**
+2. **Highlight a field** in your input (e.g., a line of reasoning, fixed text, or an instruction).
+> 📷 _![event timeline](/images/tt4.png)_
+3. **Scroll up and add a name for your variable** — this tells us what you want to call it. 
+4. **Click create variable**
+> 📷 _![event timeline](/images/tt5.png)_
+5. **Scroll to the bottom of the page** and you can now see all your defined variables
+> 📷 _![event timeline](/images/tt6.png)_
+6. **Go back to the time travel page** -- Now your variables are fixed and don't clutter your screen so you can focus on the prompt you want to change.
+> 📷 _![event timeline](/images/tt7.png)_
+7. **Optional**: Check the exact input to your LLM by clicking the "preview" button.
+> 📷 _![event timeline](/images/tt8.png)_
+
+
+
+By clearly separating what you *can* and *can’t* change, you’ll get cleaner comparisons and sharper insights.
+
+> Variables are especially useful when debugging brittle prompts, testing fallback instructions, or analyzing model behavior across slight input changes.
+
 ---
+
 
 ## 🧩 Related Concepts
 

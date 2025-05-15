@@ -29,7 +29,7 @@ git clone https://github.com/lucidic-ai/browser-use-lai.git
 cd browser-use
 ```
 
-> 📘 This is a fork of the official repo with added observability.
+> 📘 This is a fork of the official repo with added observability.`
 
 ---
 
@@ -70,29 +70,63 @@ agent.run("Find the capital of Japan and report its population.")
 ```
 
 ---
+### 4. Example Script 
+Perfect — since your full script is already available on GitHub, your docs section should focus on **highlighting specific capabilities** using short, labeled code snippets, not showing everything at once.
 
-## 🔍 What You’ll Get
-
-With Lucidic integration, every run is:
-
-- Logged as a **Session**
-- Broken down into **Steps** (e.g. page navigation, tool usage)
-- Populated with **Events** (e.g. LLM completions, actions)
-- Replayable as a video or gif in the [Workflow Sandbox](/features/workflow-sandbox)
-- Evaluated with custom or default [Rubrics](/features/rubrics)
-
+Here’s a revised **“Example Script”** section that explains the value, links to your repo, and then breaks things down into focused, readable snippets:
 
 ---
 
-## 🧠 Why This Matters
+### 4. Example Script
 
-Browser agents are complex — they:
+You can run full-scale testing of your browser agents using our [example script on GitHub](https://github.com/Lucidic-AI/browser-use-lai/blob/main/examples/models/test.py). It supports multiple models, prompt versions, and tasks — all fully tracked with Lucidic.
 
-- Navigate pages
-- Interact with forms and tools
-- Call LLMs with changing context
+Below are a few key snippets:
 
-Lucidic helps you see **why they failed**, **how they acted**, and **what to improve** — across individual sessions or full-scale Mass Simulations.
+---
+
+#### 🔁 Test Multiple Models
+
+Loop through LLMs like GPT-4 and Gemini using a shared browser agent:
+
+```python
+llm_configs = [
+  {"name": "gpt-4.1-nano", "provider": "openai", "api_key": openai_key},
+  {"name": "gemini-2.0-flash", "provider": "google", "api_key": gemini_key},
+]
+
+for llm in llm_configs:
+    agent = Agent(llm=load_llm(llm), task="Search Hello world on google", browser=shared_browser)
+    await agent.run()
+```
+
+---
+
+#### 🧠 Test Different Prompt Versions
+
+Dynamically inject different versions of prompts (`production`, `development`, etc.) into your agents:
+
+```python
+prompt_labels = ["production", "development"]
+
+for label in prompt_labels:
+    content = lai.get_prompt("System Prompt", label=label)
+    system_message = SystemMessage(content=content.format(max_actions=4))
+```
+
+---
+
+#### 🧪 Run Mass Simulations
+
+Track each run under a different session name and mass sim ID:
+
+```python
+lai.init(
+  task="Search Hello world on google",
+  session_name=f"{prompt_label} | {llm_name}",
+  mass_sim_id="a89c61f9-1a16-4a68-85f3-31cd2eca8abc"
+)
+```
 
 ---
 

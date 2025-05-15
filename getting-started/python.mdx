@@ -43,14 +43,13 @@ lai.init(
     provider = "openai",                
 )
 ```
-Ideally you move the `lucidic_api_key` and `agent_id` to environment variables. The way to do this is create a `.env` file in the root of your project and add the following. Most of you will have these where you keep your API keys:
+We reccomend moving the `LUCIDIC_API_KEY` and `LUCIDIC_AGENT_ID` to environment variables. The way to do this is create a `.env` file in the root of your project and add the following. Most of you will already have a .env (it is where you would keep any API key) and will just have to add a Lucidic API Key and a Lucidic Agent ID.
 ```python
 LUCIDIC_API_KEY=your-api-key
 LUCIDIC_AGENT_ID=your-agent-id
 ```
 OR 
-`lucidic_api_key` and `agent_id` if you set:
-
+You can set the environment variables in your terminal:
 ```bash
 export LUCIDIC_API_KEY=your-api-key
 export LUCIDIC_AGENT_ID=your-agent-id
