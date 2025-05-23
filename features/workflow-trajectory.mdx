@@ -19,8 +19,29 @@ Each node in the Workflow Trajectory represents a **grouped state** the agent re
 
 Each edge represents a **transition** (an action) the agent took between states.
 
->pic
+> 📷 _![workflow trajectory](/images/wt1.png)_
 
+- **Click the image** in the node to see it in more detail
+> 📷 _![workflow trajectory](/images/wt6.png)_
+
+---
+
+## 🔍 Interacting with the Graph
+
+- **Orange edges** are **forward** transitions
+- **Blue edges** are **backward** transitions
+- **Pink edges** are **self** transitions, meaning the agent went back to the same state
+- **The multiplier** shows the frequency of that transition across all sessions
+> 📷 _![workflow trajectory](/images/wt5.png)_
+
+- **Click a node** to inspect all sessions that passed through that state
+> 📷 _![workflow trajectory](/images/wt2.png)_
+- **Scroll down** to use the **Time Travel** feature to see how likely it is that your agent will make a specific action with different parameters (prompt, model, temperature, etc.).
+> 📷 _![workflow trajectory](/images/wt7.png)_
+- **Click an edge** to view sessions that made that specific transition
+> 📷 _![workflow trajectory](/images/wt3.png)_
+- **Zoom in** to see local behavior or **zoom out** for overall flow
+> 📷 _![workflow trajectory](/images/wt4.png)_
 
 ---
 
@@ -62,16 +83,6 @@ If a task is supposed to be deterministic, any branching in this graph reveals i
 
 ---
 
-## 🔍 Interacting with the Graph
-
-- **Click a node** to inspect all sessions that passed through that state
-- **Click an edge** to view sessions that made that specific transition
-- **Zoom in** to see local behavior or **zoom out** for overall flow
-- Use **highlighting tools** (coming soon) to emphasize successful vs failed paths
-
-
----
-
 ## 🔢 Probabilistic Insights
 
 You can think of this graph as a **probabilistic model** of your agent’s behavior:
@@ -80,16 +91,6 @@ You can think of this graph as a **probabilistic model** of your agent’s behav
 - It helps you estimate **failure rates** in certain trajectories
 - It surfaces **unexpected branches** and **edge cases**
 
-
----
-
-## 🔮 Planned Upgrades
-
-- **Auto-tagging of suspicious patterns** (e.g. loops, frequent revisits)
-- **Overlay evaluation scores** on nodes
-- **Compare trajectory graphs** across different simulations
-- **Graph diffs** for prompt/model comparisons
-- **Custom clustering strategies** beyond just state equivalence
 
 ---
 
