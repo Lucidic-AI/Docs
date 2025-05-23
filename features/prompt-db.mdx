@@ -30,6 +30,32 @@ With Prompt DB, you can:
 > 📷 _![promptdb](/images/promptdb.png)_
 
 ---
+## ✍️ How to Create One
+
+There are 2 components to creating a prompt in the UI and then using it in your code.
+
+### Step 1: In the UI
+
+- Click a project and then an agent 
+- On the agent page it will be right below the agent name, so in the example right below "Browseruse Demo"
+> 📷 _![promptdb](/images/r3.png)_
+- Click create prompt button. 
+- Create a prompt name (this is what you will refer to it in the Python Package)
+- Add a version description (optional)
+- Copy paste your prompt from your code and IMPORTANT change all your variables to {{variable_name}}.
+> So for example if in python you have f"summarize this page: {page_text}" then when you copy it to the prompt content change it to "summarize this page: {{page_text}}"
+- Click Save
+- Click on the prompt name on the top bar to see a summary of the prompt
+
+### Step 2: In Python
+
+```python
+lai.init(
+    session_name="custom_task",
+    provider="openai",
+    prompts=["default", "my_custom_prompt"]  # Include both default and custom prompts
+)
+```
 
 ## 🧬 How It Works
 
