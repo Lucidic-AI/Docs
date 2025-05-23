@@ -1,0 +1,85 @@
+---
+title: Creating a Mass Simulation
+description: Learn how to create a mass simulation using the Python SDK and in the UI
+---
+
+A Mass Simulation is a collection of Sessions where the same agent runs the same task multiple times. Due to the inherent non-determinism of autonomous agents, a single run is often misleading — Mass Sims let you observe what your agent can do, usually does, and sometimes fails to do.
+
+Learn more about Mass Sims in the [Mass Simulations](/mass-simulations) section.
+>There are 2 ways to create a mass sim: 1) [in the UI](#1-create-in-ui) and 2) [using the Python SDK](#2-create-in-python-sdk)
+
+## ✍️ How to Create One in the UI 
+
+### 1. Create in UI
+- Go to the **"Mass Sims"** tab inside your Agent
+> 📷 _![api key2](/images/masssimcreation.png)_
+
+- Click **"New Mass Sim"**
+- Copy the **Mass Sim ID** into your SDK:
+
+```python
+lai.init(
+    session_name="run_37",
+    mass_sim_id="abc123"
+)
+```
+
+### 2. Create in Python SDK
+
+You can programmatically create a mass simulation using the `create_mass_sim()` function:
+
+```python
+from lucidicai import create_mass_sim
+
+mass_sim_id = create_mass_sim(
+    mass_sim_name="search_performance_test",
+    total_num_sessions=50,
+    lucidic_api_key="your-api-key",  # Or use env var: LUCIDIC_API_KEY
+    agent_id="your-agent-id",        # Or use env var: LUCIDIC_AGENT_ID
+    task="Search Wikipedia for Steve Jobs biography",
+    tags=["search", "performance", "wikipedia"]
+)
+
+print(f"Created mass simulation with ID: {mass_sim_id}")
+```
+
+#### Parameters
+
+* **`mass_sim_name`** – A descriptive name for your mass simulation.
+* **`total_num_sessions`** – The number of sessions to run in this simulation.
+* **`lucidic_api_key`** – Your Lucidic API key (optional if set as environment variable).
+* **`agent_id`** – Your Lucidic Agent ID (optional if set as environment variable).
+* **`task`** – The task description for all sessions in this simulation (optional).
+* **`tags`** – A list of tags to categorize this mass simulation (optional).
+
+#### Returns
+
+* A string containing the unique ID of the created mass simulation.
+
+#### Example Usage
+
+Create a mass simulation and then use the returned ID in your session initialization:
+
+```python
+import lucidicai as lai
+from lucidicai import create_mass_sim
+
+# Create a mass simulation with 25 sessions
+mass_sim_id = create_mass_sim(
+    mass_sim_name="product_search_test",
+    total_num_sessions=25,
+    task="Search for iPhone 15 Pro Max",
+    tags=["gemini", "search", "e-commerce"]
+)
+
+# Use the mass_sim_id in your session initialization
+lai.init(
+    session_name="search_run",
+    provider="gemini",
+    mass_sim_id=mass_sim_id
+)
+
+# Continue with your agent logic...
+```
+
+---

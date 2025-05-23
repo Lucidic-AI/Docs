@@ -11,6 +11,36 @@ Instead of relying on a single pass/fail outcome or ad hoc scores, rubrics help 
 
 ---
 
+
+## ⚙️  How to Use Rubrics
+
+Usiing rubrics consists of 2 parts, first creating one in the UI and then using it in your code. 
+
+### In the UI
+
+- Navigate to the **Rubrics** tab on any Agent 
+> 📷 _![rubric](/images/r2.png)_
+> 📷 _![rubric](/images/r3.png)_
+> (Right underneath the agent name, so in the example right below "Browseruse Demo")
+
+
+- Create, name, and configure a rubric
+- Attach it to Sessions manually or automatically
+
+### In Python 
+
+```python
+lai.init(
+    session_name="custom_task",
+    provider="openai",
+    rubrics=["default", "my_custom_rubric"]  # Include both default and custom rubrics
+)
+```
+
+You can apply rubrics at runtime or in post-processing via the dashboard.
+
+---
+
 ## 🧠 Why Use Rubrics?
 
 Agents don’t just succeed or fail — they:
@@ -23,6 +53,7 @@ Agents don’t just succeed or fail — they:
 Rubrics let you **capture those nuances** and **standardize how you evaluate** an agent’s session. They’re perfect for comparing sessions, identifying regressions, or measuring improvement across prompt or model changes.
 
 ---
+
 
 ## 🧬 Rubric Anatomy
 

@@ -1,5 +1,5 @@
 ---
-title: Using the Python SDK
+title: Final Instructions [Creating Steps, Events, and Sessions]
 description: Learn how to instrument your agent with Lucidic using the Python SDK.
 ---
 
@@ -11,7 +11,7 @@ This guide walks you through how to initialize a session, track steps and events
 
 ---
 
-## 🚀 Step 1: Import & Initialize
+## 🚀 Step 1: Create a Session
 
 Theere are 4 things you need to provide to initialize a session:
 
@@ -28,7 +28,7 @@ lai.init(
     session_name="search_wikipedia",
     lucidic_api_key="your-api-key",   # Or use env var: LUCIDIC_API_KEY
     agent_id="your-agent-id",         # Or use env var: LUCIDIC_AGENT_ID
-    task="Search Wikipedia for Elon Musk's biography",
+    task="Search Wikipedia for Steve Jobs biography",
     provider="openai",                # "openai", "anthropic", if "langchain" you can leave this blank checkout [LangChain Integration](/integrations/langchain)
     mass_sim_id="your-mass-sim-id",   # Optional
     rubrics=["default", "custom_score"]  # Optional
@@ -57,7 +57,7 @@ export LUCIDIC_AGENT_ID=your-agent-id
 
 ---
 
-## 🧭 Step 2: Instrument Agent Steps
+## 🧭 Step 2: Create Steps
 
 Use `create_step()` and `end_step()` around your step logic. Each step should represent a meaningful action or decision point.
 
@@ -84,7 +84,7 @@ You can enrich any step with the following optional fields to improve debugging,
 
 ---
 
-## ⚙️ Step Updates
+### ⚙️ Step Updates
 
 You can update steps mid-run or retroactively:
 
@@ -95,9 +95,10 @@ lai.update_previous_step(index=-1, eval_score=0.5)
 
 ---
 
-## ⚙️ Step Events
+## 🎗️ Step 3: Create Events
 
-If your agent has tool calls or LLM usage, track them as **events** within each step.
+If your agent has tool calls or LLM usage, track them as **events** within each step. 
+> If you only have LLM calls with a supported provider you don't need to create events for them! Lucidic will automatically create events for you.
 
 ```python
 lai.create_event(description="OpenAI call")
@@ -105,13 +106,23 @@ lai.create_event(description="OpenAI call")
 lai.end_event(is_successful=True, result="Summary generated")
 ```
 
-You can also use `update_event()` and `update_previous_event()` to patch logs.
+You can enrich any event with the following optional fields to improve debugging, evaluation, and traceability:
+
+>All of these are optional, but we recommend setting at least `description` and `result`.
+
+* **`description`** – A detailed explanation of the event (e.g., “clicked submit”, “completed form entry”), or any relevant input, context, or memory for your agent. This field is often used to capture user actions, LLM prompts, document processing inputs, or data retrieval details. Include any information you consider important for your agent.
+* **`is_successful`** – A boolean indicating whether the event was successful.
+* **`result`** – This is more of a result/output of the event. For example, if you are doing a document processing, this could be the result of the document processing. Or if you make an API call, this could be the result of the API call.
+* **`is_finished`** – A boolean indicating whether the event was finished. This will automatically be set to true when the event is ended.
+* **`model`** – A lot of people use events with LLMs so if you have a custom LLM call you can set the model name here.
+* **`cost`** – If you have a custom API call or LLM call you can set the cost here.
+
 
 > LLM calls from supported providers like OpenAI and Anthropic are **automatically captured** into events when you set the `provider` in `init()`.
 
 ---
 
-## 📥 Step 3: (Optional) Pull Prompts from Prompt DB
+## 📥 Step 4: (Optional) Pull Prompts from Prompt DB
 
 Use Lucidic’s [Prompt DB](/features/prompt-db) to version and serve prompts dynamically:
 
@@ -124,6 +135,18 @@ prompt = lai.get_prompt(
 )
 ```
 
+Here's what each parameter does:
+
+- `prompt_name`: Prompt name
+- `label`: Label to fetch (defaults to `production`)
+- `variables`: Dictionary of string key/values to interpolate
+- `cache_ttl`: 
+  - `0` = no cache  
+  - `-1` = cache forever  
+  - `n` = cache for `n` seconds
+
+Additional notes:
+
 - `{{variable}}` placeholders will be replaced using your dictionary
 - Missing keys will raise an error
 - Unreplaced variables will trigger a warning
@@ -131,7 +154,7 @@ prompt = lai.get_prompt(
 
 ---
 
-## 🧼 Session Cleanup
+## 🧼 Step 5: End the Session
 
 
 Your session will automatically end when the script exits (via an `atexit` handler), but you can also end it manually if you would like to add in evals:
@@ -146,6 +169,39 @@ lai.end_session(
 ```
 
 **All fields are optional — if you don’t provide them, Lucidic will automatically evaluate the session for you.**
+
+### 📊 Custom Evaluation Rubrics
+
+When ending a session, you can provide your own evaluation metrics to better assess your agent's performance:
+
+- If you don't provide evaluation metrics, Lucidic will automatically evaluate your session using default rubrics.
+- If you provide custom evaluation metrics, Lucidic will use your metrics instead of the default ones.
+
+We recommend creating your own rubric for custom tasks to ensure the evaluation aligns with your specific requirements:
+
+```python
+# When initializing your session, specify custom rubrics
+lai.init(
+    session_name="custom_task",
+    provider="openai",
+    rubrics=["default", "my_custom_rubric"]  # Include both default and custom rubrics
+)
+
+# When ending the session, provide your custom evaluation
+lai.end_session(
+    is_successful=True,
+    session_eval="4.5",  # Your custom score which is not a rubric
+    session_eval_reason="Agent completed primary objectives but took longer than expected"
+)
+```
+
+Custom rubrics allow you to:
+- Define task-specific success criteria
+- Implement domain-specific evaluation metrics
+- Compare agent performance across different versions using consistent metrics
+- Track improvements over time with metrics tailored to your use case
+
+Learn more about creating and using custom rubrics in the [Evaluation Rubrics](/features/rubrics) documentation.
 
 ---
 
@@ -189,11 +245,11 @@ lai.create_step(state="Home", goal="Search for Stanford")
 
 lai.create_event(description="OpenAI call")
 # (Your LLM call)
-lai.end_event(is_successful=True, result="Found Stanford")
+lai.end_event(is_successful=True, result="Found Stanford") #Optional 
 
-lai.end_step(is_successful=True, action="Used search")
+lai.end_step(is_successful=True, action="Used search") #Required
 
-lai.end_session(is_successful=True)
+lai.end_session(is_successful=True) #Optional 
 ```
 
 ---

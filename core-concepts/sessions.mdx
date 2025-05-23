@@ -13,7 +13,8 @@ A **Session** represents a single run of an AI agent as it attempts to complete 
 
 ## 🧠 What is a Session?
 
-A Session is a top-level unit of observability. It begins when an agent starts a task and ends when the task is either completed, failed, or interrupted.
+A Session is a top-level unit of observability. It begins when an agent starts a task and ends when the task is either completed, failed, or interrupted. 
+Learn to create a session [here](/getting-started/python)
 
 Within each Session, you’ll find:
 
@@ -30,25 +31,6 @@ Sessions are non-deterministic by nature. Re-running the same task may lead to d
 ---
 
 ## 🧬 Session Structure
-
-### Data Model Overview
-
-```python
-class Session(models.Model):
-    id = UUID
-    agent = ForeignKey(Agent)
-    name = str
-    task = str
-    start_time = datetime
-    last_updated = datetime
-    num_steps = int
-    is_finished = bool
-    is_successful = bool
-    cost = float
-    has_gif = bool
-    mass_sim = ForeignKey(MassSim)
-    graph_data = OneToOne(GraphData)
-```
 
 ### Step and Event Hierarchy
 
@@ -90,7 +72,11 @@ Sessions can be evaluated via multiple systems:
 Passed in at runtime using the Python SDK. Useful for customized or domain-specific scoring.
 
 ```python
-session.log_eval(score=0.8, description="Task succeeded but was slow.")
+lai.end_session(
+    is_successful=True,
+    session_eval="4.5",  # Your custom score which is not a rubric
+    session_eval_reason="Agent completed primary objectives but took longer than expected"
+)
 ```
 
 ### 2. **Rubric-Based Evaluation**
@@ -113,7 +99,7 @@ These rubrics produce both per-criterion and composite scores.
 
 ### 3. **Default Evaluation**
 Our built-in system outputs:
-- A score (0, 0.5, or 1) based on task completion
+- A score (0 or 1) based on task completion
 - A list of “wrong” or suboptimal steps (automatically identified)
 - Graph highlights of failure points
 
@@ -130,8 +116,6 @@ Sessions give you rich insight into how your agent operates and where it goes wr
 - **Track revisited states** and looping patterns
 
 Coming soon:
-
-- **Time Travel Debugging**: pause at any step and try alternate prompt modifications
 - **Prompt DB integration**: live-edit prompts your agent uses at runtime
 
 

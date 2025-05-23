@@ -19,21 +19,11 @@
               "getting-started/introduction",
               "getting-started/installation",
               "getting-started/dashboard",
-              "getting-started/python"
+              "getting-started/python",
+              "getting-started/masssim"
             ]
           },
-          {
-            "group": "Core Concepts",
-            "pages": [
-              "core-concepts/principles",
-              "core-concepts/ai-agent",
-              "core-concepts/sessions",
-              "core-concepts/steps",
-              "core-concepts/events",
-              "core-concepts/mass-simulations",
-              "core-concepts/evaluations-rubrics"
-            ]
-          },
+
           {
             "group": "Features",
             "pages": [
@@ -52,6 +42,18 @@
               "integrations/anthropic",
               "integrations/langchain",
               "integrations/browser-use"
+            ]
+          }, 
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "core-concepts/principles",
+              "core-concepts/ai-agent",
+              "core-concepts/sessions",
+              "core-concepts/steps",
+              "core-concepts/events",
+              "core-concepts/mass-simulations",
+              "core-concepts/evaluations-rubrics"
             ]
           }
         ]
