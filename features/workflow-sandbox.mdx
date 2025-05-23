@@ -1,9 +1,9 @@
 ---
-title: Workflow Sandbox
+title:  Viewing Sessions (Workflow Sandbox)
 description: Dive into a full breakdown of one agent run — replay, inspect, evaluate, and debug every decision.
 ---
 
-# 🧪 Workflow Sandbox
+# 🧪  Workflow Sandbox
 
 The **Workflow Sandbox** is your deep-dive view into a single agent run — also known as a [Session](/sessions). Learn to create one [here](/getting-started/python).
 
@@ -12,6 +12,8 @@ It’s where observability meets usability: you can **replay the session**, **in
 ---
 
 ## 🧠 What It Shows
+> To get here Click Project -> Agent -> any session in the session history.
+
 
 At the top of the Workflow Sandbox, you’ll see:
 
@@ -19,8 +21,8 @@ At the top of the Workflow Sandbox, you’ll see:
 - The task string supplied to the agent at the start of the session
 
 ### 2. 📊 Session Stats
-- Session Evaluation (read more about it [here](/sessions#evaluation-and-scoring))
-- Is Successful (read more about it [here](/sessions#evaluation-and-scoring))
+- Session Evaluation 
+- Is Successful 
 - Cost
 - Time 
 - Total Steps
@@ -97,7 +99,7 @@ Two synced timelines appear below:
 >🧠 **Pro tip:**: Use arrow keys to quickly go from one step to the next.
 
 ### ⚙️ Event Timeline (within Step)
-- Shows all [Events](/events) that occurred in that step (e.g. LLM calls, tool invocations)
+- Shows all [Events](/core-concepts/events) that occurred in that step (e.g. LLM calls, tool invocations)
 - Clicking an event shows:
   - Request/response
   - Images used (if any)
@@ -132,15 +134,5 @@ The Workflow Sandbox is where you:
 - Inline prompt diffing
 - Attach notes to runs for team reviews or QA
 
----
-
-## 🔗 Related Docs
-
-- [Sessions](/sessions)
-- [Steps](/steps)
-- [Events](/events)
-- [Rubrics](/features/rubrics)
-- [Prompt DB](/features/prompt-db)
-- [Workflow Trajectory](/features/workflow-trajectory)
 
 ---

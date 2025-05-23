@@ -16,7 +16,7 @@ A **Session** represents a single run of an AI agent as it attempts to complete 
 A Session is a top-level unit of observability. It begins when an agent starts a task and ends when the task is either completed, failed, or interrupted. 
 Learn to create a session [here](/getting-started/python)
 
-Within each Session, you’ll find:
+Within each Session UI in Lucidic or what we call [workflow sandbox](/features/workflow-sandbox), you’ll find:
 
 - A **timeline of Steps** (agent states and transitions)
 - Fine-grained **Events** (e.g. LLM calls, API responses) inside each Step
@@ -50,9 +50,9 @@ Steps and Events are documented [here →](/steps) and [here →](/events) respe
 
 ---
 
-## 📺 Session Dashboard
+## 📺 Session Dashboard or Workflow Sandbox
 
-Each Session in the dashboard includes:
+Each Session in the [workflow sandbox](/features/workflow-sandbox) includes:
 
 - **Overview metrics**: duration, step count, cost, completion status
 - **Visual replay**: full session video or GIF (if captured)
@@ -133,25 +133,5 @@ Each Session contains rich metadata including:
 - Replay data and graph reference
 
 Planned: **semantic tagging**, **search**, and **session filtering** based on LLM-labeled themes.
-
----
-
-## 🔄 Compare Sessions
-
-To study differences in agent behavior, use our [**Compare Sims**](/compare-sims) feature (beta):
-
-- Compare sets of Sessions from different models, prompts, or versions
-- Visualize structural differences in graph flows
-- View evaluation and cost deltas side-by-side
-
----
-
-## 🧪 Related Concepts
-
-- [Steps](/steps)
-- [Events](/events)
-- [Mass Simulations](/mass-simulations)
-- [Compare Sims](/compare-sims)
-- [Prompt DB](/prompt-db)
 
 ---

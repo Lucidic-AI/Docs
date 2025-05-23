@@ -47,13 +47,10 @@
           {
             "group": "Core Concepts",
             "pages": [
-              "core-concepts/principles",
-              "core-concepts/ai-agent",
               "core-concepts/sessions",
               "core-concepts/steps",
               "core-concepts/events",
-              "core-concepts/mass-simulations",
-              "core-concepts/evaluations-rubrics"
+              "core-concepts/mass-simulations"
             ]
           }
         ]

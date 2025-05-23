@@ -7,9 +7,9 @@ import Callout from '/snippets/callout.mdx'
 
 # 🪜 Steps
 
-A **Step** is a unit of execution within a [Session](/sessions). It captures both a snapshot of the agent’s **current state** and the **action taken** to transition to the next state. Steps are the backbone of a session timeline and form the nodes in your workflow graph.
+A **Step** is a unit of execution within a [Session](/core-concepts/sessions). It captures both a snapshot of the agent’s **current state** and the **action taken** to transition to the next state. Steps are the backbone of a session timeline and form the nodes in your workflow graph.
 
-Each Step may contain multiple underlying [Events](/events), such as tool calls, API requests, or LLM invocations.
+Each Step may contain multiple underlying [Events](/core-concepts/events), such as tool calls, API requests, or LLM invocations.
 
 ---
 
@@ -25,28 +25,6 @@ Each Step records:
 - Whether the step was **finished**, **successful**, or **stuck**
 - Whether a **screenshot** was captured
 - An **evaluation score + description** if provided or computed
-
-```python
-class Step(models.Model):
-    session = ForeignKey(Session)
-    index = int
-    start_time = datetime
-    last_updated = datetime
-    state = str (optional)
-    state_summary = str (optional)
-    goal = str (optional)
-    goal_summary = str (optional)
-    action = str (optional)
-    action_summary = str (optional)
-    is_finished = bool
-    is_successful = bool
-    eval_score = float (optional)
-    eval_description = str (optional)
-    has_screenshot = bool
-    node = ForeignKey(Node)
-```
-
-
 ---
 
 ## 🧭 State, Goal, and Action
@@ -79,7 +57,7 @@ Steps can be scored individually using:
 - **Default heuristics**: highlight stuck or repeated states
 
 ```python
-step.log_eval(score=0.3, description="Tried to switch tabs but failed.")
+lai.update_step(eval_score=0.3, eval_description="Tried to switch tabs but failed.")
 ```
 
 <Callout type="warning">
@@ -145,14 +123,5 @@ Steps are the atomic unit of debugging:
 - Visual comparison across step variations
 - Semantic annotations + auto-tagging
 - LLM-based per-step eval suggestions
-
----
-
-## 🔗 Related Docs
-
-- [Sessions](/sessions)
-- [Events](/events)
-- [Mass Simulations](/mass-simulations)
-- [Compare Sims](/compare-sims)
 
 ---
