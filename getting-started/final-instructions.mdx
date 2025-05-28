@@ -18,12 +18,13 @@ Creating a session requires the `init` function to be called on the `lai` object
 | Name            | Type   | Description                                                                 |
 |-----------------|--------|-----------------------------------------------------------------------------|
 | `session_name`  | `str`  | A name for your session – whatever you want (e.g. `"Search Wikipedia"`)     |
-| `lucidic_api_key` | `str` | Your Lucidic API key – you should have this copied somewhere safe           |
-| `agent_id`      | `str`  | Your Lucidic Agent ID – you can get this from the dashboard                 |
 | `provider`      | `str`  | The LLM provider you're using – `"openai"`, `"anthropic"`, or `"langchain"` |
+| `lucidic_api_key` | `str` (optional IF set as environment variable) | Your Lucidic API key – you should have this copied somewhere safe           |
+| `agent_id`      | `str` (optional IF set as environment variable) | Your Lucidic Agent ID – you can get this from the dashboard                 |
 | `task`          | `str` (optional)  | The task your agent is performing. **Must** be specified to show up on the dashboard (e.g. `"Search Wikipedia for Steve Jobs biography"`) |
 | `mass_sim_id`   | `str` (optional)  | The mass simulation ID your agent is part of (e.g. `"8021bc11-20f3-48cb-8717-6ef9017e3663"`) |
 | `rubrics`       | `list[str]` (optional)  | The rubrics you want to use for evaluation (e.g. `["default", "custom_score"]`) |
+| `tags` | `list[str]` (optional) | A list of tags to categorize this session. |
 
 ### 1) If you **DO NOT** have your Lucidic API Key and Lucidic Agent ID in a .env file.
 

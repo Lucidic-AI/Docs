@@ -3,30 +3,44 @@ title: Creating a Mass Simulation
 description: Learn how to create a mass simulation using the Python SDK and in the UI
 ---
 
-A Mass Simulation is a collection of Sessions where the same agent runs the same task multiple times. Due to the inherent non-determinism of autonomous agents, a single run is often misleading — Mass Sims let you observe what your agent can do, usually does, and sometimes fails to do.
+A Mass Simulation is a collection of [Sessions](/core-concepts/sessions) where the same agent runs the same task multiple times. Due to the inherent non-determinism of autonomous agents, a single run is often misleading — Mass Sims let you observe what your agent can do, usually does, and sometimes fails to do.
 
-Learn more about Mass Sims in the [Mass Simulations](/mass-simulations) section.
->There are 2 ways to create a mass sim: 1) [in the UI](#1-create-in-ui) OR 2) [using the Python SDK](#2-create-in-python-sdk)
+Learn more about Mass Sims in the [Mass Simulations](/core-concepts/mass-simulations) section.
+>There are 2 ways to create a mass sim: [1) in the UI](#1-create-in-ui) OR [2) using the Python SDK](#2-create-in-python-sdk)
 
-## ✍️ How to Create One in the UI 
+## ✍️ How to Create a Mass Simulation
 
 ### 1. Create in UI
 - Go to the **"Mass Sims"** tab inside your Agent
 > 📷 _![api key2](/images/masssimcreation.png)_
 
-- Click **"New Mass Sim"**
+- Click **"Create New Mass Simulation"**
 - Copy the **Mass Sim ID** into your SDK:
 
 ```python
 lai.init(
     session_name="run_37",
+    provider="openai",
     mass_sim_id="abc123"
 )
 ```
+- **You're done!** Now the sessions that you run under this mass simulation ID will be grouped together into one mass simulation. If you want to create another one, just repeat the process and make sure to use the right mass sim ID!
 
 ### 2. Create in Python SDK
 
+This approach to creating a mass simulation doesn't need any UI interaction at all! It is often more convenient to create a mass simulation using the Python SDK if you want to do things such as create a script that creates multiple mass simulations.
+
 You can programmatically create a mass simulation using the `create_mass_sim()` function:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| **`mass_sim_name`** | str | A descriptive name for your mass simulation. |
+| **`total_num_sessions`** | int | The number of sessions to run in this simulation. |
+| **`lucidic_api_key`** | str (optional IF set as environment variable) | Your Lucidic API key. |
+| **`agent_id`** | str (optional IF set as environment variable) | Your Lucidic Agent ID. |
+| **`task`** | str (optional) | The task description for all sessions in this simulation. |
+| **`tags`** | list (optional) | A list of tags to categorize this mass simulation. |
+
 
 ```python
 from lucidicai import create_mass_sim
@@ -42,15 +56,6 @@ mass_sim_id = create_mass_sim(
 
 print(f"Created mass simulation with ID: {mass_sim_id}")
 ```
-
-#### Parameters
-
-* **`mass_sim_name`** – A descriptive name for your mass simulation.
-* **`total_num_sessions`** – The number of sessions to run in this simulation.
-* **`lucidic_api_key`** – Your Lucidic API key (optional if set as environment variable).
-* **`agent_id`** – Your Lucidic Agent ID (optional if set as environment variable).
-* **`task`** – The task description for all sessions in this simulation (optional).
-* **`tags`** – A list of tags to categorize this mass simulation (optional).
 
 #### Returns
 
@@ -81,5 +86,49 @@ lai.init(
 
 # Continue with your agent logic...
 ```
+
+## 🏃 How to Run your Mass Simulation
+
+A [Mass Simulation](/core-concepts/mass-simulations) is just a way to group multiple sessions with the same task together and see the analytics of the sessions as a whole. 
+
+Therefore, it is still necessary to run the sessions under the mass simulation ID. 
+
+Feel free to run your sessions however you like! For your convenience, we created two bash scripts to help you run your sessions in a loop. 
+
+### 1. Running the sessions in a mass simulation sequentially:
+
+This means it will run your agent script one at a time, waiting for each session to finish before running the next one.
+
+```bash
+for i in {1..[n]}; do python3 [your-script.py]; done
+```
+Where `n` is the number of sessions you want to run and `your-script.py` is the file path from the current directory to the script that runs your agent.
+
+**Example Usage:**
+```bash
+for i in {1..5}; do python3 examples/models/gemini.py; done
+```
+
+This would run the `gemini.py` agent 5 times.
+
+### 2. Running the sessions in a mass simulation in parallel:
+
+This means it will run your agent script multiple times at the same time (in parallel), so it will run faster.
+
+> **Important Note:** If you are running more than **5** sessions in parallel, ensure that your computer can handle it!
+
+```bash
+for i in {1..[n]}; do python3 [your-script.py]&; done
+```
+> **Note:** The `&` at the end of the command runs the process in the background and allows you to run multiple processes at the same time.
+
+Where `n` is the number of sessions you want to run and `your-script.py` is the file path from the current directory to the script that runs your agent.
+
+**Example Usage:**
+```bash
+for i in {1..5}; do python3 examples/models/gemini.py&; done
+```
+
+This would run the `gemini.py` agent 5 times in parallel (i.e. launch 5 processes at the same time).
 
 ---
