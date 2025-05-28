@@ -7,13 +7,13 @@ description: Dive into a full breakdown of one agent run — replay, inspect, ev
 
 The **Workflow Sandbox** is your deep-dive view into a single agent run — also known as a [Session](/core-concepts/sessions). Learn to create a session [here](/getting-started/final-instructions).
 
-It’s where observability meets usability: you can **replay the session**, **inspect every step**, **explore the underlying events**, and **evaluate performance** using rubrics — all in one place.
+This is where observability meets usability: you can **replay the session**, **inspect every step**, **explore the underlying events**, and **evaluate performance** using rubrics — all in one place.
+
+> To get here Click **Project -> Agent -> any session in the session history**.
 
 ---
 
 ## 🧠 What It Shows
-> To get here Click Project -> Agent -> any session in the session history.
-
 
 At the top of the Workflow Sandbox, you’ll see:
 
@@ -42,76 +42,75 @@ Below the overview, you’ll find any evaluation rubrics attached to this sessio
 - The **Lucidic default rubric** runs on every session automatically
 - Custom rubrics can be attached per Agent when running a session
 
->🧠 **Pro tip:**: The description of why you got a certain score for a given criterion is below the score, so you can actually see why each of your criteria got a certain score! 
+>🧠 **Pro tip:** The description of why you got a certain score for a given criterion is below the score, so you can actually see why each of your criteria got a certain score! 
 
 > 📷 _![rubric](/images/ws2.png)_
 
 ---
 
-## 📚 Quick Access: Prompt DB
+## 📚 Quick Access: Prompt DB + Session Replay GIF
 
-You can open the [Prompt DB](/features/prompt-db) directly from the session:
+Under the rubric evaluations, you can open the [Prompt DB](/features/prompt-db) directly from the session by clicking the prompt name or the **Prompt Editor** button:
 
 - Quickly view which prompt was used
 - Test changes or view version history
 - Add tags to quickly iterate on prompts
 
+On the right of the [Prompt DB](/features/prompt-db) you can also see a replay GIF of the session:
 
+> 📷 _![promptdb](/images/ws7.png)_
 
 ---
 ## 🧭 Session Replay: Step Trajectory Graph
 
 Next, you’ll see a **Session-specific graph** — a mini version of the [Workflow Trajectory](/features/workflow-trajectory), scoped to just this one session.
 
-- **Nodes** = states visited
-- **Edges** = actions taken
-- **Grouped** = similar states are clustered (e.g. looping or retrying)
+- **Nodes:** states visited
+- **Edges:** actions taken
+- **Grouped:** similar states are clustered (e.g. looping or retrying)
 
->🧠 **Pro tip:**: Clicking a node opens a full breakdown of that **Step** below the graph!
+>🧠 **Pro tip:** The step which caused your agent to fail will be highlighted in red! Hover over the error icon in the top right of the node to quickly see a failure explanation.
+
+> **Note:** If you want to turn off error highlighting, click the alarm icon in the bottom left toolbar of the graph.
+
+> 📷 _![trajectory](/images/ws6.png)_
 
 > 📷 _![trajectory](/images/ws3.png)_
 
-
->🧠 **Pro tip:**: The step which caused your agent to fail will be highlighted in red!
-
-> 📷 _![trajectory](/images/ws6.png)_
+>🧠 **Pro tip:** Clicking a **Step/Event** opens a full breakdown of that **Step/Event** below the graph!
 ---
 
 
-
-## 🕰 Timeline Navigation
+### 🕰 Timeline Navigation
 
 Two synced timelines appear below:
 
-### 🪜 Step Timeline
-- Shows the ordered sequence of Steps
-- Clicking a step:
+#### 🪜 Step Timeline
+- Shows the ordered sequence of [Steps](/core-concepts/steps)
+- Clicking a [Step](/core-concepts/steps):
   - Advances the graph to that state
   - Opens the step detail panel
-- Step detail panel shows:
-  - Basic Information: Start time, duration, Cost
-  - Evaluation: Status, step eval score, eval description
-  - State overview: Goal, Action, State
-  - Image of state
+- **Step detail panel** shows:
+  - Basic Information: **Start Time, Duration, Cost**
+  - Evaluation: **Status, Step Evaluation Score, Evaluation Description**
+  - State Overview: **Goal, Action, State**
+  - **State Screenshot**
 
 > 📷 _![step detail](/images/ws4.png)_
 
->🧠 **Pro tip:**: Use arrow keys to quickly go from one step to the next.
+>🧠 **Pro tip:** Use arrow keys to quickly go from one step to the next.
 
 ### ⚙️ Event Timeline (within Step)
 - Shows all [Events](/core-concepts/events) that occurred in that step (e.g. LLM calls, tool invocations)
-- Clicking an event shows:
-  - Request/response
-  - Images used (if any)
-  - Cost
-  - Model used
-  - Any errors or retries
-  - Time travels (read more about them [here](/features/time-travel))
-  - Pretty vs raw request/response
+- Clicking an [Event](/core-concepts/events) shows:
+  - Basic Information: **Status, Model, Start Time, Duration, Cost**
+  - **Prettified vs Raw Request/Response** (click the wand/text icon in the top right of Input/Output to toggle)
+  - **Images used (if any)** in the request
 
+> 🧠 **Pro tip:** **SPEED UP** iteration and debugging time by avoiding rerunning the same failed run with [Time Travels](/features/time-travel). [Time Travels](/features/time-travel), in the **Time Travel tab** to (to the right of "Event Details" which is directly under the two timelines), are extremely useful for debugging failed runs. Time Travels enable you to freeze time and rerun the event in isolation to see if your error/success is reliable. Learn more how to use them [here](/features/time-travel).
 > 📷 _![event timeline](/images/ws5.png)_
 
-> 🧠 **Pro tip:**: If your LLM calls are super cluttered, use our pretty text which is built in! It's the wand and will show you your text in a readable format. 
+> 🧠 **Pro tip:** If your LLM calls are super cluttered, use our pretty text which is built in! It's the wand and will show you your text in a more human-readable format. 
 
 ---
 
@@ -119,20 +118,11 @@ Two synced timelines appear below:
 
 The Workflow Sandbox is where you:
 
-- Debug a failed run
-- Investigate edge cases
-- Replay odd behavior
-- Evaluate agent consistency
-- Identify root causes of errors
-- Understand how a prompt or model change affected logic
-
----
-
-## 🔮 Future Features
-
-- Annotate steps or events
-- Inline prompt diffing
-- Attach notes to runs for team reviews or QA
-
+- **Debug** a failed run
+- **Investigate** edge cases
+- **Replay** odd behavior
+- **Evaluate** agent consistency
+- **Identify** root causes of errors
+- **Understand** how a prompt or model change affected logic
 
 ---
