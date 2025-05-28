@@ -2,7 +2,7 @@
 title: Dashboard Setup
 description: Learn how to set up your project, agent, and API key in the Lucidic dashboard.
 ---
-> 🧠 **Note:** Setup has two parts — (1) installing the [SDK](/getting-started/installation) and (2) connecting it to the Lucidic dashboard (below). You need to complete both.
+> 🧠 **Note:** Setup has three parts — (1) [installing the SDK](/getting-started/installation), (2) connecting it to the Lucidic dashboard (below), and (3) [setting up steps, events, and sessions](/getting-started/python). You need to complete all three.
 
 # 🖥️ Getting Started in the Dashboard
 
@@ -36,9 +36,8 @@ Projects are high-level containers for your work — usually one per app, workfl
 
 Inside your project:
 
-- Go to the **"Agents"** tab
 - Click **"New Agent"**
-- Provide a name and description
+- Provide a name and choose an icon
 
 Agents represent individual autonomous systems (e.g. a browser agent, a research assistant, a planner).
 
@@ -52,7 +51,7 @@ You’ll need an API key to authenticate your SDK.
 
 - Go to the **"API Keys"** icon in the bottom left corner in the side bar 
 - Click **"Create API Key"**
-- Copy the key somewhere safe
+- Copy the key somewhere safe - you won't be able to see it again!
 > 📷 _<img src="/images/apikey.png" alt="api key" width="300"/>_
 > 📷 _![api key2](/images/apikey2.png)_
 
@@ -80,8 +79,8 @@ lai.init(
 Or set them as environment variables:
 
 ```bash
-export LUCIDIC_API_KEY=your-api-key
-export LUCIDIC_AGENT_ID=your-agent-id
+export LUCIDIC_API_KEY="your-api-key"
+export LUCIDIC_AGENT_ID="your-agent-id"
 ```
 
 ---
@@ -93,7 +92,7 @@ If you want to run many sessions as part of a single evaluation:
 - Go to the **"Mass Sims"** tab inside your Agent
 > 📷 _![api key2](/images/masssimcreation.png)_
 
-- Click **"New Mass Sim"**
+- Click **"New Mass Simulation"** on the top right of the table
 - Copy the **Mass Sim ID** into your SDK:
 
 ```python

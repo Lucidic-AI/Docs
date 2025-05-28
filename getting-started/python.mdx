@@ -13,40 +13,45 @@ This guide walks you through how to initialize a session, track steps and events
 
 ## 🚀 Step 1: Create a Session
 
-Theere are 4 things you need to provide to initialize a session:
+### 1) If you **DO NOT** have your Lucidic API Key and Lucidic Agent ID in a .env file.
 
-- `session_name`: A name for your session #Whatever you want to name it
-- `lucidic_api_key`: Your Lucidic API key #You should have this copied somewhere safe 
-- `agent_id`: Your Lucidic Agent ID #You can get this from the dashboard
-- `provider`: The LLM provider you're using #OpenAI, Anthropic, or LangChain
+There are 4 things you need to provide to initialize a session:
+
+- `session_name`: A name for your session - whatever you want to name it (e.g. "Search Wikipedia")
+- `lucidic_api_key`: Your Lucidic API key - you should have this copied somewhere safe 
+- `agent_id`: Your Lucidic Agent ID - you can get this from the dashboard
+- `provider`: The LLM provider you're using - OpenAI, Anthropic, or LangChain
 
 Full version of init:
 
 ```python
 import lucidicai as lai
 lai.init(
-    session_name="search_wikipedia",
+    session_name="Search Wikipedia",
     lucidic_api_key="your-api-key",   # Or use env var: LUCIDIC_API_KEY
     agent_id="your-agent-id",         # Or use env var: LUCIDIC_AGENT_ID
-    task="Search Wikipedia for Steve Jobs biography",
     provider="openai",                # "openai", "anthropic", if "langchain" you can leave this blank checkout [LangChain Integration](/integrations/langchain)
-    mass_sim_id="your-mass-sim-id",   # Optional
-    rubrics=["default", "custom_score"]  # Optional
+    # Optional fields
+    task="Search Wikipedia for Steve Jobs biography", # Optional (for the task to show up on your dashboard)
+    mass_sim_id="your-mass-sim-id",   # Optional (if you want your session to be part of a mass simulation)
+    rubrics=["default", "custom_score"]  # Optional (if you want to specify custom rubrics)
 )
 ```
-Shorter/more common version of init:
+### 2) If you **DO** have your Lucidic API Key and Lucidic Agent ID in a .env file.
+
+You will just need the `session_name` and `provider`.
 
 ```python
 import lucidicai as lai
 lai.init(
-    session_name="search_wikipedia",
-    provider = "openai",                
+    session_name="Search Wikipedia",
+    provider="openai",                
 )
 ```
-We reccomend moving the `LUCIDIC_API_KEY` and `LUCIDIC_AGENT_ID` to environment variables. The way to do this is create a `.env` file in the root of your project and add the following. Most of you will already have a .env (it is where you would keep any API key) and will just have to add a Lucidic API Key and a Lucidic Agent ID.
+We **recommend** moving the `LUCIDIC_API_KEY` and `LUCIDIC_AGENT_ID` to environment variables. The way to do this is create a `.env` file in the root of your project and add the following. Most of you will already have a .env (it is where you would keep any API key) and will just have to add a Lucidic API Key and a Lucidic Agent ID.
 ```python
-LUCIDIC_API_KEY=your-api-key
-LUCIDIC_AGENT_ID=your-agent-id
+LUCIDIC_API_KEY="your-api-key"
+LUCIDIC_AGENT_ID="your-agent-id"
 ```
 OR 
 You can set the environment variables in your terminal:
@@ -59,38 +64,75 @@ export LUCIDIC_AGENT_ID=your-agent-id
 
 ## 🧭 Step 2: Create Steps
 
-Use `create_step()` and `end_step()` around your step logic. Each step should represent a meaningful action or decision point.
+Use `lai.create_step()` and `lai.end_step()` around your step logic. Each step should represent a meaningful action or decision point.
 
 ```python
-lai.create_step(state="Home page", goal="Navigate to search")
+lai.create_step(
+    state="Home page", 
+    action="Navigating to search",
+    goal="Navigate to search",
+    screenshot="https://example.com/screenshot.png"
+    eval_score=5,
+    eval_description="Agent successfully navigated to search page",
+) # All fields are optional
 
 # Your agent logic here...
 
-lai.end_step(is_successful=True, action="Clicked search")
+# All fields will be overwritten if they are provided in end_step
+lai.end_step(
+    action="Clicked search",
+    eval_score=4,
+    eval_description="Agent successfully clicked search",
+)
 ```
 
 > Only **one step can be active at a time**, so be sure to end a step before creating a new one.
 
 ### ⚙️ Optional Fields You Can Attach to a Step
 
-You can enrich any step with the following optional fields to improve debugging, evaluation, and traceability:
+`lai.create_step` and `lai.end_step` have the same parameters. You can pass in information into `lai.end_step` if any information has changed since `lai.create_step` was called (but this is not necessary, you can just call `lai.end_step()`). You can enrich any step with the following optional fields to improve debugging, evaluation, and traceability:
 
 * **`state`** – A short description of the current environment or UI (e.g., page title, visible content, or system state).
 * **`action`** – What the agent did in this step (e.g., “clicked submit”, “filled out form”).
 * **`goal`** – What the agent *intended* to accomplish (e.g., “navigate to checkout”, “extract user name”).
-* **`eval_score`** – A step-level rating (like `"5"` or `"pass"`) to assess performance at that point.
-* **`eval_description`** – An explanation justifying the `eval_score`, useful for audits or structured reviews.
 * **`screenshot`** or **`screenshot_path`** – Visual context for this step, either as a base64-encoded image or a file path.
+* **`eval_score`** – A step-level rating (e.g. `5`) to assess performance at that point.
+* **`eval_description`** – An explanation justifying the `eval_score` on why your agent performed well or poorly (e.g. "Agent performed well because it successfully extracted the username").
+
 
 ---
 
-### ⚙️ Step Updates
+### ⚙️ (Optional) Step Updates
 
-You can update steps mid-run or retroactively:
+You can update steps mid-run or retroactively. The parameters are the exact same as `create_step`. You would use this if you want to add/adjust any information after a step has been created.
+
+If you want to update a current step:
 
 ```python
-lai.update_step(action="Updated description")
-lai.update_previous_step(index=-1, eval_score=0.5)
+lai.update_step(
+    state="Updated state",
+    action="Updated action",
+    goal="Updated goal",
+    eval_score=5,
+    eval_description="Updated eval description",
+    screenshot="Updated screenshot link",
+)
+```
+
+If you want to update a previous step:
+
+```python
+lai.update_previous_step(
+    index=-1, # -1 is the latest step, -2 is the second latest, etc. (going out of bounds will raise an error)
+    state="Updated state",
+    action="Updated action",
+    goal="Updated goal",
+    eval_score=5,
+    eval_description="Updated eval description",
+    screenshot="Updated screenshot link",
+    # Or use screenshot_path if you have a url to a file path
+    screenshot_path="https://example.com/screenshot.png",
+)
 ```
 
 ---
@@ -98,63 +140,38 @@ lai.update_previous_step(index=-1, eval_score=0.5)
 ## 🎗️ Step 3: Create Events
 
 If your agent has tool calls or LLM usage, track them as **events** within each step. 
-> If you only have LLM calls with a supported provider you don't need to create events for them! Lucidic will automatically create events for you.
+> If you only have LLM calls with a supported provider you don't need to create events for them! Lucidic will automatically create events for you. For instance, if you set `provider="openai"` in `lai.init()`, Lucidic will automatically create events for you for any OpenAI calls.
 
 ```python
-lai.create_event(description="OpenAI call")
+lai.create_event(
+    description="OpenAI call",
+    result="Summary generated",
+    model="gpt-4o",
+    cost_added=0.01,
+    screenshots=["https://example.com/screenshot.png"]
+)
 # Do your LLM call...
-lai.end_event(is_successful=True, result="Summary generated")
+
+# Costs and screenshots are appended not overwritten
+lai.end_event(cost_added=0.01, screenshots=["https://example.com/screenshot1.png", "https://example.com/screenshot2.png"]) 
 ```
 
-You can enrich any event with the following optional fields to improve debugging, evaluation, and traceability:
+`lai.create_event` and `lai.end_event` have the same parameters. You can pass in information into `lai.end_event` if any information has changed since `lai.create_event` was called (but this is not necessary, you can just call `lai.end_event()`). You can enrich any event with the following optional fields to improve debugging, evaluation, and traceability:
 
 >All of these are optional, but we recommend setting at least `description` and `result`.
 
 * **`description`** – A detailed explanation of the event (e.g., “clicked submit”, “completed form entry”), or any relevant input, context, or memory for your agent. This field is often used to capture user actions, LLM prompts, document processing inputs, or data retrieval details. Include any information you consider important for your agent.
-* **`is_successful`** – A boolean indicating whether the event was successful.
 * **`result`** – This is more of a result/output of the event. For example, if you are doing a document processing, this could be the result of the document processing. Or if you make an API call, this could be the result of the API call.
-* **`is_finished`** – A boolean indicating whether the event was finished. This will automatically be set to true when the event is ended.
 * **`model`** – A lot of people use events with LLMs so if you have a custom LLM call you can set the model name here.
-* **`cost`** – If you have a custom API call or LLM call you can set the cost here.
+* **`cost_added`** – Add the cost of the event here.
+* **`screenshots`** – Add a list of screenshots of the event here.
 
 
 > LLM calls from supported providers like OpenAI and Anthropic are **automatically captured** into events when you set the `provider` in `init()`.
 
 ---
 
-## 📥 Step 4: (Optional) Pull Prompts from Prompt DB
-
-Use Lucidic’s [Prompt DB](/features/prompt-db) to version and serve prompts dynamically:
-
-```python
-prompt = lai.get_prompt(
-    prompt_name="summarize_webpage",
-    variables={"page_text": "Stanford University is..."},
-    label="production",
-    cache_ttl=60
-)
-```
-
-Here's what each parameter does:
-
-- `prompt_name`: Prompt name
-- `label`: Label to fetch (defaults to `production`)
-- `variables`: Dictionary of string key/values to interpolate
-- `cache_ttl`: 
-  - `0` = no cache  
-  - `-1` = cache forever  
-  - `n` = cache for `n` seconds
-
-Additional notes:
-
-- `{{variable}}` placeholders will be replaced using your dictionary
-- Missing keys will raise an error
-- Unreplaced variables will trigger a warning
-- Read more at [Prompt DB](/features/prompt-db)
-
----
-
-## 🧼 Step 5: End the Session
+## 🧼 Step 4: End the Session
 
 
 Your session will automatically end when the script exits (via an `atexit` handler), but you can also end it manually if you would like to add in evals:
@@ -223,6 +240,38 @@ lai.end_session(
 ```
 
 This gives you full control and lets you keep your logic consistent with your own success criteria.
+
+---
+
+## 📥 Step 5: (Optional) Pull Prompts from Prompt DB
+
+Use Lucidic’s [Prompt DB](/features/prompt-db) so you don't have to go to your code to make a prompt change! Pull prompts from our prompt database in your code, change the content in the dashboard, and see them automatically update on your next agent run! We support prompt versioning and labels so you can have different versions of a prompt for different use cases (e.g. production, testing, etc.).
+
+```python
+prompt = lai.get_prompt(
+    prompt_name="summarize_webpage",
+    variables={"page_text": "Stanford University is..."},
+    label="production",
+    cache_ttl=60
+)
+```
+
+Here's what each parameter does:
+
+- `prompt_name`: Prompt name
+- `label`: Label to fetch (defaults to `production`)
+- `variables`: Dictionary of string key/values to interpolate
+- `cache_ttl`: 
+  - `0` = no cache  
+  - `-1` = cache forever  
+  - `n` = cache for `n` seconds
+
+Additional notes:
+
+- `{{variable}}` placeholders will be replaced using your dictionary
+- Missing keys will raise an error
+- Unreplaced variables will trigger a warning
+- Read more at [Prompt DB](/features/prompt-db)
 
 ---
 
