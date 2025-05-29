@@ -13,22 +13,24 @@ Instead of relying on a single pass/fail outcome or ad hoc scores, rubrics help 
 
 ## ⚙️ How to Use Rubrics
 
-Usiing rubrics consists of 2 parts, first creating one in the UI and then using it in your code.
+Using rubrics consists of two parts, **1) creating one in the UI** and **2) using it in your code**.
 
 ### Step 1: In the UI
 
 - Navigate to the **Rubrics** tab on any Agent
   > 📷 _![rubric](/images/r2.png)_
   > 📷 _![rubric](/images/r3.png)_
-  > (Right underneath the agent name, so in the example right below "Browseruse Demo")
-- Click create rubric button
+  > (Directly under the agent name — directly below "Browseruse Demo" in the above image)
+- Click the **Create New Evaluation Rubric** button
   > 📷 _![rubric](/images/r4.png)_
   > 📷 _![rubric](/images/r5.png)_
-- Create, name, and configure a rubric
+- Give your **Rubric a name, description, and icon**
+  > Fill in the **Rubric Criteria** (name your criteria and give it a weight, which determines how much it contributes to the final score) and **Score Definitions** (what each score means (e.g. 10 is the best score because ..., 1 is the worst score because ...))
+  > See more details [below](/features/rubrics#🧬-rubric-anatomy)
   > 📷 _![rubric](/images/r6.png)_
-- Click Save
-- Click on the rubric name on the top bar to see a summary of the rubric
-  > 📷 _![rubric](/images/r7.png)_
+- **Click Save**
+> 📝 **Pro Tip:** Click on the **Evaluation Rubric Summary** to see a quick summary of the rubric
+> 📷 _![rubric](/images/r7.png)_
 
 ### Step 2: In Python
 
@@ -46,17 +48,16 @@ lai.init(
 
 ## 🧠 Why Create Custom Rubrics?
 
-Agents don’t just succeed or fail — they:
+**Agents don’t just succeed or fail**:
 
 - They have small task specificities (i.e is the resturant open, is the resturant closed)
-- They have certain paths which are more efficient than others (clicking finding the menu on the resturants website vs trying to find the menu by looking on door dash)
--
+- They have certain paths which are more efficient than others (finding the menu on the resturants website vs trying to find the menu by looking on DoorDash)
 
 Rubrics let you **capture those nuances** and **standardize how you evaluate** an agent’s session. They’re perfect for comparing sessions, identifying regressions, or measuring improvement across prompt or model changes.
 
 ### Default Rubric
 
-Lucidic has a default rubric which is attached to every session. You can find it in the UI and it is called "default". It is a basic rubric which tries to determine how good was the agent at completing the task.
+Lucidic has a default rubric which is attached to every session. It is a basic rubric which tries to determine how good was the agent at completing the task.
 The criterias are:
 
 - Task Completion (40%)
@@ -65,7 +66,7 @@ The criterias are:
 - Error Recovery (10%)
 - Safety (5%)
 
-If you are interested in how we made the default rubric, you can find it in the UI and it is called "default". In general, it is supposed to be a good starting point for most use cases.
+If you are interested in the details of how we made the default rubric, you can view it in the UI under the **Evaluation Rubric tab**. Its purpose is to be a good starting point for most use cases, but is by no means a perfect rubric or comprehensive. **We strongly encourage you to still make your own rubric and customize it to your needs.**
 
 ---
 
@@ -73,9 +74,14 @@ If you are interested in how we made the default rubric, you can find it in the 
 
 A rubric contains:
 
-- One or more **Criteria**
-- Optional **weights** for each criterion
-- **Score Definitions** (what a score of 1 to 10 means for each criterion)
+- **Name** (e.g. "Browser Navigation Quality")
+- **Description** (optional) (e.g. "How good was the agent at completing the task?")
+- **Icon** for better visual recognition between different rubrics
+- **Criteria** (e.g. Task Completion, Attention to Detail, Efficiency, Error Recovery, Safety)
+  - **Weights** (optional) for each criterion (e.g. 40%, 25%, 20%, 10%, 5%)
+  - **Score Definitions** 
+    - **Score** (e.g. 1, 2, 3, 4, 5)
+    - **Description** (e.g. "Never visited a site more than once")
 
 ### Example
 
@@ -83,14 +89,14 @@ A rubric contains:
 Rubric: "Browser Navigation Quality"
 
 Criteria:
-  - name: "Revisiting Sites"
+    name: "Revisiting Sites"
     weight: 2
     scores:
       10: "Never visited a site more than once"
       5: "Occasionally revisited"
       1: "Frequently revisited the same sites"
 
-  - name: "Step Efficiency"
+    name: "Step Efficiency"
     weight: 1
     scores:
       10: "Completed task in under 10 steps"
@@ -100,66 +106,65 @@ Criteria:
 
 ---
 
-## 📊 Scoring and Weights
+## 📊 Weights and Score Definitions
 
-Each criterion is scored independently (typically from 1–5) and then combined into a **composite score**:
+Each criterion is scored independently (typically from 1 – 5) and then combined into an **overall score** based on the weights (weighted average) of each criterion.
 
-- Scores range from a minimum of 1 to a maximum of 10
-- Criteria serve as "goalposts" - you only need to define key reference points (e.g., what scores of 1, 5, and 10 mean) rather than every possible score
-- The system will interpolate intermediate scores based on the agentic context captured through steps and events
+**Criteria** serve as **"goalposts"** - you only need to define key reference points (e.g., what scores of 1, 5, and 10 mean) rather than every possible score. The system will interpolate intermediate scores based on the agentic context captured through steps and events
 
-### Weighting Calculations
+### Weight Calculations
 
-- If no weights are defined, all criteria are weighted equally
+- **Weights are optional**. If no weights are defined, all criteria are weighted equally
 - If weights are set, we compute a **weighted average** using their relative values:
-  - Weights can be expressed as percentages or relative values
-  - All weights are summed and each criterion's score is multiplied by its proportion of the total weight
-  - The final score is the sum of these weighted criterion scores
+  - Weights can be expressed as **percentages** (e.g., 20%, 30%, 50%) or **relative values** (e.g., 1, 2, 3)
+  - All weights are summed and each **criterion's score** is multiplied by its **proportion** of the total weight
+  - The **final score** is the **sum of these weighted criterion scores**
 
-For example, with criteria A (weight 2) scoring 8, and criteria B (weight 1) scoring 4:
+> **Note:** When using percentages, they should sum to **100%** for clarity, though the system will normalize them if they don't. Zero weights are allowed but not recommended—consider removing the criterion instead.
 
-- Total weight: 3
-- Weighted score: ((8 × 2) + (4 × 1)) ÷ 3 = 6.67
+> **Relative Weights Example:** 
+>
+> **Criteria A**
+> - Weight: **2**
+> - Score: **8**
+>
+> **Criteria B**
+> - Weight: **1**
+> - Score: **4**
+>
+> Total weight: **3**
+>
+> Weighted score: **((8 × 2) + (4 × 1)) ÷ 3 = 6.67**
+
+> **Percentage Weights Example:** 
+>
+> **Criteria A**
+> - Weight: **20%**
+> - Score: **8**
+>
+> **Criteria B**
+> - Weight: **80%**
+> - Score: **4**
+>
+> Total weight: **100%**
+>
+> Weighted score: **((8 × 20%) + (4 × 80%)) = 4.80**
 
 
-#### Score Interpretation
+### Score Definitions
 
-- Decimal scores are rounded to two decimal places for display purposes
-- A criterion with no explicitly defined score for a certain level will use the nearest defined reference point
-- When an agent's performance falls between two defined score points, the system interpolates linearly
+**Requirements:**
+- You can define scores from **0 to 10**
+- A **Score Definition** must have **at least two scores** to be valid a minimum and maximum. For meaningful comparative analysis, **we recommend at least three criteria**
+  - For example, you cannot just define one score. Rubric criteria need to have at least two score definitions to be valid 
+- The **lowest** and **highest** scores that you define will be the **minimum and maximum scores that can be achieved**
+  - For example, if you define what a score of 1 and 2 means, we will not extrapolate to 5 or 10. We will assume 2 is the best score that can be achieved.
 
-#### Weight Formats
-
-- Weights can be expressed as integers (e.g., 1, 2, 3) or percentages (e.g., 20%, 30%, 50%)
-- When using percentages, they should sum to 100% for clarity, though the system will normalize them if they don't
-- Zero weights are allowed but not recommended—consider removing the criterion instead
-
-#### Minimum Required Criteria
-
-- A rubric must have at least two criteria to be valid a minimum and maximum. So this means if you specify a 1 and a 2, we will not interpolate to 5 or 10 and assume 2 is the best score that can be achieved.
-- For meaningful comparative analysis, we recommend at least three criteria
-
-#### Score Distributions
-
-- The scoring system supports non-linear distributions if needed
-- You can define more reference points for areas where you need finer granularity
-- Example: You could define scores for 1, 2, 3, 7, and 10 if the middle range isn't important to your evaluation
-
-#### Programmatic Access
-
-- All rubric scores are available via the API for integration with your own analytics
-- Historical scoring data is preserved even if rubric definitions change
-
----
-
-## 🔮 What's Next
-
-Coming soon:
-
-- Rubric analytics across Mass Sims
-- Graph overlays colored by rubric score
-- Rubric diffing across prompt or model changes
-- Export/import rubrics across teams
-- LLM-assisted rubric scoring
+**Other Details:**
+- On the **dashboard**, scores are rounded to **two decimal places**
+- When an agent's performance falls **between two defined score points**, the system **interpolates linearly**
+  - For example, if you only define scores of 1 and 5, and the agent's performance is 3, the system will interpolate linearly to give it a score of 3. 
+- Sessions that were scored using a rubric that has been changed, **will NOT be re-scored using the new rubric** and will maintain the old scores**. 
+  - For example, if you ran session S with rubric R and then changed rubric R to R', session S will still be scored using rubric R, not R'. 
 
 ---
