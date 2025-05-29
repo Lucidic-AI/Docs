@@ -17,7 +17,7 @@ When you use `provider="langchain"` with Lucidic, you can attach a special handl
 - **Automatically attach itself** as a callback handler
 - Capture LLM usage as **Lucidic Events**, grouped under the correct Step
 
-This means you get full observability into your agent's reasoning — with zero boilerplate instrumentation.
+This means you get **full observability into your agent's reasoning — with zero boilerplate instrumentation.**
 
 ---
 
@@ -47,15 +47,17 @@ handler.attach_to_llms(agent)
 
 ---
 
-## 🧠 What Gets Captured
+## ✅ What Gets Captured
 
 For every LangChain LLM call, we’ll log:
 
-- `description`: LLM method or chain origin
-- `model`: if available (e.g. `gpt-4`)
-- `cost`: if token counts are available
-- `result`: response text or summary
-- Timing and success metadata
+- **Input**: your prompt to the LLM (e.g. `"What's the capital of France?"`)
+- **Model**: the LLM model used (e.g. `gpt-4`, `gpt-3.5-turbo`)
+- **Output**: the LLM response
+
+Based on your input, we automatically calculate the following:
+
+- **Cost**: estimated based on input/output tokens
 
 
 ---
@@ -103,7 +105,7 @@ agent.run("Search for Stanford University")
 
 ## 🛠️ Requirements
 
-- `langchain` installed
+- `langchain` pip installed
 - Works with `BaseLanguageModel`, `LLMChain`, `AgentExecutor`, and custom toolchains
 - You must call `attach_to_llms()` before executing the agent
 - Events are attached to the **currently active Step**
