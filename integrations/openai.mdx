@@ -21,24 +21,26 @@ Lucidic will:
 
 - **Monkey patch** `openai.ChatCompletion.create`
 - Automatically log each LLM call as an **Event**
-- Attach the call to the currently active Step
+- Attach the call to the currently active **Step**
 
 This means:
 
 - You don’t need to call `create_event()` or `end_event()` manually
-- You get full observability into prompt, model, cost, result, and more — out of the box
+- You get **full observability into prompt, model, cost, result, and more — out of the box**
 
 ---
 
 ## ✅ What Gets Captured
 
-Each OpenAI call is tracked with:
+We automatically capture the following when you pass it to `openai.ChatCompletion.create`:
 
-- `description`: e.g. `"OpenAI call to gpt-4"`
+- `input`: e.g. `"OpenAI call to gpt-4"`
 - `model`: the model name (e.g. `gpt-4`, `gpt-3.5-turbo`)
-- `cost`: calculated based on token usage
-- `result`: truncated summary of the response
+- `output`: truncated summary of the response
 
+Based on your input, we automatically calculate the following:
+
+- `cost`: calculated based on token usage
 
 ---
 
@@ -46,10 +48,10 @@ Each OpenAI call is tracked with:
 
 LLM calls are a core part of most agent workflows — but without visibility, it’s impossible to debug or optimize:
 
-- Which call caused the failure?
-- Which step was it part of?
-- How much did it cost?
-- What was the actual response?
+- Which call caused the **failure**?
+- Which **step** was it part of?
+- How much did it **cost**?
+- What was the actual **response**?
 
 This integration gives you full transparency, with **zero boilerplate**.
 
