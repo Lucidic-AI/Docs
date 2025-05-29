@@ -1,57 +1,64 @@
 ---
-title: Prompt DB
+title: Prompt Database
 description: Manage, version, and fetch prompts dynamically to accelerate agent iteration and experimentation.
 ---
 
-# 🧾 Prompt DB
+# 🧾 Prompt Database
 
-**Prompt DB** is your centralized, versioned store for managing agent prompts — without needing to redeploy code or edit files in a repo.
+**Prompt Database** is your centralized, versioned store for managing agent prompts — **without needing to redeploy code or edit files in a repo**.
 
 It allows you to:
 
-- Create and version prompts in the UI
-- Dynamically fetch them at runtime
-- Templatize with variables
-- Rapidly iterate on prompt design
-- Swap prompts without touching your codebase
+- **Create and version prompts** in the UI
+- **Dynamically fetch them at runtime**
+- **Templatize with variables**
+- **Rapidly iterate on prompt design**
+- **Swap/Adjust prompts without touching your codebase**
 
 ---
 
 ## 🚀 Why Prompt DB?
 
-Tuning an AI agent often means tweaking its prompts. But doing that through your codebase slows everything down.
+Improving an AI agent often means **adjusting its prompts**. But doing that **through your codebase slows everything down.**
 
-With Prompt DB, you can:
+With our Prompt DB, you can:
 
-- Change a prompt in the dashboard → rerun your agent instantly
-- Test prompt performance across Sessions or Mass Sims
-- Diff, compare, and experiment — without redeploying anything
+- **Change a prompt in the dashboard** → **rerun** your agent instantly **without redeploying**
+- **Test prompt performance** across **Sessions or Mass Sims**
+- **Compare** and **experiment** with **different versions of prompts without redeploying anything**
 
 > 📷 _![promptdb](/images/promptdb.png)_
 
 ---
 ## ✍️ How to Create One
 
-There are 2 components to creating a prompt in the UI and then using it in your code.
-
 ### Step 1: In the UI
-- Click a project and then an agent 
-- On the agent page it will be right below the agent name, so in the example right below "Browseruse Demo"
+- Click a **project** and then an **agent** 
+- On the agent page it will be directly below the agent name, so in the example directly below "Browseruse Demo"
 > 📷 _![promptdb](/images/r3.png)_
-- Click create prompt button. 
+- Click **Create New Prompt** button. 
 > 📷 _![promptdb](/images/pdb2.png)_
 
-- Create a prompt name (this is what you will refer to it in the Python Package)
-- Add a version description (optional)
-- Copy paste your prompt from your code and change all your variables to ```` {{variable_name}}````.
-> So for example if in python you have ``` f"summarize this page: {page_text}"``` then when you copy it to the prompt content change it to ```` "summarize this page: {{page_text}}"````
-- Click Save
+- Create a **prompt name** (this is what you will refer to it in the Python Package)
+- Add a **version description** (optional)
+- Copy paste your prompt from your code and change **all your variables** to the format ```` {{variable_name}}````.
+> For example, your prompt in python might look like ``` f"summarize this page: {page_text}"``` then when you **copy it into the Prompt Database** change it to ```` "summarize this page: {{page_text}}"````
+- Click **Save**
 > 📷 _![promptdb](/images/pdb3.png)_
+
+> **Note:** **ALWAYS save a prompt** if you make changes to it that you would like to keep.
 
 
 ### Step 2: In Python
 
-Whereever you want to use the prompt, you can use the following code
+**Wherever you want to use the prompt**, you can pull it from our **Prompt Database** using the following code:
+
+| Name            | Type   | Description                                                                 |
+|-----------------|--------|-----------------------------------------------------------------------------|
+| `prompt_name`   | `str`  | The name of the prompt to fetch.                                            |
+| `label`         | `str` (optional)  | The label of the prompt to fetch. Defaults to `production`.                 |
+| `variables`     | `dict` (optional) | A dictionary of string key/values to interpolate into the prompt.          |
+| `cache_ttl`     | `int` (optional)  | The time-to-live for the prompt in seconds. Defaults to 300 seconds (0 = no cache, -1 = cache forever, n = cache for n seconds).         |
 
 ```python
 prompt = lai.get_prompt(
@@ -62,28 +69,18 @@ prompt = lai.get_prompt(
 )
 ```
 
-### Parameters
-
-- `prompt_name`: Prompt name
-- `label`: Label to fetch (defaults to `production`)
-- `variables`: Dictionary of string key/values to interpolate
-- `cache_ttl`: Controls how frequently the system needs to retrieve the prompt from the database. Measured in seconds: (so your code is still fast, defaults to 300)
-  - `0` = no cache  
-  - `-1` = cache forever  
-  - `n` = cache for `n` seconds
-
-> 📘 Prompt strings with missing variables throw a warning; extra user vars throw an error.
+> 📘 If your prompt references `{{variable_name}}` but you don't provide a value, you'll get a warning. If you provide variables that aren't used in the prompt, you'll get an error
 
 
 ## 🏷️ Labels
 
-Labels attach to a single prompt version and allow flexible, dynamic fetches. They're a powerful feature that enables prompt management without code changes.
+Labels attach to a single prompt version and **allow flexible, dynamic fetches**. They're a powerful feature that enables prompt management without code changes.
 
 ### What Labels Do
 
 - **Version Identification**: Labels point to specific prompt versions without needing IDs
 - **Runtime Flexibility**: Switch versions without code changes
-- **Environment Management**: Separate dev, test, and production prompts
+- **Environment Management**: Separate development, test, and production prompts
 - **A/B Testing**: Direct different users to different versions
 - **Rollback Support**: Quickly revert to previous versions by moving a label if a new version isn't performing well
 
@@ -94,38 +91,38 @@ Labels attach to a single prompt version and allow flexible, dynamic fetches. Th
 | `latest`    | Always points to the most recent version              |
 | `production`| The "live" version used by default                    |
 | `development` | Convenience label for testing changes before production |
+| `test` | Convenience label for testing changes before production |
 | Custom      | Any user-defined label for testing or segmentation   |
 
 ### How Labels Work
 
-- Only one version can hold a given label at a time
-- If you move a label to a new version, the old version will no longer have that label
-- When you create a new version, the `latest` label automatically moves to it
+- **Only one version can hold a given label at a time**
+- If **you move a label to a new version**, the **old version will no longer have that label**
+- When you create a new prompt version, the `latest` label automatically moves to it
 - Moving the `production` label is a manual action (to ensure stability)
-- Custom labels (like `beta`, `experiment-a`, `region-specific`) can be created for specific use cases
-- All code using a specific label will immediately use the newly labeled version when the label is moved
+- Custom labels (like `beta`, `experiment-a`, `region-specific`) can be created by you for specific use cases
 
 ### How to use labels
-1. Click labels next to the version of the prompt you want to use
+1. Click **labels** next to the version of the prompt you want to use
 > 📷 _<img src="/images/pdb4.png" alt="promptdb" width="400"/>_
-2. Click the new label(s) you would like to move to the version 
+2. Click the **new label(s)** you would like to move to the version 
 > 📷 _<img src="/images/pdb5.png" alt="promptdb" width="400"/>_
-3. Click save 
+3. Click **Save Changes**
 
 ---
 ## 🔗 Variables
 
-Variables allow you to create dynamic, reusable prompts by inserting runtime values into your prompt templates. This is critical for creating prompts that can adapt to different inputs without creating new versions.
+Variables allow you to create **dynamic, reusable prompts** by inserting **runtime values** into your prompt templates. This is critical for creating prompts that can adapt to different inputs without creating new versions.
 
 ### How Variables Work
 
 1. **Define variables** in your prompt using double curly braces: `{{variable_name}}`
-2. **Pass values** when fetching the prompt in your code
-3. Lucidic **automatically interpolates** the values into your prompt
+2. **Pass variable values** into the variables field in your code
+3. Lucidic **automatically substitutes** the variable values into your prompt before sending it to the LLM
 
 ### Formatting Variables
 
-When adding prompts to Prompt DB, you need to convert your code's variable syntax to Lucidic's template syntax:
+When adding prompts to the **Prompt DB**, you need to convert your code's variable syntax to Lucidic's template syntax:
 
 | In Your Code | In Prompt DB |
 |--------------|---------------|
@@ -137,10 +134,13 @@ When adding prompts to Prompt DB, you need to convert your code's variable synta
 
 **Basic example:**
 
-```python
-# Define a prompt with variables in Prompt DB: "Generate {{number}} ideas about {{topic}}"
+In the **Prompt DB** UI, you would define the prompt as:
 
-# In your code:
+> `Generate {{number}} ideas about {{topic}}`
+
+In your code, you would call it like this:
+
+```python
 prompt = lai.get_prompt(
     name="idea_generator",
     variables={
@@ -148,15 +148,23 @@ prompt = lai.get_prompt(
         "topic": "artificial intelligence"
     }
 )
-# Result: "Generate 5 ideas about artificial intelligence"
 ```
 
-**Complex example with conditional content:**
+**Result:**
+
+> Generate 5 ideas about artificial intelligence
+
+**Another example:**
+
+In the **Prompt DB** UI, you would define the prompt as:
+
+> `{{system_prompt}}`
+>
+> `Answer the user's question: {{question}}`
+
+In your code, you would call it like this:
 
 ```python
-# Define in Prompt DB:
-# "{{#if system_prompt}}{{system_prompt}}\n\n{{/if}}Answer the user's question: {{question}}"
-
 prompt = lai.get_prompt(
     name="qa_prompt",
     variables={
@@ -164,11 +172,13 @@ prompt = lai.get_prompt(
         "question": "How do cells divide?"
     }
 )
-# Result: 
-# "You are a helpful AI assistant specialized in biology.
-#
-# Answer the user's question: How do cells divide?"
 ```
+
+**Result:**
+
+> You are a helpful AI assistant specialized in biology.
+>
+> Answer the user's question: How do cells divide?
 
 ### Error Handling
 
@@ -177,8 +187,7 @@ prompt = lai.get_prompt(
 
 ### Best Practices
 
-- Use descriptive variable names that indicate their purpose
-- Document which variables each prompt expects
+- Use **descriptive variable names** that indicate their purpose
 - Consider setting default values for optional variables in your code
 - Test your prompts with different variable values to ensure they work as expected
 
@@ -189,31 +198,8 @@ When you update a prompt in the UI:
 - A new **Prompt Version** is created
 - The `latest` label is moved to the new version
 - You can optionally move the `production` label to the new version
-- You cannot edit an old version of a prompt
+- You cannot edit an old version of a prompt — if you save it, it will just create a new version
 
 Because agents fetch prompts dynamically, the next run of your agent will use the updated prompt automatically — no deploy needed.
-
----
-## 🧬 How It Works
-
-### Prompt
-
-A **Prompt** is a named entity that stores one or more **Prompt Versions**.
-
-```text
-Prompt: "summarize_page"
-├── Version 1: "Summarize this webpage: {{page_text}}"
-├── Version 2: "You are a helpful assistant. Please summarize: {{page_text}}"
-└── ...
-```
-
-### Prompt Version
-
-Each **Prompt Version** is:
-
-- **Immutable**
-- A plain string, optionally with `{{variables}}`
-- Tagged with **labels** (like `production`, `latest`, or custom)
-
 
 ---
