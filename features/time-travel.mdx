@@ -1,5 +1,4 @@
 ---
-
 title: Time Travel
 description: Freeze time and checkout the past, literally. 
 ---
@@ -11,7 +10,7 @@ Whether your agent failed halfway through a task or made an unexpected decision,
 
 This is your tool for:
 
-* **Isolating failures** without starting over
+* **Isolating failures** without starting over and rerunning the whole session
 * **Debugging variability** in model outputs
 * **Fixing bad decisions** by adjusting prompts at critical steps
 * **Creating reproducible replays** from fragile, real-world sessions
@@ -20,16 +19,18 @@ You’re not guessing anymore — you’re traveling back to the exact moment th
 
 ## ✍️ How to Create One
 
-1. Select any event
-2. Click the time travel button
-3. When the screen loads, you will automatically be in a new time travel. We have froze time for right before your event i.e we have captured your exact LLM call and the state of your agent (with all the images). You can then modify any of this information and tweak it to debug your agent.
-4. Write a name for your time travel
-5. Choose a model and number of simulations (optionally adjust temperature and other parameters)
-6. Click preview to see the raw input to make sure this is the event you want to debug
-7. Click run time travel simulations (bottom right)
+1. Select any **Event**
+2. Click the **Time Travel** tab under the two timelines
+3. When the screen loads, you will automatically be in a **new Time Travel**. We have froze time for right before your event i.e we have captured your exact LLM call and the state of your agent (with all the images). You can then modify any of this information and tweak it to debug your agent.
+4. Write a **name** for your **Time Travel**
+5. Choose a **model** and **number of simulations** (optionally adjust temperature and other parameters)
+
 > 📷 _![event timeline](/images/tt1.png)_
-8. Optional: If you have an image you can test your input with and without the image by clicking the checkbox. 
----> 📷 _![event timeline](/images/tt3.png)_
+6. Click **Preview** to see the input that will be passed to the LLM to make sure it looks right
+7. Click **Run Time Travel Simulations** (bottom right) to run the Time Travel simulations!
+> 📷 _![event timeline](/images/tt3.png)_
+8. *Optional*: If you have images, you can select which images you want to use in the time travel simulation by checking the box next to the image name. This is useful if you want to test your input with and without vision.
+
 
 
 ---
@@ -38,27 +39,26 @@ You’re not guessing anymore — you’re traveling back to the exact moment th
 
 ### How to access the results
 
-- Click the results tab to see the results of your time travel.
-- It takes 30 seconds to a minute to run (we are simulating a lot of your inputs haha)
+- Click the **Results** tab to see the results of your Time Travel.
+- Depening on how many simulations you ran, your connection speed, LLM model, etc., **it may take a few minutes to finish, so sit tight!**
 
 ### Output style 
-- The outputs will include both the raw responses from the LLM and intelligently organized groupings of those responses.
+- The outputs will include both the **raw responses from the LLM** and **intelligently organized groupings of those responses**.
+- Each group features a **descriptive summary of the agent’s typical actions** and a **clickable name to easily access the underlying raw responses**.
 
-- Each group features a descriptive summary of the agent’s typical actions, along with a clickable name to easily access the underlying raw responses.
-
-The results are grouped by behavior category — so you can instantly see dominant, fringe, and problematic outcomes. These groups are a best interpretation of the raw responses so check each response to make sure it is what you expect.
+The results are grouped by **behavior category** so you can instantly see dominant, edge, and problematic outcomes. 
 
 > 📷 _![event timeline](/images/tt2.png)_
 
 
 ---
 
-## ⏳ Variables - Be clean about systematically iterating on your prompt
+## ⏳ Variables - Organize your prompt changes
 
 
-Time Travel lets you modify any part of your agent’s state — but sometimes, you want to be *systematic* about it.
+Time Travel lets you modify any part of your agent’s state — but sometimes, you want to be **systematic** about it.
 
-That’s where **variables** come in. Variables let you mark specific parts of your input as "changeable," so you can experiment cleanly while keeping the rest of the input constant.
+That’s where **variables** come in. Variables let you mark specific parts of your input as **"unchangeable"**, so you can experiment cleanly while keeping the rest of the input constant.
 
 Use variables to:
 
@@ -67,22 +67,22 @@ Use variables to:
 
 ### How it works
 
-1. **Click the variables button**
+1. **Click the Variables tab**
 2. **Highlight a field** in your input (e.g., a line of reasoning, fixed text, or an instruction).
 > 📷 _![event timeline](/images/tt4.png)_
 3. **Scroll up and add a name for your variable** — this tells us what you want to call it. 
-4. **Click create variable**
+4. **Click Set as Variable**
 > 📷 _![event timeline](/images/tt5.png)_
 5. **Scroll to the bottom of the page** and you can now see all your defined variables
 > 📷 _![event timeline](/images/tt6.png)_
-6. **Go back to the time travel page** -- Now your variables are fixed and don't clutter your screen so you can focus on the prompt you want to change.
+6. **Go back to the time travel page** -- Now your variables are fixed and don't clutter your screen so you can focus on the parts of the prompt that you want to change.
 > 📷 _![event timeline](/images/tt7.png)_
-7. **Optional**: Check the exact input to your LLM by clicking the "preview" button.
+7. **Optional**: Check the exact input to your LLM by clicking the **Preview** button to ensure that everything still looks right!
 > 📷 _![event timeline](/images/tt8.png)_
 
 
 
-By clearly separating what you *can* and *can’t* change, you’ll get cleaner comparisons and sharper insights.
+By clearly **separating** what you **can** and **can’t** change, you’ll get cleaner comparisons and sharper insights.
 
 > Variables are especially useful when debugging brittle prompts, testing fallback instructions, or analyzing model behavior across slight input changes.
 
