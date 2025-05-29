@@ -27,27 +27,29 @@ Lucidic will:
 
 ## ✅ What Gets Captured
 
-Each Claude call is logged with:
+We automatically capture the following when you pass it to `anthropic.Client().messages.create`:
 
-- `description`: e.g. `"Claude call to claude-3-opus"`
-- `model`: the Claude version used
-- `cost`: estimated based on input/output tokens
-- `result`: a summarized or truncated response
-- Metadata like latency, success status, etc.
+- **Input**: your prompt to Claude (e.g. `"What's the capital of France?"`)
+- **Model**: the Claude model used (e.g. `claude-3-opus`, `claude-3`)
+- **Output**: the Claude response
+
+Based on your input, we automatically calculate the following:
+
+- **Cost**: estimated based on input/output tokens
 
 
 ---
 
 ## 🧠 Why This Matters
 
-Claude is powerful — but debugging its outputs without traceability is painful.
+LLM calls are a core part of most agent workflows — but without visibility, it’s impossible to debug or optimize:
 
-With automatic Anthropic integration, you can:
+- Which call caused the **failure**?
+- Which **step** was it part of?
+- How much did it **cost**?
+- What was the actual **response**?
 
-- Trace LLM calls back to their context
-- Measure cost and performance over time
-- Identify which responses worked (and which failed)
-- View model usage at a step-by-step level
+This integration gives you full transparency, with **zero boilerplate**.
 
 ---
 
