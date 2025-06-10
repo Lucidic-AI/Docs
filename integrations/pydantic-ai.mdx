@@ -1,0 +1,93 @@
+---
+title: PydanticAI Integration
+description: Automatically capture PydanticAI agent completions in your sessions with one line of setup.
+---
+
+# 🤝 PydanticAI Integration
+
+Lucidic makes it easy to **automatically track PydanticAI agent completions** as part of your agent's behavior — no code changes required.
+
+---
+
+## ⚙️ How It Works
+
+When you set:
+
+```python
+lai.init(..., provider="pydantic_ai")
+```
+
+Lucidic will:
+
+- **Monkey patch** PydanticAI's `AnthropicModel.request` and `OpenAIModel.request`
+- Automatically log each agent call as an **Event**
+- Attach the call to the currently active Step
+
+This means:
+
+- You don't need to call `create_event()` or `end_event()` manually
+- You get full observability into prompts, model, cost, result, and more — out of the box
+
+---
+
+## ✅ What Gets Captured
+
+Each PydanticAI call is tracked with:
+
+- `description`: formatted messages sent to the model
+- `model`: the underlying model name (e.g. `claude-3-5-sonnet-20241022`, `gpt-4`)
+- `cost`: calculated based on token usage
+- `result`: truncated summary of the response
+
+
+---
+
+## 🧠 Why This Matters
+
+PydanticAI agent calls are a core part of most AI workflows — but without visibility, it's impossible to debug or optimize:
+
+- Which call caused the failure?
+- Which step was it part of?
+- How much did it cost?
+- What was the actual response?
+
+This integration gives you full transparency, with **zero boilerplate**.
+
+---
+
+## 🧪 Example
+
+```python
+import lucidicai as lai
+from pydantic_ai import Agent
+from pydantic_ai.models.anthropic import AnthropicModel
+
+lai.init(
+    session_name="pydantic_ai_run",
+    agent_id="your-agent-id",
+    lucidic_api_key="your-api-key",
+    provider="pydantic_ai"
+)
+
+model = AnthropicModel(model_name="claude-3-5-sonnet-20241022")
+agent = Agent(model=model, system_prompt="You are a helpful assistant.")
+
+lai.create_step(state="Research", goal="Generate research ideas")
+
+# This call is automatically tracked!
+response = await agent.run(
+    user_prompt="What are 5 research ideas about climate change?"
+)
+
+lai.end_step(is_successful=True, action="Generated research ideas")
+```
+
+---
+
+## 🛠️ Notes
+
+- Both `AnthropicModel.request` and `OpenAIModel.request` are currently patched
+- You must have an active session and step for events to be attached
+- You can always override or add custom events using `create_event()` if needed
+
+---
