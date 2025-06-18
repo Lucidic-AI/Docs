@@ -3,8 +3,6 @@ title: Steps
 description: Learn how Steps represent agent states and transitions within a Session.
 ---
 
-import Callout from '/snippets/callout.mdx'
-
 # 🪜 Steps
 
 A **Step** is a unit of execution within a [Session](/core-concepts/sessions). It captures both a snapshot of the agent’s **current state** and the **action taken** to transition to the next state. Steps are the backbone of a session timeline and form the nodes in your workflow graph.
@@ -22,29 +20,20 @@ Each Step records:
 - The **action** taken to transition to the next step (with optional LLM-generated summary)
 - **Timestamps** for start and update time
 - **Cost** for operations within this step
-- Whether the step was **finished**, **successful**, or **stuck**
-- Whether a **screenshot** was captured
-- An **evaluation score + description** if provided or computed
----
+- Whether **screenshots** were captured
+- An **evaluation score** and **evaluation description** if provided or computed
 
-## 🧭 State, Goal, and Action
-
-- **State**: where the agent is right now (e.g., a page it's on, a field it’s viewing, or a task state)
-- **Goal**: what the agent wants to do in this step
-- **Action**: how the agent attempts to reach the goal
-
-If provided, you can supply these fields manually through your agent SDK. Otherwise, summaries can be automatically generated via LLMs if raw text is available.
-
+More details can be found on programmatically what a **Step** looks like [here](/getting-started/final-instructions#🧭-step-2%3A-create-steps)
 
 ---
 
 ## 🎬 Screenshots and Visual State
 
-Steps may include a screenshot that visually captures what the agent was seeing or interacting with at that moment. These can be critical for understanding UI-based agents or browser actions.
+**Steps** may include a **screenshot** that visually captures what the agent was seeing or interacting with at that moment. These can be critical for understanding UI-based agents or browser actions.
 
-- Displayed in the Step detail view
-- Used for default evaluations and visual debugging
-- Stored per-step and accessible via the SDK or dashboard
+- Displayed in the **Step detail view**
+- Used for **visual debugging**
+- Stored per-step and accessible via the **dashboard**
 
 ---
 
@@ -60,9 +49,7 @@ Steps can be scored individually using:
 lai.update_step(eval_score=0.3, eval_description="Tried to switch tabs but failed.")
 ```
 
-<Callout type="warning">
-Step-level evaluation in isolation is often difficult without broader task context. We recommend pairing this with session-wide scoring or rubrics when possible.
-</Callout>
+> **Warning:** Step-level evaluation in isolation is often difficult without broader task context. We recommend pairing this with session-wide scoring or rubrics when possible.
 
 ---
 

@@ -3,8 +3,6 @@ title: Events
 description: Understand Events as the fine-grained atomic operations that occur within each Step.
 ---
 
-import Callout from '/snippets/callout.mdx'
-
 # ⚙️ Events
 
 An **Event** is the most granular unit of action in your agent's execution trace. Events represent atomic operations — like LLM calls, API requests, or tool invocations — that occur *within* a [Step](/steps).
@@ -15,14 +13,17 @@ If a **Step** is the macro decision (“go to a new site”), then an **Event** 
 
 ## 🧬 Event Structure
 
-Each Event includes:
+Each Event includes (based on what you pass in):
 
-- A description of the event (e.g., “LLM: What site should I go to next?”)
-- The result (e.g., model output, API response, return value)
-- A summary (optional, often LLM-generated)
-- Timestamps
-- Cost and success/failure metadata
-- Model name (for LLM events)
+- **Description**: of the event (e.g., “LLM: What site should I go to next?”)
+- **Result**: the output of your event (e.g., model output, API response, return value)
+- **Cost**: how much it cost to run this event (e.g. $0.01)
+- **Model name**: for LLM events (e.g. `gpt-4o`)
+- **Screenshots**: for visual events (e.g. browser screenshots)
+
+The following are **generated automatically** by us and provided to you on the **dashboard**:
+- **Summary**: LLM-generated summary of the event
+- **Timestamps**: when the event started and ended
 
 ---
 
@@ -36,7 +37,7 @@ Events can include:
 - 🧮 **Internal computations** (e.g. custom heuristics or logic)
 - 💡 **Agent “thoughts”** captured from internal logs
 
-Your agent determines what gets logged as an Event. The more fine-grained, the better your observability.
+You determine what gets logged as an **Event**. The more fine-grained, the better your observability.
 
 
 ---
@@ -45,12 +46,12 @@ Your agent determines what gets logged as an Event. The more fine-grained, the b
 
 Events help you:
 
-- Debug *inside* a step
-- Understand why an action was chosen
-- View raw outputs from models or tools
-- Measure cost attribution at the finest level
-- Identify timing bottlenecks
-- Analyze failure causes (e.g. bad model output, timeout, incorrect API usage)
+- **Debug *inside* a step**
+- **Understand why an action was chosen**
+- **View raw outputs from models or tools**
+- **Measure cost attribution at the finest level**
+- **Identify timing bottlenecks**
+- **Analyze failure causes (e.g. bad model output, timeout, incorrect API usage)**
 
 ---
 
@@ -73,24 +74,11 @@ Each event gives you a breadcrumb trail of micro-decisions that led to the step'
 
 Each Event tracks its **cost**, **duration**, and **model identity** (for LLMs). This lets you:
 
-- Break down session cost by step or event
-- Track model usage across different sessions
-- Optimize high-cost actions
+- **Break down session cost by step or event**
+- **Track model usage across different sessions**
+- **Optimize high-cost actions**
 
-<Callout type="note">
-We recommend logging Events for every tool or model your agent uses to maximize observability.
-</Callout>
 
----
-
-## 📈 Event Summary Fields
-
-You can optionally pass or generate:
-
-- `summary`: a short one-line TL;DR of what the event did
-- `description`: a raw string of what the agent attempted (human- or agent-written)
-- `result`: the returned content or output
-
-These fields help contextualize what happened without reading full logs.
+> **Note:** We recommend logging Events for every tool or model your agent uses to maximize observability.
 
 ---
