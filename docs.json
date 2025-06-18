@@ -17,7 +17,6 @@
             "group": "Get Started",
             "pages": [
               "getting-started/introduction",
-              "getting-started/installation",
               "getting-started/dashboard",
               "getting-started/final-instructions",
               "getting-started/masssim"
