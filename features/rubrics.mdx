@@ -39,7 +39,7 @@ During initialization, you can attach rubrics to a session by name.
 ```python
 lai.init(
     session_name="custom_task",
-    provider="openai",  # or "anthropic", "pydantic_ai", "langchain"
+    providers=["openai"] #, "anthropic", "pydantic_ai", "langchain"],
     rubrics=["default", "my_custom_rubric"]  # Include both default and custom rubrics
 )
 ```

@@ -14,7 +14,7 @@ Lucidic makes it easy to **automatically track OpenAI completions** as part of y
 When you set:
 
 ```python
-lai.init(..., provider="openai")
+lai.init(..., providers=["openai"])
 ```
 
 Lucidic will:
@@ -67,7 +67,7 @@ lai.init(
     session_name="chatbot_run",
     agent_id="your-agent-id",
     lucidic_api_key="your-api-key",
-    provider="openai"
+    providers=["openai"]
 )
 
 lai.create_step(state="Intro", goal="Ask user for name")

@@ -20,7 +20,7 @@ Learn more about Mass Sims in the [Mass Simulations](/core-concepts/mass-simulat
 ```python
 lai.init(
     session_name="run_37",
-    provider="openai",
+    providers=["openai"],
     mass_sim_id="abc123"
 )
 ```
@@ -80,7 +80,7 @@ mass_sim_id = create_mass_sim(
 # Use the mass_sim_id in your session initialization
 lai.init(
     session_name="search_run",
-    provider="gemini",
+    providers=["gemini"],
     mass_sim_id=mass_sim_id
 )
 

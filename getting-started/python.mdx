@@ -29,7 +29,7 @@ lai.init(
     lucidic_api_key="your-api-key",   # Or use env var: LUCIDIC_API_KEY
     agent_id="your-agent-id",         # Or use env var: LUCIDIC_AGENT_ID
     task="Search Wikipedia for Steve Jobs biography",
-    provider="openai",                # "openai", "anthropic", "pydantic_ai", if "langchain" you can leave this blank checkout [LangChain Integration](/integrations/langchain)
+    providers=["openai"],                # "openai", "anthropic", "pydantic_ai", if "langchain" you can leave this blank checkout [LangChain Integration](/integrations/langchain)
     mass_sim_id="your-mass-sim-id",   # Optional
     rubrics=["default", "custom_score"]  # Optional
 )
@@ -40,7 +40,7 @@ Shorter/more common version of init:
 import lucidicai as lai
 lai.init(
     session_name="search_wikipedia",
-    provider = "openai",                
+    providers = ["openai"],                
 )
 ```
 We reccomend moving the `LUCIDIC_API_KEY` and `LUCIDIC_AGENT_ID` to environment variables. The way to do this is create a `.env` file in the root of your project and add the following. Most of you will already have a .env (it is where you would keep any API key) and will just have to add a Lucidic API Key and a Lucidic Agent ID.
@@ -183,7 +183,7 @@ We recommend creating your own rubric for custom tasks to ensure the evaluation 
 # When initializing your session, specify custom rubrics
 lai.init(
     session_name="custom_task",
-    provider="openai",
+    providers=["openai"],
     rubrics=["default", "my_custom_rubric"]  # Include both default and custom rubrics
 )
 
@@ -234,7 +234,7 @@ import lucidicai as lai
 lai.init(
     session_name="wiki_search",
     agent_id="agent-123",
-    provider="openai",
+    providers=["openai"],
     task="Search for Stanford University",
     rubrics=["default"]
 )
