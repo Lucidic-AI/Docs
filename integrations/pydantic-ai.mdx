@@ -19,14 +19,16 @@ lai.init(..., providers=["pydantic_ai"])
 
 Lucidic will:
 
-- **Monkey patch** PydanticAI's `AnthropicModel.request` and `OpenAIModel.request`
-- Automatically log each agent call as an **Event**
-- Attach the call to the currently active Step
+- **Instrument** PydanticAI's model classes using OpenTelemetry
+- **Automatically create events** for each agent call - no manual event creation needed
+- Attach the call to the currently active Step (or auto-create one if none exists)
+- Support all PydanticAI model types (OpenAI, Anthropic, Gemini, Groq, etc.)
 
 This means:
 
 - You don't need to call `create_event()` or `end_event()` manually
 - You get full observability into prompts, model, cost, result, and more — out of the box
+- Even if you forget to create a step, Lucidic handles it automatically
 
 ---
 
@@ -61,33 +63,76 @@ This integration gives you full transparency, with **zero boilerplate**.
 import lucidicai as lai
 from pydantic_ai import Agent
 from pydantic_ai.models.anthropic import AnthropicModel
+import asyncio
 
 lai.init(
     session_name="pydantic_ai_run",
-    agent_id="your-agent-id",
-    lucidic_api_key="your-api-key",
-    providers=["pydantic_ai"]
+    providers=["pydantic_ai"]  # API key and agent ID from env vars
 )
 
-model = AnthropicModel(model_name="claude-3-5-sonnet-20241022")
+model = AnthropicModel("claude-3-5-sonnet-20241022")
 agent = Agent(model=model, system_prompt="You are a helpful assistant.")
 
 lai.create_step(state="Research", goal="Generate research ideas")
 
 # This call is automatically tracked!
-response = await agent.run(
-    user_prompt="What are 5 research ideas about climate change?"
-)
+async def run_agent():
+    response = await agent.run(
+        "What are 5 research ideas about climate change?"
+    )
+    return response
 
-lai.end_step(is_successful=True, action="Generated research ideas")
+response = asyncio.run(run_agent())
+
+lai.end_step(action="Generated research ideas")
+```
+
+### Using with Multiple Models
+
+```python
+from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.models.gemini import GeminiModel
+
+# All model types are automatically tracked
+openai_model = OpenAIModel("gpt-4o")
+gemini_model = GeminiModel("gemini-1.5-pro")
+
+# Create agents with different models
+agent1 = Agent(model=openai_model)
+agent2 = Agent(model=gemini_model)
+```
+
+### Minimal Example - Auto Everything!
+
+```python
+import lucidicai as lai
+from pydantic_ai import Agent
+import asyncio
+
+# Just initialize - that's it!
+lai.init(providers=["pydantic_ai"])
+
+agent = Agent()  # Uses default model
+
+# Even without creating a step, this works!
+# Lucidic will auto-create a step AND auto-create an event
+async def run():
+    response = await agent.run("What's the weather like?")
+    return response
+
+asyncio.run(run())
+
+# Session auto-ends when script exits
 ```
 
 ---
 
 ## 🛠️ Notes
 
-- Both `AnthropicModel.request` and `OpenAIModel.request` are currently patched
-- You must have an active session and step for events to be attached
-- You can always override or add custom events using `create_event()` if needed
+- All PydanticAI model types are instrumented (OpenAI, Anthropic, Gemini, Groq, etc.)
+- Both sync and async agent runs are supported
+- If no step exists when an agent call is made, Lucidic automatically creates one
+- Streaming responses are tracked automatically
+- You can always add custom events using `create_event()` for additional context
 
 ---

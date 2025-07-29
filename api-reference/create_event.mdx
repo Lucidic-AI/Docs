@@ -43,7 +43,7 @@ lai.create_event(
 </ParamField>
 
 <ParamField path="screenshots" type="List[str]" optional>
-  List of base64-encoded screenshots associated with this event.
+  List of screenshots associated with this event. Each screenshot should be provided as a file path (which will be read and uploaded) or as base64-encoded image data.
 </ParamField>
 
 ## Returns
@@ -144,11 +144,11 @@ lai.create_event(
 )
 
 # Event 4: Image processing with screenshots
-screenshots = process_document_images(document_images)
+screenshot_paths = save_processed_images(document_images)  # Returns list of file paths
 lai.create_event(
     description="Extracted and analyzed document images",
-    result=f"Processed {len(screenshots)} images",
-    screenshots=screenshots  # Base64 encoded images
+    result=f"Processed {len(screenshot_paths)} images",
+    screenshots=screenshot_paths  # List of image file paths
 )
 
 lai.end_step()

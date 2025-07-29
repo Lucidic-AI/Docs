@@ -74,7 +74,7 @@ Passed in at runtime using the Python SDK. Useful for customized or domain-speci
 ```python
 lai.end_session(
     is_successful=True,
-    session_eval="4.5",  # Your custom score which is not a rubric
+    session_eval=4.5,  # Your custom score (numeric value, not string)
     session_eval_reason="Agent completed primary objectives but took longer than expected"
 )
 ```

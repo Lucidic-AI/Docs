@@ -41,6 +41,25 @@ We help you:
 
 ---
 
+## 🎯 Automatic Instrumentation
+
+Lucidic is designed to be as **non-intrusive** as possible. With just two lines of code, you get:
+
+- **Auto Event Creation**: LLM calls from supported providers (OpenAI, Anthropic, LangChain, PydanticAI) are automatically captured
+- **Auto Step Creation**: If no step exists when an LLM call occurs, one is created automatically
+- **Auto-Ending Steps**: Steps are automatically ended when your session ends
+- **Auto-End Sessions**: Sessions automatically close when your script exits
+- **Zero-Config Tracking**: Just import, initialize with providers, and everything else is handled
+
+This means you can instrument existing workflows with minimal changes:
+
+```python
+import lucidicai as lai
+lai.init(providers=["openai"])  # That's it! All OpenAI calls are now tracked
+```
+
+---
+
 ## 🚀 Next Steps
 
 Ready to dive in?

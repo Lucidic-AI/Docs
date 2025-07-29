@@ -62,7 +62,7 @@ With our Prompt DB, you can:
 
 ```python
 prompt = lai.get_prompt(
-    name="summarize_page",
+    prompt_name="summarize_page",
     label="production",  # optional, defaults to "production"
     variables={"page_text": "Stanford University is a top..."},  # optional
     cache_ttl=300  # optional (in seconds) defaults to 300
@@ -142,7 +142,7 @@ In your code, you would call it like this:
 
 ```python
 prompt = lai.get_prompt(
-    name="idea_generator",
+    prompt_name="idea_generator",
     variables={
         "number": "5",
         "topic": "artificial intelligence"
@@ -166,7 +166,7 @@ In your code, you would call it like this:
 
 ```python
 prompt = lai.get_prompt(
-    name="qa_prompt",
+    prompt_name="qa_prompt",
     variables={
         "system_prompt": "You are a helpful AI assistant specialized in biology.", 
         "question": "How do cells divide?"

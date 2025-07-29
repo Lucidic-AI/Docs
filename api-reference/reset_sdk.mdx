@@ -1,0 +1,165 @@
+---
+title: 'reset_sdk'
+description: 'Reset the Lucidic SDK to its initial state'
+---
+
+## Overview
+
+The `reset_sdk` function resets the Lucidic SDK to its initial state, clearing any active session and uninstrumenting all telemetry providers. This is useful for cleanup between tests, switching contexts, or recovering from error states.
+
+## Syntax
+
+```python
+lai.reset_sdk() -> None
+```
+
+## Parameters
+
+This function takes no parameters.
+
+## Returns
+
+This function returns `None`.
+
+## Examples
+
+### Basic Usage
+
+```python
+import lucidicai as lai
+
+# Start a session
+lai.init(session_name="First Session", providers=["openai"])
+
+# Do some work...
+# ...
+
+# Reset everything
+lai.reset_sdk()
+
+# Now you can start fresh
+lai.init(session_name="Second Session", providers=["anthropic"])
+```
+
+### Testing Scenarios
+
+```python
+import lucidicai as lai
+import pytest
+
+@pytest.fixture
+def clean_lucidic():
+    """Fixture to ensure clean SDK state for each test"""
+    yield
+    lai.reset_sdk()  # Clean up after each test
+
+def test_workflow_one(clean_lucidic):
+    lai.init(session_name="Test 1")
+    # Test implementation
+    lai.end_session()
+
+def test_workflow_two(clean_lucidic):
+    lai.init(session_name="Test 2")
+    # Test implementation - starts fresh
+    lai.end_session()
+```
+
+### Error Recovery
+
+```python
+import lucidicai as lai
+
+try:
+    lai.init(session_name="Problematic Session")
+    # Some operation that might fail
+    risky_operation()
+except Exception as e:
+    print(f"Error occurred: {e}")
+    # Reset SDK to clean state
+    lai.reset_sdk()
+    
+    # Try again with different configuration
+    lai.init(
+        session_name="Recovery Session",
+        production_monitoring=True
+    )
+```
+
+### Switching Contexts
+
+```python
+import lucidicai as lai
+
+# Development session
+lai.init(
+    session_name="Dev Testing",
+    providers=["openai"],
+    production_monitoring=False
+)
+# Do development work...
+lai.end_session()
+
+# Reset before switching to production
+lai.reset_sdk()
+
+# Production session with different configuration
+lai.init(
+    session_name="Production Run",
+    providers=["openai", "anthropic"],
+    production_monitoring=True,
+    masking_function=mask_sensitive_data
+)
+```
+
+### Multiple Independent Workflows
+
+```python
+import lucidicai as lai
+
+def process_customer_a():
+    lai.init(session_name="Customer A Processing")
+    # Process customer A data
+    lai.end_session()
+    lai.reset_sdk()  # Clean slate for next customer
+
+def process_customer_b():
+    lai.init(session_name="Customer B Processing")
+    # Process customer B data
+    lai.end_session()
+    lai.reset_sdk()
+
+# Each function starts with a clean SDK state
+process_customer_a()
+process_customer_b()
+```
+
+## Notes
+
+- Clears the current session if one exists
+- Uninstruments all OpenTelemetry providers
+- Resets the client to uninitialized state
+- Does not throw errors if SDK is already in clean state
+- Useful for test isolation and context switching
+- Any active session data that hasn't been sent will be lost
+
+## Behavior Details
+
+When called, `reset_sdk`:
+1. Checks if the SDK is initialized
+2. If OpenTelemetry is active, uninstruments all providers
+3. Clears the client instance and session data
+4. Returns silently if already in clean state
+
+## Best Practices
+
+1. **Test Isolation**: Use in test fixtures for clean state
+2. **Error Recovery**: Reset after critical errors before retrying
+3. **Context Switching**: Reset when changing between different workflows
+4. **Not for Normal Flow**: Regular applications should use `end_session()` instead
+5. **Data Loss Warning**: Ensure sessions are properly ended before reset
+
+## See Also
+
+- [`init`](/api-reference/api_functions/init) - Initialize a new session
+- [`end_session`](/api-reference/api_functions/end_session) - Properly end a session
+- [`continue_session`](/api-reference/api_functions/continue_session) - Continue an existing session

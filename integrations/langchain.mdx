@@ -11,73 +11,68 @@ Lucidic integrates seamlessly with **LangChain** agents and chains — no need t
 
 ## ⚙️ How It Works
 
-When you use `provider="langchain"` with Lucidic, you can attach a special handler that will:
+When you use `providers=["langchain"]` with Lucidic:
 
-- **Recursively search** your agent for LangChain LLMs
-- **Automatically attach itself** as a callback handler
-- Capture LLM usage as **Lucidic Events**, grouped under the correct Step
+- LangChain LLM calls are **automatically instrumented** using OpenTelemetry
+- **Events are automatically created** for every LLM call - no manual event creation needed
+- No need to manually attach handlers in most cases
+- All LLM usage is captured as **Lucidic Events**, grouped under the correct Step
+- If no step exists when an LLM call occurs, one is automatically created
 
-This means you get **full observability into your agent's reasoning — with zero boilerplate instrumentation.**
+This means you get **full observability into your agent's reasoning — with minimal setup.**
 
 ---
 
 ## 🧪 Setup Instructions
 
-### 1. Initialize Lucidic
+### Basic Setup
 
 ```python
 import lucidicai as lai
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
 
 lai.init(
     session_name="langchain_agent_run",
-    agent_id="your-agent-id",
-    lucidic_api_key="your-api-key",
-    providers=["langchain"]
+    providers=["langchain"]  # API key and agent ID from env vars
 )
+
+# LangChain calls are automatically tracked!
+llm = ChatOpenAI(model="gpt-4")
+response = llm.invoke([HumanMessage(content="Hello!")])
 ```
 
-### 2. Attach to Your Agent
+### For Complex Agents (Optional)
+
+For some complex agent setups, you may need to manually attach a handler:
 
 ```python
-handler = lai.LucidicLangchainHandler()
-handler.attach_to_llms(agent)
+from lucidicai.telemetry.otel_handlers import OTelLangChainHandler
+
+# Get the handler from the SDK
+handler = lai.Client().get_provider("langchain")
+
+# Manually attach to your agent if needed
+if hasattr(agent, 'callbacks'):
+    agent.callbacks.append(handler)
 ```
 
-✅ That’s it — even if your LLMs are deeply nested inside custom wrappers or chains, we’ll find and attach to them automatically.
+✅ In most cases, automatic instrumentation will work without manual attachment.
 
 ---
 
 ## ✅ What Gets Captured
 
-For every LangChain LLM call, we’ll log:
+For every LangChain LLM call, we automatically capture:
 
-- **Input**: your prompt to the LLM (e.g. `"What's the capital of France?"`)
-- **Model**: the LLM model used (e.g. `gpt-4`, `gpt-3.5-turbo`)
-- **Output**: the LLM response
+- **Input**: your messages/prompt to the LLM
+- **Model**: the LLM model used (e.g. `gpt-4`, `claude-3`)
+- **Output**: the LLM response (including streaming)
+- **Token usage**: input and output tokens
+- **Cost**: calculated based on token usage and model pricing
+- **Chain context**: which chain or agent made the call
+- **Tool usage**: any tools invoked by the agent
 
-Based on your input, we automatically calculate the following:
-
-- **Cost**: estimated based on input/output tokens
-
-
----
-
-## 🔍 Under the Hood
-
-Here’s a simplified view of what’s happening when you call `attach_to_llms()`:
-
-```python
-def attach_to_llms(self, llm_or_chain_or_agent):
-    if hasattr(obj, 'callbacks'):
-        obj.callbacks.append(self)
-    for attr in dir(obj):
-        if hasattr(attr, 'callbacks'):
-            attr.callbacks.append(self)
-```
-
-Your agent might be deeply nested — but Lucidic recursively walks through the object and **attaches itself to any LLMs it finds**.
-
-> 📘 You don’t need to dig into `.llm_chain.llm` or manually insert the handler. We do that for you.
 
 ---
 
@@ -85,30 +80,68 @@ Your agent might be deeply nested — but Lucidic recursively walks through the 
 
 ```python
 import lucidicai as lai
-from my_agent import MyLangChainAgent
+from langchain_openai import ChatOpenAI
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain.tools import Tool
+from langchain_core.prompts import PromptTemplate
 
 lai.init(
     session_name="langchain_test",
-    agent_id="agent-123",
     providers=["langchain"]
 )
 
-agent = MyLangChainAgent()
+# Define tools
+tools = [
+    Tool(
+        name="Calculator",
+        func=lambda x: eval(x),
+        description="Useful for math calculations"
+    )
+]
 
-handler = lai.LucidicLangchainHandler()
-handler.attach_to_llms(agent)
+# Create agent
+llm = ChatOpenAI(model="gpt-4")
+prompt = PromptTemplate.from_template("You are a helpful assistant. {input}")
+agent = create_react_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools)
 
-agent.run("Search for Stanford University")
+# Create a step
+lai.create_step(state="Ready", goal="Solve math problem")
+
+# All LLM calls within the agent are automatically tracked!
+result = executor.invoke({"input": "What is 25 * 4 + 10?"})
+
+lai.end_step()
+```
+
+### Minimal Example - Auto Everything!
+
+```python
+import lucidicai as lai
+from langchain_openai import ChatOpenAI
+
+# Just initialize - that's it!
+lai.init(providers=["langchain"])
+
+llm = ChatOpenAI(model="gpt-4")
+
+# Even without creating a step, this works!
+# Lucidic will auto-create a step AND auto-create events for each LLM call
+response = llm.invoke("Tell me a joke")
+
+# Session auto-ends when script exits
 ```
 
 ---
 
-## 🛠️ Requirements
+## 🛠️ Notes
 
-- `langchain` pip installed
-- Works with `BaseLanguageModel`, `LLMChain`, `AgentExecutor`, and custom toolchains
-- You must call `attach_to_llms()` before executing the agent
-- Events are attached to the **currently active Step**
+- Requires LangChain packages installed (`langchain`, `langchain-openai`, etc.)
+- Works with all LangChain LLMs, chains, and agents
+- Automatic instrumentation handles most use cases
+- If no step exists when an LLM call is made, Lucidic automatically creates one
+- Both sync and async operations are supported
+- Tool calls and chain execution are tracked as separate events
 
 ---
 
