@@ -1,0 +1,176 @@
+---
+title: 'init'
+description: 'Initialize a new Lucidic session'
+---
+
+## Overview
+
+The `init` function initializes a new Lucidic session for tracking and monitoring AI agent workflows. It sets up the SDK with your credentials, configures providers, and starts a new session.
+
+## Syntax
+
+```python
+lai.init(
+    session_name: Optional[str] = None,
+    session_id: Optional[str] = None,
+    lucidic_api_key: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    task: Optional[str] = None,
+    providers: Optional[List[ProviderType]] = [],
+    production_monitoring: Optional[bool] = False,
+    mass_sim_id: Optional[str] = None,
+    rubrics: Optional[list] = None,
+    tags: Optional[list] = None,
+    masking_function = None,
+    auto_end: Optional[bool] = True,
+) -> str
+```
+
+## Parameters
+
+<ParamField path="session_name" type="string" optional>
+  The display name for this session. Used for easy identification in the Lucidic dashboard.
+</ParamField>
+
+<ParamField path="session_id" type="string" optional>
+  Custom ID for the session. If not provided, a random ID will be generated.
+</ParamField>
+
+<ParamField path="lucidic_api_key" type="string" optional>
+  Your Lucidic API key for authentication. If not provided, the SDK will use the `LUCIDIC_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="agent_id" type="string" optional>
+  Your agent identifier. If not provided, the SDK will use the `LUCIDIC_AGENT_ID` environment variable.
+</ParamField>
+
+<ParamField path="task" type="string" optional>
+  A high-level description of the task or workflow being performed in this session.
+</ParamField>
+
+<ParamField path="providers" type="List[ProviderType]" optional default="[]">
+  List of LLM providers to automatically instrument. Supported values: `"openai"`, `"anthropic"`, `"langchain"`, `"pydantic_ai"`, `"openai_agents"`.
+</ParamField>
+
+<ParamField path="production_monitoring" type="boolean" optional default="False">
+  Flag to enable production monitoring mode. Can also be set via `LUCIDIC_PRODUCTION_MONITORING` environment variable.
+</ParamField>
+
+<ParamField path="mass_sim_id" type="string" optional>
+  ID of a mass simulation to include this session in. Use with `create_mass_sim()`.
+</ParamField>
+
+<ParamField path="rubrics" type="list" optional>
+  List of evaluation criteria for this session. Used for automated evaluation workflows.
+</ParamField>
+
+<ParamField path="tags" type="list" optional>
+  List of tags to categorize and filter sessions in the dashboard.
+</ParamField>
+
+<ParamField path="masking_function" type="callable" optional>
+  Custom function to mask sensitive data before sending to Lucidic. Function should accept text and return masked text.
+</ParamField>
+
+<ParamField path="auto_end" type="boolean" optional default="True">
+  Automatically end the session when the process exits. Ensures data is not lost on unexpected termination.
+</ParamField>
+
+## Returns
+
+Returns the session ID as a string.
+
+## Examples
+
+### Basic Usage
+
+```python
+import lucidicai as lai
+
+# Initialize with minimal configuration
+session_id = lai.init()
+
+# any llm calls after this will automatically be traced
+# ...
+
+```
+
+### With Provider Integration
+
+```python
+import lucidicai as lai
+from openai import OpenAI
+
+# Initialize with OpenAI provider
+lai.init(
+    session_name="AI Assistant",
+    providers=["openai"],
+    task="Answer customer questions"
+)
+
+# OpenAI calls are now automatically tracked
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+### Production Configuration
+
+```python
+import lucidicai as lai
+
+def mask_pii(text):
+    # Custom logic to mask sensitive information
+    return text.replace("SSN:", "XXX-XX-")
+
+lai.init(
+    session_name="Production Agent",
+    production_monitoring=True,
+    masking_function=mask_pii,
+    tags=["production", "v2.0", "customer-service"],
+    rubrics=["response_quality", "task_completion"],
+    auto_end=True  # Ensures session ends even on crashes
+)
+```
+
+### Mass Simulation Usage
+
+```python
+import lucidicai as lai
+
+# First create a mass simulation
+mass_sim_id = lai.create_mass_sim(
+    mass_sim_name="Load Test",
+    total_num_sessions=1000
+)
+
+# Then initialize sessions as part of the simulation
+lai.init(
+    session_name="Test Session 1",
+    mass_sim_id=mass_sim_id
+)
+```
+
+## Notes
+
+- Either `lucidic_api_key` or `LUCIDIC_API_KEY` environment variable must be set
+- Either `agent_id` or `LUCIDIC_AGENT_ID` environment variable must be set
+- The SDK can only have one active session at a time
+- If a session is already active, calling `init` will raise an `InvalidOperationError`
+- The `auto_end` feature ensures your session data is preserved even on unexpected exits
+- Provider instrumentation happens automatically once configured
+
+## Error Handling
+
+```python
+from lucidicai.errors import APIKeyVerificationError, InvalidOperationError
+
+try:
+    lai.init(session_name="My Session")
+except APIKeyVerificationError:
+    print("Please set your LUCIDIC_API_KEY environment variable")
+except InvalidOperationError:
+    print("A session is already active. Call lai.end_session() first.")
+```

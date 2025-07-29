@@ -1,0 +1,250 @@
+---
+title: 'create_mass_sim'
+description: 'Create a new mass simulation for running multiple sessions'
+---
+
+## Overview
+
+The `create_mass_sim` function creates a mass simulation container that can hold multiple related sessions. This is useful for load testing, A/B testing, batch processing, or running multiple variants of the same workflow.
+
+## Syntax
+
+```python
+lai.create_mass_sim(
+    mass_sim_name: str,
+    total_num_sessions: int,
+    lucidic_api_key: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    task: Optional[str] = None,
+    tags: Optional[list] = None
+) -> str
+```
+
+## Parameters
+
+<ParamField path="mass_sim_name" type="string" required>
+  The name of the mass simulation for identification in the dashboard.
+</ParamField>
+
+<ParamField path="total_num_sessions" type="integer" required>
+  The total intended number of sessions for this simulation. More sessions can be added later if needed.
+</ParamField>
+
+<ParamField path="lucidic_api_key" type="string" optional>
+  Your Lucidic API key. If not provided, uses the `LUCIDIC_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="agent_id" type="string" optional>
+  Your agent identifier. If not provided, uses the `LUCIDIC_AGENT_ID` environment variable.
+</ParamField>
+
+<ParamField path="task" type="string" optional>
+  High-level description of the task or purpose of this mass simulation.
+</ParamField>
+
+<ParamField path="tags" type="list" optional>
+  List of tags to categorize the mass simulation for filtering and organization.
+</ParamField>
+
+## Returns
+
+Returns the mass simulation ID as a string. Use this ID when initializing sessions to include them in the simulation.
+
+## Examples
+
+### Basic Load Testing
+
+```python
+import lucidicai as lai
+import concurrent.futures
+
+# Create a mass simulation for load testing
+mass_sim_id = lai.create_mass_sim(
+    mass_sim_name="API Load Test",
+    total_num_sessions=1000,
+    task="Test system performance under load",
+    tags=["load-test", "performance", "api-v2"]
+)
+
+def run_test_session(session_num):
+    # Each session is part of the mass simulation
+    lai.init(
+        session_name=f"Load Test Session {session_num}",
+        mass_sim_id=mass_sim_id
+    )
+    
+    # Simulate workload
+    lai.create_step(state="Processing request", action="Execute API call")
+    # ... perform test operations ...
+    lai.end_step()
+    
+    lai.end_session(is_successful=True)
+
+# Run sessions in parallel
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    futures = [executor.submit(run_test_session, i) for i in range(100)]
+    concurrent.futures.wait(futures)
+```
+
+### A/B Testing Example
+
+```python
+import lucidicai as lai
+import random
+
+# Create mass simulation for A/B test
+mass_sim_id = lai.create_mass_sim(
+    mass_sim_name="Prompt Strategy A/B Test",
+    total_num_sessions=500,
+    task="Compare two prompt strategies",
+    tags=["ab-test", "prompt-optimization"]
+)
+
+def run_ab_test_session(user_id):
+    # Randomly assign to variant
+    variant = "A" if random.random() < 0.5 else "B"
+    
+    lai.init(
+        session_name=f"User {user_id} - Variant {variant}",
+        mass_sim_id=mass_sim_id,
+        tags=[f"variant-{variant}"]
+    )
+    
+    # Use different prompts based on variant
+    if variant == "A":
+        prompt = lai.get_prompt("strategy_a")
+    else:
+        prompt = lai.get_prompt("strategy_b")
+    
+    # Run the test
+    result = execute_with_prompt(prompt)
+    
+    # End with evaluation
+    lai.end_session(
+        session_eval=result.score,
+        is_successful=result.success
+    )
+
+# Run test sessions
+for user_id in range(500):
+    run_ab_test_session(user_id)
+```
+
+### Batch Processing
+
+```python
+import lucidicai as lai
+from datetime import datetime
+
+# Create mass simulation for batch job
+mass_sim_id = lai.create_mass_sim(
+    mass_sim_name=f"Daily Report Generation - {datetime.now().date()}",
+    total_num_sessions=50,  # One per report
+    task="Generate daily reports for all clients",
+    tags=["batch-job", "daily-reports", "automated"]
+)
+
+def generate_client_report(client_id, client_name):
+    lai.init(
+        session_name=f"Report for {client_name}",
+        mass_sim_id=mass_sim_id,
+        tags=[f"client-{client_id}"]
+    )
+    
+    try:
+        # Generate report steps
+        lai.create_step(state="Loading client data", action="Query database")
+        data = load_client_data(client_id)
+        lai.end_step()
+        
+        lai.create_step(state="Analyzing metrics", action="Calculate KPIs")
+        metrics = analyze_metrics(data)
+        lai.end_step()
+        
+        lai.create_step(state="Generating report", action="Create PDF")
+        report_path = create_report(client_name, metrics)
+        lai.end_step(screenshot_path=report_path)
+        
+        lai.end_session(
+            is_successful=True,
+            session_eval=1.0,
+            session_eval_reason="Report generated successfully"
+        )
+        
+    except Exception as e:
+        lai.end_session(
+            is_successful=False,
+            session_eval=0.0,
+            session_eval_reason=f"Failed: {str(e)}"
+        )
+
+# Process all clients
+clients = get_all_clients()
+for client in clients:
+    generate_client_report(client.id, client.name)
+```
+
+### Model Comparison
+
+```python
+import lucidicai as lai
+
+# Create simulation to compare different models
+mass_sim_id = lai.create_mass_sim(
+    mass_sim_name="Model Performance Comparison",
+    total_num_sessions=300,  # 100 tests per model
+    task="Compare GPT-4, Claude, and Gemini on same tasks",
+    tags=["model-comparison", "benchmarking"]
+)
+
+test_cases = load_test_cases()
+models = ["gpt-4", "claude-3", "gemini-pro"]
+
+for model in models:
+    for i, test_case in enumerate(test_cases[:100]):
+        lai.init(
+            session_name=f"{model} - Test {i}",
+            mass_sim_id=mass_sim_id,
+            tags=[f"model-{model}", f"test-{test_case.category}"]
+        )
+        
+        lai.create_step(
+            state=f"Testing {model} on {test_case.name}",
+            action="Execute test",
+            goal="Measure performance and accuracy"
+        )
+        
+        result = run_model_test(model, test_case)
+        
+        lai.end_step(
+            eval_score=result.accuracy,
+            eval_description=f"Latency: {result.latency}ms"
+        )
+        
+        lai.end_session(
+            session_eval=result.overall_score,
+            is_successful=result.passed
+        )
+```
+
+## Notes
+
+- Mass simulation ID must be provided during `init()` to include sessions
+- Sessions can be added to a mass simulation even after initial creation
+- The `total_num_sessions` is indicative and can be exceeded
+- Mass simulations help organize and analyze related sessions together
+- Use tags for sub-categorization within the mass simulation
+
+## Best Practices
+
+1. **Descriptive Names**: Use clear names that indicate the simulation's purpose
+2. **Appropriate Sizing**: Set realistic `total_num_sessions` estimates
+3. **Consistent Tagging**: Use tags to enable filtering and analysis
+4. **Session Naming**: Use systematic session names within the simulation
+5. **Error Handling**: Ensure sessions end properly even on failures
+
+## See Also
+
+- [`init`](/api-reference/api_functions/init) - Initialize sessions with mass_sim_id
+- [Mass Simulations](/core-concepts/mass-simulations) - Learn more about mass simulations
+- [Features Overview](/features/mass-simulation-overview) - Mass simulation features

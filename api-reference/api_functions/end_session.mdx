@@ -1,0 +1,205 @@
+---
+title: 'end_session'
+description: 'End the current Lucidic session'
+---
+
+## Overview
+
+The `end_session` function completes the current active session, optionally setting final evaluation metrics and success status. This sends all remaining data to Lucidic and cleans up the local session state.
+
+## Syntax
+
+```python
+lai.end_session(
+    session_eval: Optional[float] = None,
+    session_eval_reason: Optional[str] = None,
+    is_successful: Optional[bool] = None,
+    is_successful_reason: Optional[str] = None
+) -> None
+```
+
+## Parameters
+
+<ParamField path="session_eval" type="float" optional>
+  Overall evaluation score for the session (typically 0.0 to 1.0). This provides a quantitative measure of session quality or success.
+</ParamField>
+
+<ParamField path="session_eval_reason" type="string" optional>
+  Text explanation for the session evaluation score. This provides context for the numerical score.
+</ParamField>
+
+<ParamField path="is_successful" type="boolean" optional>
+  Boolean flag indicating whether the session achieved its intended goal.
+</ParamField>
+
+<ParamField path="is_successful_reason" type="string" optional>
+  Text explanation for why the session was or wasn't successful.
+</ParamField>
+
+## Returns
+
+This function returns `None`.
+
+## Examples
+
+### Basic Usage
+
+```python
+import lucidicai as lai
+
+# Start session
+lai.init(session_name="Customer Query")
+
+# Do work...
+handle_customer_query()
+
+# End session
+lai.end_session()
+```
+
+### With Success Evaluation
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Data Processing Pipeline")
+
+try:
+    # Process data through multiple steps
+    data = load_data()
+    processed = transform_data(data)
+    results = analyze_data(processed)
+    
+    # Successful completion
+    lai.end_session(
+        session_eval=0.95,
+        session_eval_reason="Pipeline completed with high quality results",
+        is_successful=True,
+        is_successful_reason="All data processed without errors"
+    )
+    
+except Exception as e:
+    # Failed completion
+    lai.end_session(
+        session_eval=0.2,
+        session_eval_reason=f"Pipeline failed: {str(e)}",
+        is_successful=False,
+        is_successful_reason="Critical error during processing"
+    )
+```
+
+### Conditional Success
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Goal-Based Task")
+
+# Define success criteria
+target_accuracy = 0.90
+target_speed = 100  # items per second
+
+# Execute task
+results = execute_task()
+
+# Evaluate against criteria
+success = (results['accuracy'] >= target_accuracy and 
+          results['speed'] >= target_speed)
+
+lai.end_session(
+    session_eval=results['accuracy'],
+    session_eval_reason=f"Accuracy: {results['accuracy']:.2%}, Speed: {results['speed']} items/sec",
+    is_successful=success,
+    is_successful_reason=(
+        "Met all performance targets" if success 
+        else f"Below targets - need {target_accuracy:.0%} accuracy and {target_speed} items/sec"
+    )
+)
+```
+
+### Auto-End Behavior
+
+```python
+import lucidicai as lai
+
+# With auto_end enabled (default)
+lai.init(session_name="Auto-End Example", auto_end=True)
+
+# Even if you forget to call end_session or the program crashes,
+# the session will automatically end when the process exits
+
+# With auto_end disabled
+lai.init(session_name="Manual-End Example", auto_end=False)
+
+# You must explicitly call end_session
+# If you don't, the session data may be lost
+lai.end_session()
+```
+
+### Integration with Monitoring
+
+```python
+import lucidicai as lai
+from your_metrics import track_metric
+
+lai.init(session_name="Production Service", production_monitoring=True)
+
+try:
+    result = process_production_request()
+    
+    # Track success metrics
+    track_metric("request_success", 1)
+    
+    lai.end_session(
+        session_eval=1.0,
+        is_successful=True,
+        is_successful_reason="Request processed successfully"
+    )
+    
+except Exception as e:
+    # Track failure metrics
+    track_metric("request_failure", 1)
+    
+    lai.end_session(
+        session_eval=0.0,
+        is_successful=False,
+        is_successful_reason=f"Request failed: {type(e).__name__}"
+    )
+    raise
+```
+
+## Notes
+
+- Only affects the current active session
+- Automatically ends any active step before ending the session
+- Clears all session state after ending
+- If `auto_end=True` (default), session ends automatically on process exit
+- Cannot be called if no session is active
+- All buffered data is sent to Lucidic before the session ends
+
+## Error Handling
+
+```python
+from lucidicai.errors import LucidicNotInitializedError
+
+try:
+    lai.end_session()
+except Exception:
+    # Session might not be active
+    print("No active session to end")
+```
+
+## Best Practices
+
+1. **Always End Sessions**: Ensure sessions are properly ended to avoid data loss
+2. **Use Auto-End**: Keep `auto_end=True` for automatic cleanup
+3. **Meaningful Evaluation**: Provide both score and reason for clarity
+4. **Success Criteria**: Define clear success criteria for `is_successful`
+5. **Error Handling**: End session even when errors occur
+
+## See Also
+
+- [`init`](/api-reference/api_functions/init) - Start a new session
+- [`continue_session`](/api-reference/api_functions/continue_session) - Continue an existing session
+- [`update_session`](/api-reference/api_functions/update_session) - Update session metadata
+- [`reset_sdk`](/api-reference/api_functions/reset_sdk) - Reset the SDK state

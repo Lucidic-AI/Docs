@@ -66,6 +66,44 @@
             ]
           },
           {
+            "group": "Python SDK Functions",
+            "pages": [
+              "api-reference/api_functions/index",
+              {
+                "group": "Session Management",
+                "pages": [
+                  "api-reference/api_functions/init",
+                  "api-reference/api_functions/continue_session",
+                  "api-reference/api_functions/update_session",
+                  "api-reference/api_functions/end_session"
+                ]
+              },
+              {
+                "group": "Step Management",
+                "pages": [
+                  "api-reference/api_functions/create_step",
+                  "api-reference/api_functions/update_step",
+                  "api-reference/api_functions/end_step"
+                ]
+              },
+              {
+                "group": "Event Management",
+                "pages": [
+                  "api-reference/api_functions/create_event",
+                  "api-reference/api_functions/update_event",
+                  "api-reference/api_functions/end_event"
+                ]
+              },
+              {
+                "group": "Advanced Features",
+                "pages": [
+                  "api-reference/api_functions/get_prompt",
+                  "api-reference/api_functions/create_mass_sim"
+                ]
+              }
+            ]
+          },
+          {
             "group": "Endpoint Examples",
             "pages": [
               "api-reference/endpoint/get",
@@ -85,20 +123,20 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:team@lucidic.ai"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "href": "https://dashboard.lucidic.ai"
     }
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/LucidicAI",
+      "github": "https://github.com/Lucidic-AI/Lucidic-Python.git",
+      "linkedin": "https://linkedin.com/company/lucidic-ai"
     }
   }
 }

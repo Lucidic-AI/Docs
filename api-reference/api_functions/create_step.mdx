@@ -1,0 +1,207 @@
+---
+title: 'create_step'
+description: 'Create a new step in the current session'
+---
+
+## Overview
+
+The `create_step` function creates a new step within the active session. Steps represent discrete units of work in your AI agent's workflow, helping you track progress, actions, and outcomes at a granular level.
+
+## Syntax
+
+```python
+lai.create_step(
+    state: Optional[str] = None,
+    action: Optional[str] = None,
+    goal: Optional[str] = None,
+    eval_score: Optional[float] = None,
+    eval_description: Optional[str] = None,
+    screenshot: Optional[str] = None,
+    screenshot_path: Optional[str] = None
+) -> str
+```
+
+## Parameters
+
+<ParamField path="state" type="string" optional>
+  Description of the current state or context when this step begins. This helps understand what information or situation the agent is working with.
+</ParamField>
+
+<ParamField path="action" type="string" optional>
+  Description of what action the agent is taking in this step. This documents what the agent is doing.
+</ParamField>
+
+<ParamField path="goal" type="string" optional>
+  Description of what the agent aims to achieve in this step. This clarifies the intended outcome.
+</ParamField>
+
+<ParamField path="eval_score" type="float" optional>
+  Evaluation score for this step (typically 0.0 to 1.0). Used for performance tracking and optimization.
+</ParamField>
+
+<ParamField path="eval_description" type="string" optional>
+  Text description explaining the evaluation score or providing qualitative assessment.
+</ParamField>
+
+<ParamField path="screenshot" type="string" optional>
+  Base64-encoded screenshot image. Provide either this or `screenshot_path`, not both.
+</ParamField>
+
+<ParamField path="screenshot_path" type="string" optional>
+  Path to a screenshot file. The SDK will read and encode the image. Provide either this or `screenshot`, not both.
+</ParamField>
+
+## Returns
+
+Returns the step ID as a string.
+
+## Examples
+
+### Basic Usage
+
+```python
+import lucidicai as lai
+
+# Initialize session
+lai.init(session_name="Customer Support")
+
+# Create a step
+step_id = lai.create_step(
+    state="User asked about refund policy",
+    action="Search knowledge base for refund information",
+    goal="Provide accurate refund policy details"
+)
+
+# ... perform work ...
+
+lai.end_step()
+```
+
+### With Evaluation
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Data Analysis")
+
+# Create step with initial evaluation
+step_id = lai.create_step(
+    state="Raw dataset loaded with 10,000 records",
+    action="Clean and preprocess data",
+    goal="Prepare data for model training",
+    eval_score=0.0,
+    eval_description="Starting data processing"
+)
+
+# Process data...
+cleaned_records = clean_data(raw_data)
+
+# Update evaluation based on results
+lai.update_step(
+    step_id=step_id,
+    eval_score=0.95,
+    eval_description=f"Successfully cleaned {len(cleaned_records)} records"
+)
+
+lai.end_step()
+```
+
+### With Screenshots
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="UI Testing", providers=["openai"])
+
+# Create step with screenshot
+lai.create_step(
+    state="Application homepage loaded",
+    action="Verify UI elements and layout",
+    goal="Ensure responsive design works correctly",
+    screenshot_path="/tmp/homepage_screenshot.png"
+)
+
+# Use vision model to analyze the screenshot
+from openai import OpenAI
+client = OpenAI()
+
+response = client.chat.completions.create(
+    model="gpt-4-vision-preview",
+    messages=[{
+        "role": "user",
+        "content": "Analyze this UI screenshot for any layout issues"
+    }]
+)
+
+lai.end_step()
+```
+
+### Multi-Step Workflow
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Document Processing")
+
+# Step 1: Load document
+lai.create_step(
+    state="PDF document received",
+    action="Extract text from PDF",
+    goal="Convert PDF to processable text"
+)
+text = extract_pdf_text(pdf_path)
+lai.end_step()
+
+# Step 2: Analyze content
+lai.create_step(
+    state=f"Extracted {len(text)} characters of text",
+    action="Analyze document structure and content",
+    goal="Identify key sections and information"
+)
+analysis = analyze_document(text)
+lai.end_step()
+
+# Step 3: Generate summary
+lai.create_step(
+    state="Document analyzed with identified sections",
+    action="Generate executive summary",
+    goal="Create concise summary for stakeholders"
+)
+summary = generate_summary(analysis)
+lai.end_step(eval_score=1.0, eval_description="Summary generated successfully")
+
+lai.end_session()
+```
+
+## Notes
+
+- Only one step can be active at a time in a session
+- Previous step must be ended (via `end_step()`) before creating a new one
+- If an LLM call is made without an active step, Lucidic automatically creates a step
+- Screenshots are useful for UI testing, visual AI workflows, and debugging
+- Step IDs are unique and can be used to update the step later
+
+## Error Handling
+
+```python
+from lucidicai.errors import InvalidOperationError
+
+try:
+    lai.create_step(state="New step")
+except InvalidOperationError:
+    # Might occur if no session is active or previous step not ended
+    print("Cannot create step - check session status")
+```
+
+## Best Practices
+
+1. **Descriptive Information**: Provide clear state, action, and goal descriptions
+2. **Sequential Steps**: End each step before starting the next
+3. **Evaluation Tracking**: Use eval_score to track step success/quality manually if needed
+4. **Visual Context**: Include screenshots for UI/visual workflows
+
+## See Also
+
+- [`update_step`](/api-reference/api_functions/update_step) - Update an existing step
+- [`end_step`](/api-reference/api_functions/end_step) - End the current step
+- [`create_event`](/api-reference/api_functions/create_event) - Create events within a step
