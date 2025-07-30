@@ -1,0 +1,306 @@
+---
+title: Anthropic Integration
+description: Automatic tracking for Anthropic Claude API calls in TypeScript
+---
+
+# Anthropic Integration
+
+The TypeScript SDK provides automatic instrumentation for Anthropic's Claude API using OpenTelemetry.
+
+---
+
+## How It Works
+
+When you initialize with `providers: ['anthropic']`:
+
+1. The SDK instruments the Anthropic client using OpenTelemetry
+2. Every API call is automatically captured as an Event
+3. Token usage and costs are calculated automatically
+4. Both standard and streaming responses are tracked
+
+---
+
+## Setup
+
+```typescript
+import * as lai from 'lucidicai';
+
+// 1. Initialize Lucidic FIRST
+await lai.init({
+  providers: ['anthropic'],
+  sessionName: 'Claude Demo'
+});
+
+// 2. Import Anthropic AFTER init
+const Anthropic = (await import('@anthropic-ai/sdk')).default;
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY
+});
+
+// All calls are now automatically tracked!
+```
+
+---
+
+## What Gets Captured
+
+For every Anthropic API call:
+
+- **Input**: Messages and system prompts
+- **Model**: Claude model used (claude-3-opus, claude-3-5-sonnet, etc.)
+- **Output**: Complete response content
+- **Token Usage**: Input and output token counts
+- **Cost**: Calculated based on current pricing
+- **Timing**: Request duration
+- **Images**: Automatically handled for vision requests
+
+---
+
+## Known Limitation: Streaming
+
+Due to a limitation in the `@traceloop/instrumentation-anthropic` library, streaming responses show as "Response received" instead of the actual content.
+
+**Workaround for streaming:**
+
+```typescript
+const stream = await anthropic.messages.create({
+  model: 'claude-3-haiku-20240307',
+  messages: [{ role: 'user', content: 'Tell me a story' }],
+  stream: true,
+  max_tokens: 1000
+});
+
+let fullContent = '';
+for await (const event of stream) {
+  if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+    fullContent += event.delta.text;
+    process.stdout.write(event.delta.text);
+  }
+}
+
+// Manually create event with full content
+await lai.createEvent({
+  description: 'Claude streaming response',
+  result: fullContent,
+  model: 'claude-3-haiku-20240307'
+});
+```
+
+---
+
+## Examples
+
+### Basic Message
+
+```typescript
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022',
+  max_tokens: 1000,
+  messages: [{
+    role: 'user',
+    content: 'What are the key principles of good software design?'
+  }]
+});
+
+// Automatically tracked with:
+// - Model: claude-3-5-sonnet-20241022
+// - Token usage
+// - Cost calculation
+// - Full response
+```
+
+### With System Prompt
+
+```typescript
+const response = await anthropic.messages.create({
+  model: 'claude-3-opus-20240229',
+  system: 'You are an expert TypeScript developer.',
+  max_tokens: 2000,
+  messages: [{
+    role: 'user',
+    content: 'How do I implement dependency injection in TypeScript?'
+  }]
+});
+
+// System prompt is captured in the event
+```
+
+### Vision Requests
+
+```typescript
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022',
+  max_tokens: 1024,
+  messages: [{
+    role: 'user',
+    content: [
+      {
+        type: 'text',
+        text: 'What is in this image?'
+      },
+      {
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: 'image/jpeg',
+          data: '/9j/4AAQSkZJRg...'
+        }
+      }
+    ]
+  }]
+});
+
+// Images are automatically tracked
+```
+
+### Multi-turn Conversation
+
+```typescript
+const messages = [
+  { role: 'user', content: 'What is TypeScript?' },
+  { role: 'assistant', content: 'TypeScript is a typed superset of JavaScript...' },
+  { role: 'user', content: 'What are its main benefits?' }
+];
+
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022',
+  max_tokens: 1500,
+  messages: messages
+});
+
+// Full conversation context is tracked
+```
+
+---
+
+## Minimal Example
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Just these 2 lines for full tracking!
+await lai.init({ providers: ['anthropic'] });
+const Anthropic = (await import('@anthropic-ai/sdk')).default;
+
+const anthropic = new Anthropic();
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022',
+  messages: [{ role: 'user', content: 'Hello Claude!' }],
+  max_tokens: 100
+});
+
+// That's it! Check your dashboard for the tracked event
+```
+
+---
+
+## Cost Tracking
+
+The SDK includes built-in pricing for all Claude models:
+
+| Model | Input Cost | Output Cost |
+|-------|------------|-------------|
+| Claude 3 Opus | $0.015/1K | $0.075/1K |
+| Claude 3.5 Sonnet | $0.003/1K | $0.015/1K |
+| Claude 3 Haiku | $0.00025/1K | $0.00125/1K |
+| Claude 4 | $0.032/1K | $0.096/1K |
+
+Costs are automatically calculated and attached to each event.
+
+---
+
+## Advanced Usage
+
+### Temperature and Other Parameters
+
+```typescript
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022',
+  max_tokens: 2000,
+  temperature: 0.7,
+  top_p: 0.9,
+  messages: [{
+    role: 'user',
+    content: 'Write a creative story about AI'
+  }]
+});
+
+// All parameters are tracked
+```
+
+### Error Handling
+
+```typescript
+try {
+  const response = await anthropic.messages.create({
+    model: 'claude-3-5-sonnet-20241022',
+    max_tokens: 100000, // Too high
+    messages: [{ role: 'user', content: 'Hello!' }]
+  });
+} catch (error) {
+  // Errors are tracked as events
+  if (error.status === 400) {
+    console.error('Invalid request:', error.message);
+  }
+}
+```
+
+### Using with Steps
+
+```typescript
+// Create a step for complex workflows
+await lai.createStep({
+  state: 'Document analysis',
+  action: 'Extracting key information',
+  goal: 'Summarize technical document'
+});
+
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022',
+  system: 'You are a technical document analyzer.',
+  max_tokens: 3000,
+  messages: [{
+    role: 'user',
+    content: longDocument
+  }]
+});
+
+await lai.endStep(95, 'Successfully extracted key points');
+```
+
+---
+
+## Troubleshooting
+
+### Events Not Appearing
+
+1. **Check import order** - Anthropic must be imported AFTER `lai.init()`
+2. **Verify initialization** - Ensure `providers: ['anthropic']` is set
+3. **Enable debug logging** - Set `LUCIDIC_DEBUG=True`
+
+### Streaming Content Missing
+
+This is a known limitation. Use the manual workaround shown above for critical streaming use cases.
+
+### Custom Models
+
+For fine-tuned or custom models:
+
+```typescript
+// The SDK will attempt to match the base model for pricing
+const response = await anthropic.messages.create({
+  model: 'claude-3-5-sonnet-20241022-custom',
+  messages: [{ role: 'user', content: 'Test' }],
+  max_tokens: 100
+});
+```
+
+---
+
+## See Also
+
+- [OpenAI Integration](/typescript-sdk/integrations/openai) - GPT tracking
+- [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking
+- [API Reference](/typescript-sdk/api-reference) - Complete documentation
+
+---

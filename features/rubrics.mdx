@@ -1,170 +1,142 @@
 ---
-title: Rubrics
-description: Build flexible, structured evaluation rubrics to score and compare your agent's behavior across sessions.
----
 
-# 📏 Rubrics
+title: Evaluation Rubrics
+description: Build flexible, structured evaluation rubrics to score or validate your agent's behavior across sessions.
+----------------------------------------------------------------------------------------------------------------------
 
-**Rubrics** let you define structured evaluation criteria for your agents — turning your domain knowledge into consistent, explainable scoring systems.
+# Rubrics
 
-Instead of relying on a single pass/fail outcome or ad hoc scores, rubrics help you **quantify agent quality** across dimensions you care about.
+**Rubrics** let you define structured evaluation criteria for your agents — turning your domain knowledge into consistent, explainable scoring or validation systems.
 
----
-
-## ⚙️ How to Use Rubrics
-
-Using rubrics consists of two parts, **1) creating one in the UI** and **2) using it in your code**.
-
-### Step 1: In the UI
-
-- Navigate to the **Rubrics** tab on any Agent
-  > 📷 _![rubric](/images/r2.png)_
-  > 📷 _![rubric](/images/r3.png)_
-  > (Directly under the agent name — directly below "Browseruse Demo" in the above image)
-- Click the **Create New Evaluation Rubric** button
-  > 📷 _![rubric](/images/r4.png)_
-  > 📷 _![rubric](/images/r5.png)_
-- Give your **Rubric a name, description, and icon**
-  > Fill in the **Rubric Criteria** (name your criteria and give it a weight, which determines how much it contributes to the final score) and **Score Definitions** (what each score means (e.g. 10 is the best score because ..., 1 is the worst score because ...))
-  > See more details [below](/features/rubrics#🧬-rubric-anatomy)
-  > 📷 _![rubric](/images/r6.png)_
-- **Click Save**
-> 📝 **Pro Tip:** Click on the **Evaluation Rubric Summary** to see a quick summary of the rubric
-> 📷 _![rubric](/images/r7.png)_
-
-### Step 2: In Python
-
-During initialization, you can attach rubrics to a session by name.
-
-```python
-lai.init(
-    session_name="custom_task",
-    providers=["openai"] #, "anthropic", "pydantic_ai", "langchain"],
-    rubrics=["default", "my_custom_rubric"]  # Include both default and custom rubrics
-)
-```
+Instead of relying on a single metric, rubrics help you **quantify or verify agent quality** across dimensions you care about.
 
 ---
 
-## 🧠 Why Create Custom Rubrics?
+## Why Create Custom Rubrics?
 
-**Agents don’t just succeed or fail**:
+**Agents don’t just succeed or fail** — they perform along a spectrum, or meet/don’t meet specific expectations.
 
-- They have small task specificities (i.e is the resturant open, is the resturant closed)
-- They have certain paths which are more efficient than others (finding the menu on the resturants website vs trying to find the menu by looking on DoorDash)
+Rubrics help you:
 
-Rubrics let you **capture those nuances** and **standardize how you evaluate** an agent’s session. They’re perfect for comparing sessions, identifying regressions, or measuring improvement across prompt or model changes.
+* Capture nuanced behaviors
+* Enforce domain-specific quality standards
+* Compare model changes or prompt variations
+* Identify regressions or improvement trends
 
-### Default Rubric
+### Use Cases
 
-Lucidic has a default rubric which is attached to every session. It is a basic rubric which tries to determine how good was the agent at completing the task.
-The criterias are:
-
-- Task Completion (40%)
-- Attention to Detail (25%)
-- Efficiency (20%)
-- Error Recovery (10%)
-- Safety (5%)
-
-If you are interested in the details of how we made the default rubric, you can view it in the UI under the **Evaluation Rubric tab**. Its purpose is to be a good starting point for most use cases, but is by no means a perfect rubric or comprehensive. **We strongly encourage you to still make your own rubric and customize it to your needs.**
+* **Score Rubric**: Rate task completion, efficiency, safety, etc.
+* **Pass/Fail Rubric**: Validate key requirements, such as compliance, user safety, or response correctness
 
 ---
 
-## 🧬 Rubric Anatomy
+## Rubric Modes
 
-A rubric contains:
+### 1. Score Rubrics
 
-- **Name** (e.g. "Browser Navigation Quality")
-- **Description** (optional) (e.g. "How good was the agent at completing the task?")
-- **Icon** for better visual recognition between different rubrics
-- **Criteria** (e.g. Task Completion, Attention to Detail, Efficiency, Error Recovery, Safety)
-  - **Weights** (optional) for each criterion (e.g. 40%, 25%, 20%, 10%, 5%)
-  - **Score Definitions** 
-    - **Score** (e.g. 1, 2, 3, 4, 5)
-    - **Description** (e.g. "Never visited a site more than once")
+Score rubrics provide **weighted numeric evaluations** across several criteria. Each criterion has a defined scoring range (e.g., 1–10), with descriptions for what qualifies as high, medium, or low performance.
 
-### Example
+* Each criterion has optional **weights**, which are used to compute a **weighted average**.
+* The final rubric score is a single float value.
+* Ideal for comparative analysis, model iteration, or benchmarking performance.
+
+#### Example
 
 ```yaml
 Rubric: "Browser Navigation Quality"
 
 Criteria:
-    name: "Revisiting Sites"
+  - name: "Step Efficiency"
     weight: 2
+    scores:
+      10: "Task completed in <10 steps"
+      5: "Task completed in 11–15 steps"
+      1: ">15 steps"
+
+  - name: "Revisiting Sites"
+    weight: 1
     scores:
       10: "Never visited a site more than once"
       5: "Occasionally revisited"
       1: "Frequently revisited the same sites"
+```
 
-    name: "Step Efficiency"
-    weight: 1
-    scores:
-      10: "Completed task in under 10 steps"
-      5: "11–15 steps"
-      1: "More than 15 steps"
+### 2. Pass/Fail Rubrics
+
+Pass/Fail rubrics are designed for **binary validation** of agent behavior.
+
+* Each criterion has a **Pass Definition** and **Fail Definition**
+* If **all criteria pass**, the rubric evaluates to **True**
+* If **any criterion fails**, the rubric evaluates to **False**
+* The system **automatically identifies which step(s)** caused each failure
+
+#### Example
+
+```yaml
+Rubric: "Customer Service QA Check"
+
+Criteria:
+  - name: "Polite Communication"
+    pass_definition: "Agent maintains professional tone throughout"
+    fail_definition: "Agent uses inappropriate or dismissive language"
+
+  - name: "Issue Resolution"
+    pass_definition: "Customer issue is fully resolved"
+    fail_definition: "Customer problem remains unresolved or unclear"
 ```
 
 ---
 
-## 📊 Weights and Score Definitions
+## How to Use Rubrics
 
-Each criterion is scored independently (typically from 1 – 5) and then combined into an **overall score** based on the weights (weighted average) of each criterion.
+Using rubrics consists of two parts: **1) creating one in the UI** and **2) using it in your code**.
 
-**Criteria** serve as **"goalposts"** - you only need to define key reference points (e.g., what scores of 1, 5, and 10 mean) rather than every possible score. The system will interpolate intermediate scores based on the agentic context captured through steps and events
+### Step 1: In the UI
 
-### Weight Calculations
+* Navigate to the **Rubrics** tab on any Agent located directly under the agent name.
+* Click the **Create New Evaluation Rubric** button
 
-- **Weights are optional**. If no weights are defined, all criteria are weighted equally
-- If weights are set, we compute a **weighted average** using their relative values:
-  - Weights can be expressed as **percentages** (e.g., 20%, 30%, 50%) or **relative values** (e.g., 1, 2, 3)
-  - All weights are summed and each **criterion's score** is multiplied by its **proportion** of the total weight
-  - The **final score** is the **sum of these weighted criterion scores**
+* Give your **Rubric a name, description, and icon**
+* Choose a **Rubric Mode**:
 
-> **Note:** When using percentages, they should sum to **100%** for clarity, though the system will normalize them if they don't. Zero weights are allowed but not recommended—consider removing the criterion instead.
+  * **Score Rubric**: Numerical scoring system (e.g., 1–10 scale)
+  * **Pass/Fail Rubric**: Binary outcomes (Pass/Fail) per criterion
 
-> **Relative Weights Example:** 
->
-> **Criteria A**
-> - Weight: **2**
-> - Score: **8**
->
-> **Criteria B**
-> - Weight: **1**
-> - Score: **4**
->
-> Total weight: **3**
->
-> Weighted score: **((8 × 2) + (4 × 1)) ÷ 3 = 6.67**
+#### For Score Rubrics:
 
-> **Percentage Weights Example:** 
->
-> **Criteria A**
-> - Weight: **20%**
-> - Score: **8**
->
-> **Criteria B**
-> - Weight: **80%**
-> - Score: **4**
->
-> Total weight: **100%**
->
-> Weighted score: **((8 × 20%) + (4 × 80%)) = 4.80**
+* Add multiple **Criteria**, each with:
 
+  * A name
+  * Optional weight (for weighted average)
+  * **Score Definitions** (what a score of 1, 5, or 10 means)
 
-### Score Definitions
+#### For Pass/Fail Rubrics:
 
-**Requirements:**
-- You can define scores from **0 to 10**
-- A **Score Definition** must have **at least two scores** to be valid a minimum and maximum. For meaningful comparative analysis, **we recommend at least three criteria**
-  - For example, you cannot just define one score. Rubric criteria need to have at least two score definitions to be valid 
-- The **lowest** and **highest** scores that you define will be the **minimum and maximum scores that can be achieved**
-  - For example, if you define what a score of 1 and 2 means, we will not extrapolate to 5 or 10. We will assume 2 is the best score that can be achieved.
+* Add multiple **Criteria**, each with:
 
-**Other Details:**
-- On the **dashboard**, scores are rounded to **two decimal places**
-- When an agent's performance falls **between two defined score points**, the system **interpolates linearly**
-  - For example, if you only define scores of 1 and 5, and the agent's performance is 3, the system will interpolate linearly to give it a score of 3. 
-- Sessions that were scored using a rubric that has been changed, **will NOT be re-scored using the new rubric** and will maintain the old scores**. 
-  - For example, if you ran session S with rubric R and then changed rubric R to R', session S will still be scored using rubric R, not R'. 
+  * A name
+  * A **Pass Definition** (what success looks like)
+  * A **Fail Definition** (what failure looks like)
+
+* **Click Save**
+
+> **Pro Tip:** Click on the **Evaluation Rubric Summary** to see a quick summary of all criteria.
+
+### Step 2: In Python
+
+Attach rubrics to sessions at runtime:
+
+```python
+lai.init(
+    ...
+    rubrics=["Default", "My Custom Rubric"]
+)
+```
 
 ---
+
+## Final Notes
+
+* Rubric results are **immutable once ran on a session**; any changes made afterward won’t retroactively affect past evaluations.
+* You can use multiple rubrics per session to get both high-level and detailed insights.
+* Whether you need nuanced score-based comparisons or simple go/no-go quality checks, rubrics give you a structured, explainable framework to evaluate AI agents.

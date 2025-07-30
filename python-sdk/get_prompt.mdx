@@ -1,0 +1,243 @@
+---
+title: 'get_prompt'
+description: 'Retrieve prompts from the Lucidic prompt database'
+---
+
+## Overview
+
+The `get_prompt` function retrieves prompts stored in the Lucidic platform's prompt database. It supports variable substitution and caching for optimal performance. This enables centralized prompt management and versioning.
+
+## Syntax
+
+```python
+lai.get_prompt(
+    prompt_name: str,
+    variables: Optional[dict] = None,
+    cache_ttl: Optional[int] = 300,
+    label: Optional[str] = 'production'
+) -> str
+```
+
+## Parameters
+
+<ParamField path="prompt_name" type="string" required>
+  The name/identifier of the prompt to retrieve from the database.
+</ParamField>
+
+<ParamField path="variables" type="dict" optional>
+  Dictionary of variables to substitute in the prompt. Variables in the prompt should be wrapped in double curly braces like `{{variable_name}}`.
+</ParamField>
+
+<ParamField path="cache_ttl" type="integer" optional default="300">
+  Time-to-live for the cached prompt in seconds. Set to `-1` to cache forever, or `0` to disable caching.
+</ParamField>
+
+<ParamField path="label" type="string" optional default="production">
+  Label to retrieve a specific version of the prompt (e.g., "production", "staging", "v1.2").
+</ParamField>
+
+## Returns
+
+Returns the prompt as a string with variables substituted.
+
+## Examples
+
+### Basic Usage
+
+```python
+import lucidicai as lai
+from openai import OpenAI
+
+lai.init(session_name="Customer Support", providers=["openai"])
+
+# Get a simple prompt
+prompt = lai.get_prompt("greeting_message")
+
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "system", "content": prompt}]
+)
+```
+
+### With Variable Substitution
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Dynamic Prompts")
+
+# Get prompt with variables
+prompt = lai.get_prompt(
+    prompt_name="customer_support",
+    variables={
+        "issue_type": "billing",
+        "customer_name": "John Doe",
+        "account_tier": "Premium"
+    }
+)
+
+# If the prompt contains:
+# "Hello {{customer_name}}, I see you have a {{issue_type}} issue with your {{account_tier}} account."
+# 
+# The result will be:
+# "Hello John Doe, I see you have a billing issue with your Premium account."
+```
+
+### Version Control with Labels
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="A/B Testing")
+
+# Get different versions of the same prompt
+prompt_v1 = lai.get_prompt(
+    prompt_name="product_description",
+    label="v1.0"
+)
+
+prompt_v2 = lai.get_prompt(
+    prompt_name="product_description",
+    label="v2.0-beta"
+)
+
+# Use production version by default
+prompt_prod = lai.get_prompt(
+    prompt_name="product_description"  # Uses label="production" by default
+)
+```
+
+### Cache Management
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Performance Optimization")
+
+# Cache for 1 hour (3600 seconds)
+prompt_long_cache = lai.get_prompt(
+    prompt_name="static_instructions",
+    cache_ttl=3600
+)
+
+# Disable caching for frequently changing prompts
+prompt_no_cache = lai.get_prompt(
+    prompt_name="dynamic_news_prompt",
+    cache_ttl=0
+)
+
+# Cache forever for stable prompts
+prompt_permanent = lai.get_prompt(
+    prompt_name="company_guidelines",
+    cache_ttl=-1
+)
+```
+
+### Error Handling
+
+```python
+import lucidicai as lai
+from lucidicai.errors import PromptError
+
+lai.init(session_name="Safe Prompt Usage")
+
+try:
+    prompt = lai.get_prompt(
+        prompt_name="analysis_prompt",
+        variables={"data_type": "financial"}
+    )
+except PromptError as e:
+    # Handle missing variables or prompt not found
+    print(f"Prompt error: {e}")
+    # Use fallback prompt
+    prompt = "Please analyze the provided financial data."
+```
+
+### Complex Workflow Example
+
+```python
+import lucidicai as lai
+from openai import OpenAI
+
+lai.init(session_name="Multi-Stage Analysis")
+
+# Stage 1: Initial analysis
+initial_prompt = lai.get_prompt(
+    prompt_name="document_analysis",
+    variables={
+        "doc_type": "legal_contract",
+        "focus_areas": "terms, conditions, obligations"
+    }
+)
+
+client = OpenAI()
+initial_analysis = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": initial_prompt},
+        {"role": "user", "content": document_text}
+    ]
+)
+
+# Stage 2: Detailed review based on initial findings
+detail_prompt = lai.get_prompt(
+    prompt_name="detailed_review",
+    variables={
+        "previous_findings": initial_analysis.choices[0].message.content,
+        "review_depth": "comprehensive"
+    },
+    cache_ttl=0  # Don't cache as it includes dynamic content
+)
+
+detailed_review = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "system", "content": detail_prompt},
+        {"role": "user", "content": document_text}
+    ]
+)
+```
+
+## Notes
+
+- Prompts must exist in the Lucidic platform before retrieval
+- Variable names in prompts must be wrapped in `{{variable_name}}`
+- Missing variables in the prompt will raise a `PromptError`
+- Unreplaced variables will trigger a warning
+- Caching improves performance for frequently used prompts
+- Returns empty string if no active session exists
+
+## Error Handling
+
+```python
+from lucidicai.errors import PromptError
+
+# Missing variable
+try:
+    prompt = lai.get_prompt(
+        prompt_name="template",
+        variables={"name": "Alice"}  # But prompt expects {{name}} and {{age}}
+    )
+except PromptError:
+    print("Missing required variables in prompt")
+
+# Prompt not found
+try:
+    prompt = lai.get_prompt("non_existent_prompt")
+except Exception as e:
+    print(f"Failed to retrieve prompt: {e}")
+```
+
+## Best Practices
+
+1. **Centralized Management**: Store all prompts in Lucidic for version control
+2. **Variable Naming**: Use clear, descriptive variable names
+3. **Cache Strategy**: Use appropriate TTL based on prompt stability
+4. **Error Handling**: Always handle potential prompt errors
+5. **Label Usage**: Use labels for A/B testing and versioning
+
+## See Also
+
+- [`init`](/api-reference/api_functions/init) - Required before using get_prompt
+- [Prompt Database](/features/prompt-db) - Learn about the prompt database feature

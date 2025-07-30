@@ -3,9 +3,8 @@ title: Workflow Trajectory
 description: Visualize your agent’s decision space across many runs with the Workflow Trajectory graph.
 ---
 
-import Callout from '/snippets/callout.mdx'
 
-# 🧭 Workflow Trajectory
+# Workflow Trajectory
 
 The **Workflow Trajectory** graph is a core visualization in every [Mass Simulation](/mass-simulations). It merges all agent behavior across multiple Sessions into a single, clustered graph — giving you a bird’s-eye view of the **decision space** your agent explores.
 
@@ -13,39 +12,39 @@ It reveals not just **what happened**, but what **could happen** — and how oft
 
 ---
 
-## 🧠 What It Shows
+## What It Shows
 
 Each **node** in the Workflow Trajectory represents a **grouped state** the agent reached (e.g., same web page, same state string, or same screenshot).
 
 Each **edge** represents a **transition** (an action) the agent took between states.
 
-> 📷 _![workflow trajectory](/images/wt1.png)_
+> _![workflow trajectory](/images/wt1.png)_
 
 - **Click the image** in the node to see it in more detail
-> 📷 _![workflow trajectory](/images/wt6.png)_
+> _![workflow trajectory](/images/wt6.png)_
 
 ---
 
-## 🔍 Interacting with the Graph
+## Interacting with the Graph
 
 - **Orange edges** are **forward** transitions — the agent moved forward to a new state
 - **Blue edges** are **backward** transitions — the agent moved back to a previous state
 - **Pink edges** are **self** transitions — the agent went back to the same state
 - **The multiplier** shows the frequency of that transition across all sessions (i.e. how many sessions took that transition)
-> 📷 _![workflow trajectory](/images/wt5.png)_
+> _![workflow trajectory](/images/wt5.png)_
 
 - **Click into a node** to inspect all sessions that passed through that state
-> 📷 _![workflow trajectory](/images/wt2.png)_
+> _![workflow trajectory](/images/wt2.png)_
 - **Scroll down** to use the [Time Travel](/features/time-travel) feature to see how likely it is that your agent will make a specific action with **different parameters** (prompt, model, temperature, etc.).
-> 📷 _![workflow trajectory](/images/wt7.png)_
+> _![workflow trajectory](/images/wt7.png)_
 - **Click into an edge** to view sessions that made that specific transition
-> 📷 _![workflow trajectory](/images/wt3.png)_
+> _![workflow trajectory](/images/wt3.png)_
 - **Zoom in** to see local behavior or **zoom out** to see the overall flow
-> 📷 _![workflow trajectory](/images/wt4.png)_
+> _![workflow trajectory](/images/wt4.png)_
 
 ---
 
-## 🔄 How It’s Built
+## How It's Built
 
 1. **Each Session** has its own step-wise graph of states and transitions
 2. **As Sessions run**, they’re incrementally merged into the **Mass Simulation's Workflow Trajectory**
@@ -66,7 +65,7 @@ A
 
 ---
 
-## 🎯 Why It Matters
+## Why It Matters
 
 This graph helps you answer critical questions:
 
@@ -77,13 +76,13 @@ This graph helps you answer critical questions:
 
 By visualizing all possible paths, you gain a statistical view of your agent's decision-making.
 
-<Callout type="warning">
+<Note type="warning">
 If a task is supposed to be deterministic, any branching in this graph reveals instability in your agent’s behavior.
-</Callout>
+</Note>
 
 ---
 
-## 🔢 Probabilistic Insights
+## Probabilistic Insights
 
 You can think of this graph as a **probabilistic model** of your agent’s behavior:
 

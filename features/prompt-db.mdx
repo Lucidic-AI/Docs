@@ -3,7 +3,7 @@ title: Prompt Database
 description: Manage, version, and fetch prompts dynamically to accelerate agent iteration and experimentation.
 ---
 
-# 🧾 Prompt Database
+# Prompt Database
 
 **Prompt Database** is your centralized, versioned store for managing agent prompts — **without needing to redeploy code or edit files in a repo**.
 
@@ -17,7 +17,7 @@ It allows you to:
 
 ---
 
-## 🚀 Why Prompt DB?
+## Why Prompt DB?
 
 Improving an AI agent often means **adjusting its prompts**. But doing that **through your codebase slows everything down.**
 
@@ -27,24 +27,24 @@ With our Prompt DB, you can:
 - **Test prompt performance** across **Sessions or Mass Sims**
 - **Compare** and **experiment** with **different versions of prompts without redeploying anything**
 
-> 📷 _![promptdb](/images/promptdb.png)_
+> _![promptdb](/images/promptdb.png)_
 
 ---
-## ✍️ How to Create One
+## How to Create One
 
 ### Step 1: In the UI
 - Click a **project** and then an **agent** 
 - On the agent page it will be directly below the agent name, so in the example directly below "Browseruse Demo"
-> 📷 _![promptdb](/images/r3.png)_
+> _![promptdb](/images/r3.png)_
 - Click **Create New Prompt** button. 
-> 📷 _![promptdb](/images/pdb2.png)_
+> _![promptdb](/images/pdb2.png)_
 
 - Create a **prompt name** (this is what you will refer to it in the Python Package)
 - Add a **version description** (optional)
 - Copy paste your prompt from your code and change **all your variables** to the format ```` {{variable_name}}````.
 > For example, your prompt in python might look like ``` f"summarize this page: {page_text}"``` then when you **copy it into the Prompt Database** change it to ```` "summarize this page: {{page_text}}"````
 - Click **Save**
-> 📷 _![promptdb](/images/pdb3.png)_
+> _![promptdb](/images/pdb3.png)_
 
 > **Note:** **ALWAYS save a prompt** if you make changes to it that you would like to keep.
 
@@ -62,17 +62,17 @@ With our Prompt DB, you can:
 
 ```python
 prompt = lai.get_prompt(
-    name="summarize_page",
+    prompt_name="summarize_page",
     label="production",  # optional, defaults to "production"
     variables={"page_text": "Stanford University is a top..."},  # optional
     cache_ttl=300  # optional (in seconds) defaults to 300
 )
 ```
 
-> 📘 If your prompt references `{{variable_name}}` but you don't provide a value, you'll get a warning. If you provide variables that aren't used in the prompt, you'll get an error
+> If your prompt references `{{variable_name}}` but you don't provide a value, you'll get a warning. If you provide variables that aren't used in the prompt, you'll get an error
 
 
-## 🏷️ Labels
+## Labels
 
 Labels attach to a single prompt version and **allow flexible, dynamic fetches**. They're a powerful feature that enables prompt management without code changes.
 
@@ -104,13 +104,13 @@ Labels attach to a single prompt version and **allow flexible, dynamic fetches**
 
 ### How to use labels
 1. Click **labels** next to the version of the prompt you want to use
-> 📷 _<img src="/images/pdb4.png" alt="promptdb" width="400"/>_
+> _<img src="/images/pdb4.png" alt="promptdb" width="400"/>_
 2. Click the **new label(s)** you would like to move to the version 
-> 📷 _<img src="/images/pdb5.png" alt="promptdb" width="400"/>_
+> _<img src="/images/pdb5.png" alt="promptdb" width="400"/>_
 3. Click **Save Changes**
 
 ---
-## 🔗 Variables
+## Variables
 
 Variables allow you to create **dynamic, reusable prompts** by inserting **runtime values** into your prompt templates. This is critical for creating prompts that can adapt to different inputs without creating new versions.
 
@@ -142,7 +142,7 @@ In your code, you would call it like this:
 
 ```python
 prompt = lai.get_prompt(
-    name="idea_generator",
+    prompt_name="idea_generator",
     variables={
         "number": "5",
         "topic": "artificial intelligence"
@@ -166,7 +166,7 @@ In your code, you would call it like this:
 
 ```python
 prompt = lai.get_prompt(
-    name="qa_prompt",
+    prompt_name="qa_prompt",
     variables={
         "system_prompt": "You are a helpful AI assistant specialized in biology.", 
         "question": "How do cells divide?"
@@ -191,7 +191,7 @@ prompt = lai.get_prompt(
 - Consider setting default values for optional variables in your code
 - Test your prompts with different variable values to ensure they work as expected
 
-## 🧪 Versioning and Iteration
+## Versioning and Iteration
 
 When you update a prompt in the UI:
 

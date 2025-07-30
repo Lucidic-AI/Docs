@@ -3,15 +3,13 @@ title: Sessions
 description: Understand the lifecycle, structure, and analysis of a Session – a single run of your AI agent.
 ---
 
-import Callout from '/snippets/callout.mdx'
-
-# 📦 Sessions
+# Sessions
 
 A **Session** represents a single run of an AI agent as it attempts to complete a task. It captures the full trace of the agent’s behavior — from initial state to final outcome — and provides deep visibility into each decision, action, and outcome along the way.
 
 ---
 
-## 🧠 What is a Session?
+## What is a Session?
 
 A Session is a top-level unit of observability. It begins when an agent starts a task and ends when the task is either completed, failed, or interrupted. 
 Learn to create a session [here](/getting-started/final-instructions)
@@ -24,13 +22,13 @@ Within each Session UI in Lucidic or what we call [workflow sandbox](/features/w
 - A **GIF/video replay** of the agent’s interaction (if available)
 - Evaluation scores, cost metrics, metadata, and more
 
-<Callout type="info">
+<Note type="info">
 Sessions are non-deterministic by nature. Re-running the same task may lead to different outcomes due to the agent’s autonomy and stochasticity.
-</Callout>
+</Note>
 
 ---
 
-## 🧬 Session Structure
+## Session Structure
 
 ### Step and Event Hierarchy
 
@@ -44,13 +42,13 @@ Session
     └── ...
 ```
 
-<Callout type="note">
+<Note type="note">
 Steps and Events are documented [here →](/steps) and [here →](/events) respectively.
-</Callout>
+</Note>
 
 ---
 
-## 📺 Session Dashboard or Workflow Sandbox
+## Session Dashboard or Workflow Sandbox
 
 Each Session in the [workflow sandbox](/features/workflow-sandbox) includes:
 
@@ -64,7 +62,7 @@ Each Session in the [workflow sandbox](/features/workflow-sandbox) includes:
 
 ---
 
-## 📊 Evaluation and Scoring
+## Evaluation and Scoring
 
 Sessions can be evaluated via multiple systems:
 
@@ -74,7 +72,7 @@ Passed in at runtime using the Python SDK. Useful for customized or domain-speci
 ```python
 lai.end_session(
     is_successful=True,
-    session_eval="4.5",  # Your custom score which is not a rubric
+    session_eval=4.5,  # Your custom score (numeric value, not string)
     session_eval_reason="Agent completed primary objectives but took longer than expected"
 )
 ```
@@ -105,7 +103,7 @@ Our built-in system outputs:
 
 ---
 
-## 🕵️‍♂️ Debugging with Sessions
+## Debugging with Sessions
 
 Sessions give you rich insight into how your agent operates and where it goes wrong:
 
@@ -118,7 +116,7 @@ Sessions give you rich insight into how your agent operates and where it goes wr
 
 ---
 
-## 📁 Metadata and Tagging
+## Metadata and Tagging
 
 Each Session contains rich metadata including:
 

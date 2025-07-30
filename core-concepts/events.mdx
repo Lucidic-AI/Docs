@@ -3,7 +3,7 @@ title: Events
 description: Understand Events as the fine-grained atomic operations that occur within each Step.
 ---
 
-# ⚙️ Events
+# Events
 
 An **Event** is the most granular unit of action in your agent's execution trace. Events represent atomic operations — like LLM calls, API requests, or tool invocations — that occur *within* a [Step](/steps).
 
@@ -11,7 +11,7 @@ If a **Step** is the macro decision (“go to a new site”), then an **Event** 
 
 ---
 
-## 🧬 Event Structure
+## Event Structure
 
 Each Event includes (based on what you pass in):
 
@@ -27,22 +27,22 @@ The following are **generated automatically** by us and provided to you on the *
 
 ---
 
-## 🔍 What Counts as an Event?
+## What Counts as an Event?
 
 Events can include:
 
-- 🤖 **LLM call** (e.g. reasoning about what action to take)
-- 🌐 **API call** (e.g. fetching data from a third-party tool)
-- 🛠️ **Tool invocation** (e.g. web scraping, search)
-- 🧮 **Internal computations** (e.g. custom heuristics or logic)
-- 💡 **Agent “thoughts”** captured from internal logs
+- **LLM call** (e.g. reasoning about what action to take)
+- **API call** (e.g. fetching data from a third-party tool)
+- **Tool invocation** (e.g. web scraping, search)
+- **Internal computations** (e.g. custom heuristics or logic)
+- **Agent "thoughts"** captured from internal logs
 
 You determine what gets logged as an **Event**. The more fine-grained, the better your observability.
 
 
 ---
 
-## 🧠 Why Events Matter
+## Why Events Matter
 
 Events help you:
 
@@ -55,7 +55,7 @@ Events help you:
 
 ---
 
-## 🕵️‍♀️ Debugging Example
+## Debugging Example
 
 ```text
 Step: Visit Stanford site
@@ -70,7 +70,7 @@ Each event gives you a breadcrumb trail of micro-decisions that led to the step'
 
 ---
 
-## 💸 Cost and Performance
+## Cost and Performance
 
 Each Event tracks its **cost**, **duration**, and **model identity** (for LLMs). This lets you:
 

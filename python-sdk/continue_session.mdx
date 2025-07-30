@@ -1,0 +1,153 @@
+---
+title: 'continue_session'
+description: 'Continue an existing Lucidic session'
+---
+
+## Overview
+
+The `continue_session` function allows you to resume a previously created session. This is useful for long-running workflows, distributed systems, or when you need to add more data to an existing session.
+
+## Syntax
+
+```python
+lai.continue_session(
+    session_id: str,
+    lucidic_api_key: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    providers: Optional[List[ProviderType]] = [],
+    masking_function = None,
+    auto_end: Optional[bool] = True,
+) -> str
+```
+
+## Parameters
+
+<ParamField path="session_id" type="string" required>
+  The ID of the session to continue. This must be a valid session ID from a previous `init()` call.
+</ParamField>
+
+<ParamField path="lucidic_api_key" type="string" optional>
+  Your Lucidic API key for authentication. If not provided, the SDK will use the `LUCIDIC_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="agent_id" type="string" optional>
+  Your agent identifier. If not provided, the SDK will use the `LUCIDIC_AGENT_ID` environment variable.
+</ParamField>
+
+<ParamField path="providers" type="List[ProviderType]" optional default="[]">
+  List of LLM providers to automatically instrument. Supported values: `"openai"`, `"anthropic"`, `"langchain"`, `"pydantic_ai"`, `"openai_agents"`.
+</ParamField>
+
+<ParamField path="masking_function" type="callable" optional>
+  Custom function to mask sensitive data before sending to Lucidic. Function should accept text and return masked text.
+</ParamField>
+
+<ParamField path="auto_end" type="boolean" optional default="True">
+  Automatically end the session when the process exits. Ensures data is not lost on unexpected termination.
+</ParamField>
+
+## Returns
+
+Returns the session ID as a string (same as the input session_id).
+
+## Examples
+
+### Basic Usage
+
+```python
+import lucidicai as lai
+
+# Continue a previous session
+session_id = "existing-session-123"
+lai.continue_session(session_id=session_id)
+
+# Add more steps and events to the session
+lai.create_step(
+    state="Continuing workflow",
+    action="Process additional data"
+)
+```
+
+### Distributed System Example
+
+```python
+# Process 1: Initialize session
+import lucidicai as lai
+
+session_id = lai.init(session_name="Distributed Workflow")
+print(f"Started session: {session_id}")
+# ... do some work ...
+lai.end_session()
+
+# Process 2: Continue the session
+import lucidicai as lai
+
+# Get session_id from shared storage, message queue, etc.
+session_id = get_session_from_queue()
+
+lai.continue_session(
+    session_id=session_id,
+    providers=["openai"]
+)
+
+# Continue the workflow
+lai.create_step(
+    state="Processing in worker node",
+    action="Analyze data batch"
+)
+```
+
+### Error Recovery Example
+
+```python
+import lucidicai as lai
+import pickle
+
+def save_checkpoint(session_id, data):
+    with open('checkpoint.pkl', 'wb') as f:
+        pickle.dump({'session_id': session_id, 'data': data}, f)
+
+def load_checkpoint():
+    with open('checkpoint.pkl', 'rb') as f:
+        return pickle.load(f)
+
+try:
+    # Start new session
+    session_id = lai.init(session_name="Long Running Process")
+    data = process_part_1()
+    save_checkpoint(session_id, data)
+    
+except Exception as e:
+    # On failure, recover from checkpoint
+    checkpoint = load_checkpoint()
+    lai.continue_session(session_id=checkpoint['session_id'])
+    # Continue from where we left off
+    process_part_2(checkpoint['data'])
+```
+
+## Notes
+
+- The session must exist and not be finished to continue it
+- You cannot continue a session if another session is already active
+- The same authentication credentials must be used as when the session was created
+- All configuration (providers, masking, etc.) needs to be re-specified when continuing
+- The `auto_end` feature works the same as in `init()`
+
+## Error Handling
+
+```python
+from lucidicai.errors import InvalidOperationError, APIKeyVerificationError
+
+try:
+    lai.continue_session(session_id="invalid-session")
+except APIKeyVerificationError:
+    print("Please check your API credentials")
+except InvalidOperationError:
+    print("Session may already be active or does not exist")
+```
+
+## See Also
+
+- [`init`](/api-reference/api_functions/init) - Create a new session
+- [`end_session`](/api-reference/api_functions/end_session) - End the current session
+- [`update_session`](/api-reference/api_functions/update_session) - Update session metadata

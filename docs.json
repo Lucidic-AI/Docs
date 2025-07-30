@@ -11,10 +11,10 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Python SDK",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "GetsStarted",
             "pages": [
               "getting-started/introduction",
               "getting-started/dashboard",
@@ -27,11 +27,11 @@
             "group": "Features",
             "pages": [
               "features/workflow-sandbox",
-              "features/mass-simulation-overview",
-              "features/workflow-trajectory",
               "features/rubrics",
               "features/prompt-db",
-              "features/time-travel"
+              "features/time-travel",
+              "features/mass-simulation-overview",
+              "features/workflow-trajectory"
             ]
           },
           {
@@ -40,8 +40,7 @@
               "integrations/openai",
               "integrations/anthropic",
               "integrations/pydantic-ai",
-              "integrations/langchain",
-              "integrations/browser-use"
+              "integrations/langchain"
             ]
           }, 
           {
@@ -50,27 +49,74 @@
               "core-concepts/sessions",
               "core-concepts/steps",
               "core-concepts/events",
-              "core-concepts/mass-simulations",
-              "core-concepts/evaluations-rubrics"
+              "core-concepts/mass-simulations"
+            ]
+          },
+          {
+            "group": "Python SDK Functions",
+            "pages": [
+              "python-sdk/index",
+              {
+                "group": "Session Management",
+                "pages": [
+                  "python-sdk/init",
+                  "python-sdk/continue_session",
+                  "python-sdk/update_session",
+                  "python-sdk/end_session",
+                  "python-sdk/reset_sdk"
+                ]
+              },
+              {
+                "group": "Step Management",
+                "pages": [
+                  "python-sdk/create_step",
+                  "python-sdk/update_step",
+                  "python-sdk/end_step"
+                ]
+              },
+              {
+                "group": "Event Management",
+                "pages": [
+                  "python-sdk/create_event",
+                  "python-sdk/update_event",
+                  "python-sdk/end_event"
+                ]
+              },
+              {
+                "group": "Advanced Features",
+                "pages": [
+                  "python-sdk/get_prompt",
+                  "python-sdk/create_mass_sim"
+                ]
+              }
             ]
           }
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "TypeScript SDK",
         "groups": [
           {
-            "group": "API Documentation",
+            "group": "Getting Started",
             "pages": [
-              "api-reference/introduction"
+              "typescript-sdk/overview",
+              "typescript-sdk/installation",
+              "typescript-sdk/quick-start",
+              "typescript-sdk/core-concepts"
             ]
           },
           {
-            "group": "Endpoint Examples",
+            "group": "Integrations",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete"
+              "typescript-sdk/integrations/openai",
+              "typescript-sdk/integrations/anthropic"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "typescript-sdk/advanced-features",
+              "typescript-sdk/api-reference"
             ]
           }
         ]
@@ -85,20 +131,20 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:team@lucidic.ai"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "href": "https://dashboard.lucidic.ai"
     }
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/LucidicAI",
+      "github": "https://github.com/Lucidic-AI",
+      "linkedin": "https://linkedin.com/company/lucidic-ai"
     }
   }
 }

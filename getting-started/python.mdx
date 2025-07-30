@@ -3,7 +3,7 @@ title: Final Instructions [Creating Steps, Events, and Sessions]
 description: Learn how to instrument your agent with Lucidic using the Python SDK.
 ---
 
-# 🐍 Using the Python SDK
+# Using the Python SDK
 
 Once you've [installed Lucidic](/getting-started/installation) and [connected it to the dashboard](/getting-started/dashboard), you're ready to start recording your agent's behavior, step by step.
 
@@ -11,7 +11,7 @@ This guide walks you through how to initialize a session, track steps and events
 
 ---
 
-## 🚀 Step 1: Create a Session
+## Step 1: Create a Session
 
 Theere are 4 things you need to provide to initialize a session:
 
@@ -57,7 +57,7 @@ export LUCIDIC_AGENT_ID=your-agent-id
 
 ---
 
-## 🧭 Step 2: Create Steps
+## Step 2: Create Steps
 
 Use `create_step()` and `end_step()` around your step logic. Each step should represent a meaningful action or decision point.
 
@@ -71,7 +71,7 @@ lai.end_step(is_successful=True, action="Clicked search")
 
 > Only **one step can be active at a time**, so be sure to end a step before creating a new one.
 
-### ⚙️ Optional Fields You Can Attach to a Step
+### Optional Fields You Can Attach to a Step
 
 You can enrich any step with the following optional fields to improve debugging, evaluation, and traceability:
 
@@ -84,7 +84,7 @@ You can enrich any step with the following optional fields to improve debugging,
 
 ---
 
-### ⚙️ Step Updates
+### Step Updates
 
 You can update steps mid-run or retroactively:
 
@@ -95,7 +95,7 @@ lai.update_previous_step(index=-1, eval_score=0.5)
 
 ---
 
-## 🎗️ Step 3: Create Events
+## Step 3: Create Events
 
 If your agent has tool calls or LLM usage, track them as **events** within each step. 
 > If you only have LLM calls with a supported provider you don't need to create events for them! Lucidic will automatically create events for you.
@@ -122,7 +122,7 @@ You can enrich any event with the following optional fields to improve debugging
 
 ---
 
-## 📥 Step 4: (Optional) Pull Prompts from Prompt DB
+## Step 4: (Optional) Pull Prompts from Prompt DB
 
 Use Lucidic’s [Prompt DB](/features/prompt-db) to version and serve prompts dynamically:
 
@@ -154,7 +154,7 @@ Additional notes:
 
 ---
 
-## 🧼 Step 5: End the Session
+## Step 5: End the Session
 
 
 Your session will automatically end when the script exits (via an `atexit` handler), but you can also end it manually if you would like to add in evals:
@@ -170,7 +170,7 @@ lai.end_session(
 
 **All fields are optional — if you don’t provide them, Lucidic will automatically evaluate the session for you.**
 
-### 📊 Custom Evaluation Rubrics
+### Custom Evaluation Rubrics
 
 When ending a session, you can provide your own evaluation metrics to better assess your agent's performance:
 
@@ -205,7 +205,7 @@ Learn more about creating and using custom rubrics in the [Evaluation Rubrics](/
 
 ---
 
-### 🧠 Why Both `is_successful` and `session_eval`?
+### Why Both `is_successful` and `session_eval`?
 
 We support two types of evaluations so you can keep things simple or add more detail:
 
@@ -226,7 +226,7 @@ This gives you full control and lets you keep your logic consistent with your ow
 
 ---
 
-## 🧪 Full Example
+## Full Example
 
 ```python
 import lucidicai as lai
@@ -254,7 +254,7 @@ lai.end_session(is_successful=True) #Optional
 
 ---
 
-## 🔗 Next Steps
+## Next Steps
 
 - [Evaluate Sessions with Rubrics](/features/rubrics)
 - [Run Mass Simulations](/features/mass-simulation-overview)

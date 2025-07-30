@@ -1,0 +1,248 @@
+---
+title: 'update_session'
+description: 'Update the current session metadata'
+---
+
+## Overview
+
+The `update_session` function allows you to modify the current session's metadata while it's active. This is useful for updating the task description, evaluation scores, or success status as your workflow progresses.
+
+## Syntax
+
+```python
+lai.update_session(
+    task: Optional[str] = None,
+    session_eval: Optional[float] = None,
+    session_eval_reason: Optional[str] = None,
+    is_successful: Optional[bool] = None,
+    is_successful_reason: Optional[str] = None
+) -> None
+```
+
+## Parameters
+
+<ParamField path="task" type="string" optional>
+  Updated task description for the session. This can provide more detail as the session progresses.
+</ParamField>
+
+<ParamField path="session_eval" type="float" optional>
+  Evaluation score for the session (typically 0.0 to 1.0). Can be updated multiple times.
+</ParamField>
+
+<ParamField path="session_eval_reason" type="string" optional>
+  Text explanation for the session evaluation score.
+</ParamField>
+
+<ParamField path="is_successful" type="boolean" optional>
+  Boolean flag indicating whether the session is achieving its goal.
+</ParamField>
+
+<ParamField path="is_successful_reason" type="string" optional>
+  Text explanation for the success status.
+</ParamField>
+
+## Returns
+
+This function returns `None`.
+
+## Examples
+
+### Progressive Task Refinement
+
+```python
+import lucidicai as lai
+
+# Start with general task
+lai.init(
+    session_name="Customer Support",
+    task="Handle customer inquiry"
+)
+
+# After understanding the request
+lai.update_session(
+    task="Resolve billing dispute for premium account"
+)
+
+# Process the request...
+
+# After resolution
+lai.update_session(
+    task="Resolved billing dispute - refunded $49.99 for duplicate charge",
+    is_successful=True,
+    is_successful_reason="Customer satisfied with resolution"
+)
+
+lai.end_session()
+```
+
+### Evaluation Updates
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Model Training")
+
+# Initial phase
+lai.update_session(
+    session_eval=0.3,
+    session_eval_reason="Data preprocessing completed"
+)
+
+# Training phase
+train_model()
+lai.update_session(
+    session_eval=0.7,
+    session_eval_reason="Model training completed, awaiting validation"
+)
+
+# Validation phase
+accuracy = validate_model()
+lai.update_session(
+    session_eval=accuracy,
+    session_eval_reason=f"Model achieved {accuracy:.2%} accuracy on validation set",
+    is_successful=accuracy > 0.9,
+    is_successful_reason="Met target accuracy threshold" if accuracy > 0.9 else "Below target accuracy"
+)
+
+lai.end_session()
+```
+
+### Multi-Stage Workflow
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Document Processing Pipeline")
+
+stages = [
+    ("extraction", 0.25),
+    ("validation", 0.50),
+    ("analysis", 0.75),
+    ("reporting", 1.00)
+]
+
+for stage_name, progress in stages:
+    try:
+        execute_stage(stage_name)
+        
+        lai.update_session(
+            session_eval=progress,
+            session_eval_reason=f"Completed {stage_name} stage"
+        )
+        
+    except Exception as e:
+        lai.update_session(
+            session_eval=progress - 0.1,
+            session_eval_reason=f"Failed at {stage_name}: {str(e)}",
+            is_successful=False,
+            is_successful_reason=f"Pipeline interrupted at {stage_name}"
+        )
+        break
+
+lai.end_session()
+```
+
+### Real-time Status Updates
+
+```python
+import lucidicai as lai
+import time
+
+lai.init(session_name="Long Running Analysis")
+
+# Track progress over time
+start_time = time.time()
+total_items = 1000
+
+for i in range(0, total_items, 100):
+    batch_result = process_batch(i, i + 100)
+    
+    progress = (i + 100) / total_items
+    elapsed = time.time() - start_time
+    eta = (elapsed / progress) - elapsed
+    
+    lai.update_session(
+        task=f"Processing batch {i//100 + 1}/10",
+        session_eval=progress,
+        session_eval_reason=f"Processed {i+100}/{total_items} items. ETA: {eta:.0f}s"
+    )
+
+lai.update_session(
+    is_successful=True,
+    is_successful_reason="All batches processed successfully"
+)
+
+lai.end_session()
+```
+
+### Conditional Success Tracking
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Quality Assurance Check")
+
+# Define success criteria
+criteria = {
+    "accuracy": (0.95, False),
+    "latency": (100, False),  # ms
+    "memory": (512, False)    # MB
+}
+
+# Run tests and update
+test_results = run_qa_tests()
+
+# Check each criterion
+for metric, (threshold, passed) in criteria.items():
+    value = test_results[metric]
+    if metric == "accuracy":
+        criteria[metric] = (threshold, value >= threshold)
+    else:  # Lower is better for latency and memory
+        criteria[metric] = (threshold, value <= threshold)
+
+all_passed = all(passed for _, (_, passed) in criteria.items())
+passed_count = sum(1 for _, (_, passed) in criteria.items() if passed)
+
+lai.update_session(
+    session_eval=passed_count / len(criteria),
+    session_eval_reason=f"Passed {passed_count}/{len(criteria)} QA criteria",
+    is_successful=all_passed,
+    is_successful_reason=(
+        "All QA criteria met" if all_passed 
+        else f"Failed: {', '.join(k for k, (_, p) in criteria.items() if not p)}"
+    )
+)
+
+lai.end_session()
+```
+
+## Notes
+
+- Can only update the current active session
+- Updates are incremental - only provided fields are modified
+- Multiple updates can be made throughout the session lifecycle
+- Final values can also be set in `end_session()`
+- No session ID parameter - always updates current session
+
+## Error Handling
+
+```python
+try:
+    lai.update_session(task="Updated task")
+except Exception:
+    print("No active session to update - call lai.init() first")
+```
+
+## Best Practices
+
+1. **Progressive Updates**: Update task description as understanding improves
+2. **Regular Evaluation**: Update eval scores at major milestones
+3. **Clear Reasoning**: Always provide eval_reason and is_successful_reason
+4. **Early Failure Detection**: Update is_successful=False as soon as failure is detected
+5. **Meaningful Metrics**: Use evaluation scores that reflect actual progress
+
+## See Also
+
+- [`init`](/api-reference/api_functions/init) - Initialize a session
+- [`end_session`](/api-reference/api_functions/end_session) - End session with final values
+- [`continue_session`](/api-reference/api_functions/continue_session) - Continue an existing session

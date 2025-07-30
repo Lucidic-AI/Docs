@@ -1,0 +1,123 @@
+---
+title: TypeScript SDK Overview
+description: Official TypeScript SDK for Lucidic AI - LLM observability for your TypeScript applications
+---
+
+# TypeScript SDK
+
+The Lucidic AI TypeScript SDK provides full observability for your AI applications built with TypeScript/JavaScript. It offers automatic instrumentation for OpenAI and Anthropic, with the same powerful features as our Python SDK.
+
+---
+
+## Installation
+
+Install the SDK via npm:
+
+```bash
+npm install lucidicai
+```
+
+Or using yarn:
+
+```bash
+yarn add lucidicai
+```
+
+---
+
+## Quick Start
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Initialize the SDK
+await lai.init({
+  apiKey: 'your-api-key',    // or set LUCIDIC_API_KEY env var
+  agentId: 'your-agent-id',  // or set LUCIDIC_AGENT_ID env var
+  sessionName: 'My AI Assistant',
+  providers: ['openai']      // Auto-instrument providers
+});
+
+// IMPORTANT: Import LLM libraries AFTER lai.init()
+const OpenAI = (await import('openai')).default;
+const openai = new OpenAI();
+
+// Your LLM calls are now automatically tracked!
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+// Session auto-ends when process exits
+```
+
+---
+
+## Key Features
+
+### Automatic Instrumentation
+- **Zero-config tracking** for OpenAI and Anthropic
+- **Auto event creation** for every LLM call
+- **Auto step creation** when no active step exists
+- **Auto session ending** on process exit
+
+### Full TypeScript Support
+- Comprehensive type definitions
+- Async/await support throughout
+- Type-safe configuration
+
+### Advanced Features
+- **Multimodal support** (text and images)
+- **Cost tracking** with built-in pricing data
+- **Data masking** for sensitive information
+- **Mass simulations** for testing at scale
+- **Prompt management** from the platform
+
+---
+
+## TypeScript vs Python SDK
+
+| Feature | TypeScript SDK | Python SDK |
+|---------|---------------|------------|
+| OpenAI Integration | ✅ Full support | ✅ Full support |
+| Anthropic Integration | ✅ With streaming limitation | ✅ Full support |
+| LangChain Integration | ❌ Not yet | ✅ Supported |
+| PydanticAI Integration | ❌ Not applicable | ✅ Supported |
+| Auto Instrumentation | ✅ OpenTelemetry | ✅ OpenTelemetry |
+| Multimodal Support | ✅ Text & Images | ✅ Text & Images |
+| Mass Simulations | ✅ Supported | ✅ Supported |
+| Prompt DB | ✅ Supported | ✅ Supported |
+| Data Masking | ✅ Supported | ✅ Supported |
+
+---
+
+## Important: Import Order
+
+For automatic tracking to work, you **must** initialize Lucidic **before** importing LLM libraries:
+
+### Correct
+```typescript
+// 1. First, initialize Lucidic
+await lai.init({ providers: ['openai'] });
+
+// 2. Then, import LLM libraries
+const OpenAI = (await import('openai')).default;
+```
+
+### Incorrect
+```typescript
+// DON'T DO THIS - events won't be tracked!
+import OpenAI from 'openai';
+await lai.init({ providers: ['openai'] });
+```
+
+---
+
+## Next Steps
+
+- [Installation & Setup](/typescript-sdk/installation) - Detailed setup guide
+- [Core Concepts](/typescript-sdk/core-concepts) - Sessions, Steps, and Events
+- [Provider Integrations](/typescript-sdk/integrations) - OpenAI and Anthropic
+- [API Reference](/typescript-sdk/api-reference) - Complete function documentation
+
+---

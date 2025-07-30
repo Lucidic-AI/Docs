@@ -1,0 +1,261 @@
+---
+title: OpenAI Integration
+description: Automatic tracking for OpenAI API calls in TypeScript applications
+---
+
+# OpenAI Integration
+
+The TypeScript SDK provides automatic instrumentation for all OpenAI API calls using OpenTelemetry.
+
+---
+
+## How It Works
+
+When you initialize with `providers: ['openai']`:
+
+1. The SDK instruments the OpenAI client using OpenTelemetry
+2. Every API call is automatically captured as an Event
+3. Token usage and costs are calculated automatically
+4. Multimodal inputs (text + images) are handled seamlessly
+
+---
+
+## Setup
+
+```typescript
+import * as lai from 'lucidicai';
+
+// 1. Initialize Lucidic FIRST
+await lai.init({
+  providers: ['openai'],
+  sessionName: 'OpenAI Demo'
+});
+
+// 2. Import OpenAI AFTER init
+const OpenAI = (await import('openai')).default;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+
+// All calls are now automatically tracked!
+```
+
+---
+
+## What Gets Captured
+
+For every OpenAI API call:
+
+- **Input**: Messages, prompts, and system instructions
+- **Model**: The model used (gpt-4, gpt-3.5-turbo, etc.)
+- **Output**: Complete response including function calls
+- **Token Usage**: Input and output token counts
+- **Cost**: Calculated based on current pricing
+- **Timing**: Request duration
+- **Images**: Automatically uploaded when using vision models
+
+---
+
+## Examples
+
+### Basic Chat Completion
+
+```typescript
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'user', content: 'Explain quantum computing in simple terms.' }
+  ]
+});
+
+// Automatically tracked with:
+// - Model: gpt-4
+// - Input/output tokens
+// - Cost calculation
+// - Response content
+```
+
+### Streaming Responses
+
+```typescript
+const stream = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Write a haiku about coding' }],
+  stream: true
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content || '');
+}
+
+// Streaming is fully tracked with accumulated tokens
+```
+
+### Vision Models
+
+```typescript
+const response = await openai.chat.completions.create({
+  model: 'gpt-4-vision-preview',
+  messages: [{
+    role: 'user',
+    content: [
+      { type: 'text', text: 'What is in this image?' },
+      { 
+        type: 'image_url', 
+        image_url: { 
+          url: 'data:image/jpeg;base64,/9j/4AAQSkZJRg...' 
+        } 
+      }
+    ]
+  }]
+});
+
+// Images are automatically:
+// - Extracted from the request
+// - Uploaded to Lucidic
+// - Linked to the event
+```
+
+### Function Calling
+
+```typescript
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'What is the weather in SF?' }],
+  tools: [{
+    type: 'function',
+    function: {
+      name: 'get_weather',
+      description: 'Get weather for a location',
+      parameters: {
+        type: 'object',
+        properties: {
+          location: { type: 'string' }
+        }
+      }
+    }
+  }]
+});
+
+// Tool calls are captured in the event
+```
+
+### Embeddings
+
+```typescript
+const embedding = await openai.embeddings.create({
+  model: 'text-embedding-3-small',
+  input: 'The quick brown fox jumps over the lazy dog'
+});
+
+// Embedding calls are tracked with:
+// - Model used
+// - Input text
+// - Token count
+// - Cost
+```
+
+---
+
+## Minimal Example
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Just these 2 lines for full tracking!
+await lai.init({ providers: ['openai'] });
+const OpenAI = (await import('openai')).default;
+
+const openai = new OpenAI();
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+// That's it! Check your dashboard for the tracked event
+```
+
+---
+
+## Cost Tracking
+
+The SDK includes built-in pricing for all OpenAI models:
+
+| Model | Input Cost | Output Cost |
+|-------|------------|-------------|
+| gpt-4 | $0.03/1K | $0.06/1K |
+| gpt-4-turbo | $0.01/1K | $0.03/1K |
+| gpt-3.5-turbo | $0.0005/1K | $0.0015/1K |
+| o1-preview | $0.015/1K | $0.06/1K |
+| o1-mini | $0.003/1K | $0.012/1K |
+
+Costs are automatically calculated and attached to each event.
+
+---
+
+## Advanced Configuration
+
+### Custom OpenAI Client Options
+
+```typescript
+await lai.init({ providers: ['openai'] });
+
+const OpenAI = (await import('openai')).default;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  organization: 'org-...',
+  baseURL: 'https://api.openai.com/v1',
+  timeout: 60000,
+  maxRetries: 3
+});
+
+// All options work with tracking
+```
+
+### Error Handling
+
+```typescript
+try {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Hello!' }]
+  });
+} catch (error) {
+  // Errors are also tracked as events
+  console.error('OpenAI error:', error);
+}
+```
+
+---
+
+## Troubleshooting
+
+### Events Not Appearing
+
+1. **Check import order** - OpenAI must be imported AFTER `lai.init()`
+2. **Verify initialization** - Ensure `providers: ['openai']` is set
+3. **Enable debug logging** - Set `LUCIDIC_DEBUG=True`
+
+### Incorrect Costs
+
+The SDK uses built-in pricing data. For custom models or pricing:
+
+```typescript
+// Manually create event with custom cost
+await lai.createEvent({
+  description: 'Custom model call',
+  model: 'ft:gpt-3.5-turbo-custom',
+  costAdded: 0.05
+});
+```
+
+---
+
+## See Also
+
+- [Anthropic Integration](/typescript-sdk/integrations/anthropic) - Claude tracking
+- [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking
+- [API Reference](/typescript-sdk/api-reference) - Complete documentation
+
+---

@@ -3,7 +3,7 @@ title:  Viewing Sessions (Workflow Sandbox)
 description: Dive into a full breakdown of one agent run — replay, inspect, evaluate, and debug every decision.
 ---
 
-# 🧪  Workflow Sandbox
+#  Workflow Sandbox
 
 The **Workflow Sandbox** is your deep-dive view into a single agent run — also known as a [Session](/core-concepts/sessions). Learn to create a session [here](/getting-started/final-instructions).
 
@@ -13,14 +13,14 @@ This is where observability meets usability: you can **replay the session**, **i
 
 ---
 
-## 🧠 What It Shows
+## What It Shows
 
 At the top of the Workflow Sandbox, you’ll see:
 
-### 1. 📝 Task Overview
+### 1. Task Overview
 - The task string supplied to the agent at the start of the session
 
-### 2. 📊 Session Stats
+### 2. Session Stats
 - **Session Evaluation** - Your overall session evaluation
 - **Is Successful** - Whether the session was successful or not
 - **Cost** - The cost of the session
@@ -28,13 +28,13 @@ At the top of the Workflow Sandbox, you’ll see:
 - **Total Steps** - The total number of steps taken in the session
 - **Repeated Steps** - The number of repeated steps in the session
 - **Average Steps per node** - The average number of steps per node in the session (this is a proxy for how many times the agent retried a step)
-> 📷 _![api key2](/images/ws1.png)_
+> _![api key2](/images/ws1.png)_
 
 ---
->🧠 **Pro tip:** Hover over the session evaluation or the success/failure flag to see a the description!! 
+> **Pro tip:** Hover over the session evaluation or the success/failure flag to see a the description!! 
 
 
-## 🧮 Rubric Evaluations
+## Rubric Evaluations
 
 Below the overview, you’ll find any evaluation rubrics attached to this session. Read more about rubrics [here](/features/rubrics).
 
@@ -42,13 +42,13 @@ Below the overview, you’ll find any evaluation rubrics attached to this sessio
 - The **Lucidic default rubric** runs on every session automatically
 - Custom rubrics can be attached per Agent when running a session
 
->🧠 **Pro tip:** The description of why you got a certain score for a given criterion is below the score, so you can actually see why each of your criteria got a certain score! 
+> **Pro tip:** The description of why you got a certain score for a given criterion is below the score, so you can actually see why each of your criteria got a certain score! 
 
-> 📷 _![rubric](/images/ws2.png)_
+> _![rubric](/images/ws2.png)_
 
 ---
 
-## 📚 Quick Access: Prompt DB + Session Replay GIF
+## Quick Access: Prompt DB + Session Replay GIF
 
 Under the rubric evaluations, you can open the [Prompt DB](/features/prompt-db) directly from the session by clicking the prompt name or the **Prompt Editor** button:
 
@@ -58,10 +58,10 @@ Under the rubric evaluations, you can open the [Prompt DB](/features/prompt-db) 
 
 On the right of the [Prompt DB](/features/prompt-db) you can also see a replay GIF of the session:
 
-> 📷 _![promptdb](/images/ws7.png)_
+> _![promptdb](/images/ws7.png)_
 
 ---
-## 🧭 Session Replay: Step Trajectory Graph
+## Session Replay: Step Trajectory Graph
 
 Next, you’ll see a **Session-specific graph** — a mini version of the [Workflow Trajectory](/features/workflow-trajectory), scoped to just this one session.
 
@@ -69,23 +69,23 @@ Next, you’ll see a **Session-specific graph** — a mini version of the [Workf
 - **Edges:** actions taken
 - **Grouped:** similar states are clustered (e.g. looping or retrying)
 
->🧠 **Pro tip:** The step which caused your agent to fail will be highlighted in red! Hover over the error icon in the top right of the node to quickly see a failure explanation.
+> **Pro tip:** The step which caused your agent to fail will be highlighted in red! Hover over the error icon in the top right of the node to quickly see a failure explanation.
 
 > **Note:** If you want to turn off error highlighting, click the alarm icon in the bottom left toolbar of the graph.
 
-> 📷 _![trajectory](/images/ws6.png)_
+> _![trajectory](/images/ws6.png)_
 
-> 📷 _![trajectory](/images/ws3.png)_
+> _![trajectory](/images/ws3.png)_
 
->🧠 **Pro tip:** Clicking a **Step/Event** opens a full breakdown of that **Step/Event** below the graph!
+> **Pro tip:** Clicking a **Step/Event** opens a full breakdown of that **Step/Event** below the graph!
 ---
 
 
-### 🕰 Timeline Navigation
+### Timeline Navigation
 
 Two synced timelines appear below:
 
-#### 🪜 Step Timeline
+#### Step Timeline
 - Shows the ordered sequence of [Steps](/core-concepts/steps)
 - Clicking a [Step](/core-concepts/steps):
   - Advances the graph to that state
@@ -96,25 +96,25 @@ Two synced timelines appear below:
   - State Overview: **Goal, Action, State**
   - **State Screenshot**
 
-> 📷 _![step detail](/images/ws4.png)_
+> _![step detail](/images/ws4.png)_
 
->🧠 **Pro tip:** Use arrow keys to quickly go from one step to the next.
+> **Pro tip:** Use arrow keys to quickly go from one step to the next.
 
-### ⚙️ Event Timeline (within Step)
+### Event Timeline (within Step)
 - Shows all [Events](/core-concepts/events) that occurred in that step (e.g. LLM calls, tool invocations)
 - Clicking an [Event](/core-concepts/events) shows:
   - Basic Information: **Status, Model, Start Time, Duration, Cost**
   - **Prettified vs Raw Request/Response** (click the wand/text icon in the top right of Input/Output to toggle)
   - **Images used (if any)** in the request
 
-> 🧠 **Pro tip:** **SPEED UP** iteration and debugging time by avoiding rerunning the same failed run with [Time Travels](/features/time-travel). [Time Travels](/features/time-travel), in the **Time Travel tab** to (to the right of "Event Details" which is directly under the two timelines), are extremely useful for debugging failed runs. Time Travels enable you to freeze time and rerun the event in isolation to see if your error/success is reliable. Learn more how to use them [here](/features/time-travel).
-> 📷 _![event timeline](/images/ws5.png)_
+> **Pro tip:** **SPEED UP** iteration and debugging time by avoiding rerunning the same failed run with [Time Travels](/features/time-travel). [Time Travels](/features/time-travel), in the **Time Travel tab** to (to the right of "Event Details" which is directly under the two timelines), are extremely useful for debugging failed runs. Time Travels enable you to freeze time and rerun the event in isolation to see if your error/success is reliable. Learn more how to use them [here](/features/time-travel).
+> _![event timeline](/images/ws5.png)_
 
-> 🧠 **Pro tip:** If your LLM calls are super cluttered, use our pretty text which is built in! It's the wand and will show you your text in a more human-readable format. 
+> **Pro tip:** If your LLM calls are super cluttered, use our pretty text which is built in! It's the wand and will show you your text in a more human-readable format. 
 
 ---
 
-## 🧰 Use Cases
+## Use Cases
 
 The Workflow Sandbox is where you:
 

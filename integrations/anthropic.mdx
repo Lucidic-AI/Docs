@@ -3,13 +3,13 @@ title: Anthropic Integration
 description: Automatically track Claude completions in your agent sessions with a single line of setup.
 ---
 
-# 🤝 Anthropic Integration
+# Anthropic Integration
 
 Lucidic supports automatic tracking of **Anthropic Claude** completions in your agent sessions — with no extra instrumentation needed.
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 
 When you initialize the SDK with:
 
@@ -19,28 +19,29 @@ lai.init(..., providers=["anthropic"])
 
 Lucidic will:
 
-- **Monkey patch** `anthropic.Client().messages.create`
-- Automatically capture each Claude completion as an **Event**
-- Attach the LLM call to the **current active Step**
+- **Instrument** the Anthropic client using OpenTelemetry
+- **Automatically create events** for each Claude completion - no manual event creation needed
+- Attach the LLM call to the **current active Step** (or auto-create one if none exists)
+- Support both sync and async operations
 
 ---
 
-## ✅ What Gets Captured
+## What Gets Captured
 
-We automatically capture the following when you pass it to `anthropic.Client().messages.create`:
+We automatically capture the following from Anthropic API calls:
 
-- **Input**: your prompt to Claude (e.g. `"What's the capital of France?"`)
-- **Model**: the Claude model used (e.g. `claude-3-opus`, `claude-3`)
-- **Output**: the Claude response
-
-Based on your input, we automatically calculate the following:
-
-- **Cost**: estimated based on input/output tokens
+- **Input**: your messages/prompt to Claude
+- **Model**: the Claude model used (e.g. `claude-3-opus-20240229`, `claude-3-5-sonnet-20241022`)
+- **Output**: the Claude response (including streaming)
+- **Token usage**: input and output tokens
+- **Cost**: calculated based on token usage and model pricing
+- **Timing**: duration of the API call
+- **Images**: when using vision capabilities
 
 
 ---
 
-## 🧠 Why This Matters
+## Why This Matters
 
 LLM calls are a core part of most agent workflows — but without visibility, it’s impossible to debug or optimize:
 
@@ -53,40 +54,89 @@ This integration gives you full transparency, with **zero boilerplate**.
 
 ---
 
-## 🧪 Example
+## Example
 
 ```python
 import lucidicai as lai
-import anthropic
+from anthropic import Anthropic
+
+# Just initialize - that's it!
+lai.init(providers=["anthropic"])
+
+client = Anthropic()
+
+# steps and events are automatically created
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    messages=[{"role": "user", "content": "Hello Claude!"}]
+)
+
+# Session auto-ends when script exits
+```
+
+### Streaming Example
+
+```python
+import lucidicai as lai
+from anthropic import Anthropic
+
+lai.init(providers=["anthropic"])
+
+client = Anthropic)()
+
+# Streaming responses are also tracked automatically
+stream = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1000,
+    messages=[{"role": "user", "content": "Explain quantum computing"}],
+    stream=True
+)
+
+for event in stream:
+    if event.type == "content_block_delta":
+        print(event.delta.text, end="")
+```
+
+### Explicit Step Management
+
+```python
+import lucidicai as lai
+from anthropic import Anthropic
 
 lai.init(
     session_name="claude_task",
-    agent_id="your-agent-id",
-    lucidic_api_key="your-api-key",
-    providers=["anthropic"]
+    providers=["anthropic"]  # API key and agent ID from env vars
 )
 
-client = anthropic.Anthropic()
+client = Anthropic()
 
 lai.create_step(state="Planning", goal="Generate research questions")
 
-# This call is automatically tracked!
+# All llm calls are automatically tracked as events within this step
 response = client.messages.create(
-    model="claude-3-opus",
+    model="claude-3-5-sonnet-20241022",
     max_tokens=500,
     messages=[{"role": "user", "content": "What are 5 research ideas about climate change?"}]
 )
 
-lai.end_step(is_successful=True, action="Generated ideas")
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=500,
+    messages=[{"role": "user", "content": "What is the capital of France?"}]
+)
+
+lai.end_step()
 ```
 
 ---
 
-## 🛠️ Notes
+## Notes
 
 - Requires `anthropic` Python SDK installed (`pip install anthropic`)
-- Only `Client().messages.create` is currently patched
-- You must have an active session and step for automatic event logging
-- You can still manually use `create_event()` or `update_event()` as needed
+- All Anthropic client methods are instrumented
+- Both sync and async methods are supported
+- If no step exists when an LLM call is made, Lucidic automatically creates one
+- You can still manually use `create_event()` for additional context
+- Works with the latest Anthropic Python SDK
 
 ---

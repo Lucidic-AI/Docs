@@ -3,9 +3,9 @@ title: Code Setup (Part 2)
 description: Learn how to install LucidicAI and set up Steps, Events, and Sessions.
 ---
 
-> 🧠 **Note:** Setup has two parts — (1) connecting it to the [Lucidic Dashboard](/getting-started/dashboard), and (2) [installing LucidicAI and setting up steps, events, and sessions in your code](/getting-started/final-instructions) (below).
+> **Note:** Setup has two parts — (1) connecting it to the [Lucidic Dashboard](/getting-started/dashboard), and (2) [installing LucidicAI and setting up steps, events, and sessions in your code](/getting-started/final-instructions) (below).
 
-## 📦 Install the SDK
+## Install the SDK
 
 Our package is published on PyPI under the name `lucidicai`.
 
@@ -15,7 +15,7 @@ pip install lucidicai
 
 We recommend installing it into a **virtual environment** or as part of your existing agent stack.
 
-### 🧪 Minimum Requirements
+### Minimum Requirements
 
 - Python **3.8+**
 - Compatible with all major LLM frameworks and agent libraries
@@ -23,7 +23,7 @@ We recommend installing it into a **virtual environment** or as part of your exi
 
 ---
 
-# 🐍 Using the Python SDK
+# Using the Python SDK
 
 Once you've [installed Lucidic](/getting-started/final-instructions#📦-install-the-sdk) and [connected it to the dashboard](/getting-started/dashboard), you're ready to start recording your agent's behavior, step by step.
 
@@ -31,96 +31,77 @@ This guide walks you through how to initialize a session, track steps and events
 
 ---
 
-## 🚀 Step 1: Create a Session
+## Step 1: Create a Session
 
-Creating a session requires the `init` function to be called on the `lai` object: `lai.init()`. The initialization is parameterized by the following:
+Creating a session requires the `init` function to be called on the `lai` object: `lai.init()`. 
 
-| Name            | Type   | Description                                                                 |
-|-----------------|--------|-----------------------------------------------------------------------------|
-| `session_name`  | `str`  | A name for your session – whatever you want (e.g. `"Search Wikipedia"`)     |
-| `provider`      | `str`  | The LLM provider you're using – `"openai"`, `"anthropic"`, or `"langchain"` |
-| `lucidic_api_key` | `str` (optional IF set as environment variable) | Your Lucidic API key – you should have this copied somewhere safe           |
-| `agent_id`      | `str` (optional IF set as environment variable) | Your Lucidic Agent ID – you can get this from the dashboard                 |
-| `task`          | `str` (optional)  | The task your agent is performing. **Must** be specified to show up on the dashboard (e.g. `"Search Wikipedia for Steve Jobs biography"`) |
-| `mass_sim_id`   | `str` (optional)  | The mass simulation ID your agent is part of (e.g. `"8021bc11-20f3-48cb-8717-6ef9017e3663"`) |
-| `rubrics`       | `list[str]` (optional)  | The rubrics you want to use for evaluation (e.g. `["default", "custom_score"]`) |
-| `tags` | `list[str]` (optional) | A list of tags to categorize this session. |
+The most important parameters are:
+- `session_name` - A descriptive name for your session
+- `providers` - List of LLM providers to track (e.g., `["openai"]`, `["anthropic"]`)
+- `task` - What your agent is trying to accomplish
 
-### 1) If you **DO NOT** have your Lucidic API Key and Lucidic Agent ID in a .env file.
+For a complete list of all parameters and detailed documentation, see the [`init` API reference](/api-reference/init).
 
-You must provide the `session_name`, `lucidic_api_key`, `agent_id`, and `provider` parameters to `lai.init()`. 
+### Setting up Authentication
 
-Full version of init:
+You need to provide your Lucidic API key and Agent ID. You can do this in two ways:
 
-```python
-import lucidicai as lai
-lai.init(
-    session_name="Search Wikipedia",
-    lucidic_api_key="your-api-key",   
-    agent_id="your-agent-id",         
-    providers=["openai"], # "openai", "anthropic", if "langchain" you can leave this blank checkout [LangChain Integration](/integrations/langchain)
-    # Optional fields
-    task="Search Wikipedia for Steve Jobs biography",
-    mass_sim_id="your-mass-sim-id",   
-    rubrics=["default", "custom_score"]
-)
-```
-
-We **recommend** moving the `LUCIDIC_API_KEY` and `LUCIDIC_AGENT_ID` to environment variables. The way to do this is create a `.env` file in the root of your project and add the following. Most of you will already have a .env (it is where you would keep any API key) and will just have to add a Lucidic API Key and a Lucidic Agent ID.
-```python
-LUCIDIC_API_KEY="your-api-key"
-LUCIDIC_AGENT_ID="your-agent-id"
-```
-OR 
-You can set the environment variables in your terminal:
+**Option 1: Environment Variables (Recommended)**
 ```bash
+# In your .env file or terminal
 export LUCIDIC_API_KEY=your-api-key
 export LUCIDIC_AGENT_ID=your-agent-id
 ```
 
-### 2) If you **DO** have your Lucidic API Key and Lucidic Agent ID in a .env file.
-
-You will just need the `session_name` and `provider`.
-
+Then initialize with just the providers:
 ```python
 import lucidicai as lai
+
 lai.init(
     session_name="Search Wikipedia",
     providers=["openai"],
-    # Optional fields
-    task="Search Wikipedia for Steve Jobs biography",
-    mass_sim_id="your-mass-sim-id",   
-    rubrics=["default", "custom_score"]          
+    task="Search Wikipedia for Steve Jobs biography"
+)
+```
+
+**Option 2: Direct Parameters**
+```python
+import lucidicai as lai
+
+lai.init(
+    session_name="Search Wikipedia",
+    lucidic_api_key="your-api-key",   
+    agent_id="your-agent-id",         
+    providers=["openai"],
+    task="Search Wikipedia for Steve Jobs biography"
 )
 ```
 
 ---
 
-## 🧭 Step 2: Create Steps
+## Step 2: Create Steps
 
 Each step should represent a meaningful action or decision point. 
 
-Use `lai.create_step()` and `lai.end_step()` around your step logic. `lai.create_step()` creates a step and allows you to attach information to that step. `lai.end_step()` ends the step and optionally allows you to either adjust or add information to the created step. 
+Use `lai.create_step()` and `lai.end_step()` around your step logic:
+- `lai.create_step()` - Creates a step and attaches information to it
+- `lai.end_step()` - Ends the step and optionally updates its information
 
-`lai.create_step()` and `lai.end_step()` are both parameterized by the following. All fields are optional, but we recommend setting as many of them as possible to improve debugging, evaluation, and traceability.
+Key parameters include:
+- `state` - Current environment or context
+- `action` - What the agent is doing
+- `goal` - What the agent aims to achieve
+- `eval_score` - Performance rating
+- `screenshot_path` - Visual context (optional)
 
-| Name            | Type   | Description                                                                 |
-|-----------------|--------|-----------------------------------------------------------------------------|
-| `state`         | `str` (optional)  | A short description of the current environment or UI (e.g., page title, visible content, or system state). |
-| `action`        | `str` (optional)  | What the agent did in this step (e.g., “clicked submit”, “filled out form”). |
-| `goal`          | `str` (optional)  | What the agent *intended* to accomplish (e.g., “navigate to checkout”, “extract user name”). |
-| `screenshot`    | `str` (optional)  | Visual context for this step, either as a base64-encoded image or a file path. |
-| `eval_score`    | `float` (optional)  | A step-level rating (e.g. `5`) to assess performance at that point. |
-| `eval_description` | `str` (optional) | An explanation justifying the `eval_score` on why your agent performed well or poorly (e.g. "Agent performed well because it successfully extracted the username"). |
-
-You can pass in information into `lai.end_step` if any information has changed since `lai.create_step` was called (but this is not necessary, you can just call `lai.end_step()`). 
+For complete parameter documentation, see the [`create_step`](/api-reference/create_step) and [`end_step`](/api-reference/end_step) API reference. 
 
 ```python
 lai.create_step(
     state="Home page", 
     action="Navigating to search",
     goal="Navigate to search",
-    screenshot="https://example.com/screenshot.png"
+    screenshot_path="/path/to/screenshot.png",
     eval_score=5,
     eval_description="Agent successfully navigated to search page",
 ) # All fields are optional
@@ -136,17 +117,38 @@ lai.end_step(
 ```
 
 > Only **one step can be active at a time**, so be sure to end a step before creating a new one.
+
+### Automatic Step Creation
+
+If you're using a supported provider (OpenAI, Anthropic, LangChain, PydanticAI) and make an LLM call without an active step, Lucidic will **automatically create one for you**:
+
+```python
+import lucidicai as lai
+from openai import OpenAI
+
+lai.init(providers=["openai"])
+
+client = OpenAI()
+
+# No step created yet, but this still works!
+# Lucidic auto-creates a step when the LLM call happens
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+# The auto-created step will be ended when the session ends
+```
+
+This ensures you never lose tracking data, even if you forget to create steps explicitly.
+
 ---
 
-### ⚙️ (Optional) Step Updates
+### (Optional) Step Updates
 
-You can update steps mid-run (`lai.update_step`) or retroactively (`lai.update_previous_step`). 
-
-**These functions can only be called INSIDE of a `lai.create_step` and `lai.end_step` block**. 
+You can update the current step mid-run using `lai.update_step()`. 
 
 The parameters are the exact same as `lai.create_step`. You would use this if you want to add/adjust any information after a step has been created.
-
-If you want to update the **current step**:
 
 ```python
 lai.create_step(
@@ -161,47 +163,8 @@ lai.update_step(
     goal="Updated goal",
     eval_score=5,
     eval_description="Updated eval description",
-    screenshot="updated base64 encoded image",
-    # Or use screenshot_path if you have a url to a file path
-    screenshot_path="path/to/image.png"
-)
-
-...
-
-lai.end_step(
-    ...
-)
-```
-
-If you want to update a **previous step**, you can use `lai.update_previous_step`. This function includes an `index` parameter that allows you to specify which step to update:
-
-| Name | Type | Description |
-|------|------|-------------|
-| `index` | `int` | The index of the step to update (e.g. `-1` is the previous step, `-2` is the step before that, etc.). |
-
-> **Example:** Step 1 --> Step 2 --> Step 3 (ongoing and current step)
-
-If you want to update Step 2, you would use `lai.update_previous_step(index=-1)`, if you want to update Step 1, you would use `lai.update_previous_step(index=-2)`.
-
-> **Note:** If you try to update a step that doesn't exist, it will raise an error.
-
-```python
-lai.create_step(
-    ...
-)
-
-...
-
-lai.update_previous_step(
-    index=-1,
-    state="Updated state",
-    action="Updated action",
-    goal="Updated goal",
-    eval_score=5,
-    eval_description="Updated eval description",
-    screenshot="base64 encoded image",
-    # Or use screenshot_path if you have a url to a file path
-    screenshot_path="path/to/image.png"
+    # Use either screenshot OR screenshot_path, not both
+    screenshot_path="/path/to/image.png"
 )
 
 ...
@@ -213,23 +176,19 @@ lai.end_step(
 
 ---
 
-## 🎗️ Step 3: Create Events
+## Step 3: Create Events
 
 If your agent has tool calls or LLM usage, track them as **events** within each step. 
-> If you only have LLM calls with a supported provider you don't need to create events for them! Lucidic will automatically create events for you. For instance, if you set `provider="openai"` in `lai.init()`, Lucidic will automatically create events for you for any OpenAI calls.
+> If you only have LLM calls with a supported provider you don't need to create events for them! Lucidic will automatically create events for you. For instance, if you set `providers=["openai"]` in `lai.init()`, Lucidic will automatically create events for you for any OpenAI calls.
 
+Key parameters for events include:
+- `description` - What the event is doing
+- `result` - Output or response from the event
+- `model` - LLM model name (if applicable)
+- `cost_added` - Cost of this event
+- `screenshots` - Visual context
 
-`lai.create_event` and `lai.end_event` are both parameterized by the following. All of these parameters are optional, but we recommend **setting as many as possible** to improve debugging, evaluation, and traceability. 
-
-| Name            | Type   | Description                                                                 |
-|-----------------|--------|-----------------------------------------------------------------------------|
-| `description`   | `str` (optional)  | A detailed explanation of the event (e.g., “clicked submit”, “completed form entry”), or any relevant input, context, or memory for your agent. This field is often used to capture user actions, LLM prompts, document processing inputs, or data retrieval details. Include any information you consider important for your agent. |
-| `result`        | `str` (optional)  | This is more of a result/output of the event. For example, if you are doing a document processing, this could be the result of the document processing. Or if you make an API call, this could be the result of the API call. |
-| `model`         | `str` (optional)  | A lot of people use events with LLMs so if you have a custom LLM call you can set the model name here. |
-| `cost_added`    | `float` (optional)  | Add the cost of the event here. |
-| `screenshots`   | `list[str]` (optional) | Add a list of screenshots of the event here (either a list of base64 encoded images or a list of url image paths). |
-
-You can pass in information into `lai.end_event` if any information has changed since `lai.create_event` was called (but this is not necessary, you can just call `lai.end_event()`).
+For complete parameter documentation, see the [`create_event`](/api-reference/create_event) and [`end_event`](/api-reference/end_event) API reference.
 
 > **Note:** All fields will be overwritten EXCEPT for screenshots and cost_added which are appended/added.
 
@@ -239,29 +198,40 @@ lai.create_event(
     result="Summary generated",
     model="gpt-4o",
     cost_added=0.01,
-    screenshots=["https://example.com/screenshot.png"]
+    screenshots=["/path/to/screenshot.png"]
 )
 # Do your LLM call...
 
 # All fields will be overwritten EXCEPT for screenshots and cost_added which are appended/added
-lai.end_event(cost_added=0.01, screenshots=["https://example.com/screenshot1.png", "https://example.com/screenshot2.png"]) 
+lai.end_event(cost_added=0.01, screenshots=["/path/to/screenshot1.png", "/path/to/screenshot2.png"]) 
 ```
 
-> **Reminder:** LLM calls from supported providers like OpenAI and Anthropic are **automatically captured** into events when you set the `provider` in `init()`.
+> **Reminder:** LLM calls from supported providers like OpenAI and Anthropic are **automatically captured** into events when you set the `providers` parameter in `init()`.
 
 ---
 
-## 🧼 Step 4: End the Session
+## Step 4: End the Session
 
+### Automatic Step Ending
 
-Your session will automatically end when the script exits (via an `atexit` handler), but you can also end it manually with `lai.end_session` if you would like to add in evals:
+When your session ends (either manually or automatically), Lucidic will **automatically end any active steps** for you. This means:
 
-| Name            | Type   | Description                                                                 |
-|-----------------|--------|-----------------------------------------------------------------------------|
-| `is_successful` | `bool` (optional) | Whether the session was successful or not. |
-| `is_successful_reason` | `str` (optional) | A short description of why the session was successful or not. |
-| `session_eval` | `float` (optional) | A session-level rating (e.g. `5`) to assess performance at that point. |
-| `session_eval_reason` | `str` (optional) | An explanation justifying the `session_eval` on why your agent performed well or poorly. |
+- You don't need to worry about forgetting to call `lai.end_step()`
+- All steps are properly closed before the session completes
+- Your data remains consistent even if your script exits unexpectedly
+
+```python
+lai.create_step(state="Processing", goal="Analyze data")
+# Do some work...
+# Oops, forgot to end the step!
+
+# No problem - when session ends, the step is auto-ended
+lai.end_session()  # Or let it auto-end on script exit
+```
+
+### Automatic Session Ending
+
+Your session will automatically end when the script exits (via an `atexit` handler), but you can also end it manually with `lai.end_session` if you would like to add evaluations:
 
 ```python
 lai.end_session(
@@ -272,9 +242,36 @@ lai.end_session(
 )
 ```
 
-**All fields are optional — if you don’t provide them, Lucidic will automatically evaluate the session for you.**
+**All fields are optional — if you don't provide them, Lucidic will automatically evaluate the session for you.**
 
-### 📊 Additional Information: Custom Evaluation Rubrics
+For complete parameter documentation, see the [`end_session` API reference](/api-reference/end_session).
+
+### How Auto-End Works
+
+The `atexit` handler ensures your session data is always captured:
+
+```python
+import lucidicai as lai
+from openai import OpenAI
+
+lai.init(providers=["openai"])
+
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+
+# Script ends here - no explicit end_session() needed!
+# Lucidic automatically:
+# 1. Ends any active steps
+# 2. Ends the session
+# 3. Sends all data to the dashboard
+```
+
+This means you can instrument existing scripts with just 2 lines of code!
+
+### Additional Information: Custom Evaluation Rubrics
 
 When ending a session, you can provide your own evaluation metrics to better assess your agent's performance:
 
@@ -298,7 +295,7 @@ We recommend creating your own rubric for custom tasks to ensure the evaluation 
 # When initializing your session, specify custom rubrics
 lai.init(
     session_name="custom_task",
-    provider="openai",
+    providers=["openai", "anthropic"],
     rubrics=["default", "my_custom_rubric"]  # Include both default and custom rubrics
 )
 ```
@@ -313,7 +310,7 @@ Learn more about creating and using custom rubrics in the [Evaluation Rubrics](/
 
 ---
 
-### 🧠 Why Both `is_successful` and `session_eval`?
+### Why Both `is_successful` and `session_eval`?
 
 We support two types of evaluations so you can keep things simple or add more detail:
 
@@ -334,20 +331,11 @@ This gives you full control and lets you keep your logic consistent with your ow
 
 ---
 
-## 📥 Step 5: (Optional) Pull Prompts from Prompt DB
+## Step 5: (Optional) Pull Prompts from Prompt DB
 
-Use Lucidic’s [Prompt DB](/features/prompt-db) so you never have to go to your code to make a prompt change again! See [here](/features/prompt-db) for more details.
+Use Lucidic's [Prompt DB](/features/prompt-db) so you never have to go to your code to make a prompt change again!
 
 Pull prompts from our prompt database in your code, change the content in the dashboard, and see them automatically update on your next agent run! We support prompt versioning and labels so you can have different versions of a prompt for different use cases (e.g. production, testing, etc.).
-
-| Name            | Type   | Description                                                                 |
-|-----------------|--------|-----------------------------------------------------------------------------|
-| `prompt_name`   | `str`  | The name of the prompt to fetch.                                            |
-| `label`         | `str` (optional)  | The label of the prompt to fetch. Defaults to `production`.                 |
-| `variables`     | `dict` (optional) | A dictionary of string key/values to interpolate into the prompt.          |
-| `cache_ttl`     | `int` (optional)  | The time-to-live for the prompt in seconds. Defaults to 300 seconds (0 = no cache, -1 = cache forever, n = cache for n seconds).         |
-
-> **Note:** `cache_ttl` is only relevant if you are going to change your prompts during an ongoing session. All prompts are fetched at the beginning of a session. The `cache_ttl` determines how long the prompt will be cached for (i.e. if you set `cache_ttl=60`, the prompt will be cached for 60 seconds and if you make a change during this time, it will not be fetched until the `cache_ttl` expires).
 
 ```python
 prompt = lai.get_prompt(
@@ -358,6 +346,8 @@ prompt = lai.get_prompt(
 )
 ```
 
+For complete parameter documentation, see the [`get_prompt` API reference](/api-reference/get_prompt) and the [Prompt DB feature guide](/features/prompt-db).
+
 Additional notes:
 
 - `{{variable}}` placeholders will be replaced using your dictionary
@@ -367,7 +357,7 @@ Additional notes:
 
 ---
 
-## 🧪 Full Session Code Example
+## Full Session Code Example
 
 ```python
 import lucidicai as lai
@@ -375,7 +365,7 @@ import lucidicai as lai
 lai.init(
     session_name="wiki_search",
     agent_id="agent-123",
-    provider="openai",
+    providers=["openai"],
     task="Search for Stanford University",
     rubrics=["default"]
 )
@@ -394,14 +384,78 @@ lai.create_event(description="OpenAI call")
 # (Your LLM call)
 lai.end_event(result="Found Stanford University") # Optional 
 
-lai.end_step(action="Used search", eval_score=5, eval_description="Found Stanford University") #Required
+lai.end_step(action="Used search", eval_score=5, eval_description="Found Stanford University") # Optional
 
-lai.end_session(is_successful=True) #Optional 
+lai.end_session(is_successful=True) # Optional 
 ```
 
 ---
 
-## 🔗 Next Steps
+## Minimal Instrumentation Example
+
+Thanks to Lucidic's automatic features, you can instrument existing workflows with just **2 lines of code**:
+
+```python
+import lucidicai as lai
+lai.init(providers=["openai"])  # Or ["anthropic"], ["langchain"], etc.
+
+# That's it! Your existing code now has full observability
+```
+
+Here's a complete example showing how minimal the setup can be:
+
+```python
+import lucidicai as lai
+from openai import OpenAI
+
+# Just these 2 lines to add complete observability!
+lai.init(providers=["openai"])
+
+# Your existing code remains unchanged
+client = OpenAI()
+
+def analyze_text(text):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"Analyze this: {text}"}]
+    )
+    return response.choices[0].message.content
+
+def summarize_text(text):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"Summarize this: {text}"}]
+    )
+    return response.choices[0].message.content
+
+# Your workflow runs normally
+text = "The quick brown fox jumps over the lazy dog."
+analysis = analyze_text(text)
+summary = summarize_text(analysis)
+print(summary)
+
+# When script exits, Lucidic automatically:
+# 1. Creates steps for each distinct operation
+# 2. Creates events for each LLM call
+# 3. Ends all steps properly
+# 4. Ends the session
+# 5. Sends everything to your dashboard
+```
+
+### What Happens Automatically:
+
+1. **Session Creation**: A session starts when you call `init()`
+2. **Step Creation**: Steps are auto-created when LLM calls happen
+3. **Event Creation**: Every LLM call becomes an event automatically
+4. **Step Ending**: Active steps are auto-ended when the session ends
+5. **Session Ending**: The session auto-ends when your script exits
+6. **Data Upload**: All tracking data is sent to your dashboard
+
+This means you can add Lucidic to any existing Python script that uses supported LLM providers and immediately get full visibility into your AI workflows!
+
+---
+
+## Next Steps
 
 - [Evaluate Sessions with Rubrics](/features/rubrics)
 - [Run Mass Simulations](/features/mass-simulation-overview)

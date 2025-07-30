@@ -1,0 +1,265 @@
+---
+title: 'end_event'
+description: 'End an event within the current step'
+---
+
+## Overview
+
+The `end_event` function marks an event as finished, optionally updating its final state. This is useful for events that span a duration or need final results added after completion.
+
+## Syntax
+
+```python
+lai.end_event(
+    event_id: Optional[str] = None,
+    description: Optional[str] = None,
+    result: Optional[str] = None,
+    cost_added: Optional[float] = None,
+    model: Optional[str] = None,
+    screenshots: Optional[List[str]] = None
+) -> None
+```
+
+## Parameters
+
+<ParamField path="event_id" type="string" optional>
+  The ID of the event to end. If not provided, ends the most recent event in the current step.
+</ParamField>
+
+<ParamField path="description" type="string" optional>
+  Final description to set for the event.
+</ParamField>
+
+<ParamField path="result" type="string" optional>
+  Final result or outcome to set for the event.
+</ParamField>
+
+<ParamField path="cost_added" type="float" optional>
+  Final cost to set for the event.
+</ParamField>
+
+<ParamField path="model" type="string" optional>
+  Final model/service identifier to set for the event.
+</ParamField>
+
+<ParamField path="screenshots" type="List[str]" optional>
+  Final list of screenshots to set for the event. Each screenshot should be provided as a file path (which will be read and uploaded) or as base64-encoded image data.
+</ParamField>
+
+## Returns
+
+This function returns `None`.
+
+## Examples
+
+### Basic Event Lifecycle
+
+```python
+import lucidicai as lai
+import time
+
+lai.init(session_name="Event Timing Demo")
+
+lai.create_step(state="Long running operation", action="Process data")
+
+# Start an event
+event_id = lai.create_event(
+    description="Starting batch processing",
+    model="batch-processor"
+)
+
+# Simulate processing
+start_time = time.time()
+result = process_large_batch()
+duration = time.time() - start_time
+
+# End the event with results
+lai.end_event(
+    event_id=event_id,
+    result=f"Processed {len(result)} items in {duration:.2f}s",
+    cost_added=calculate_cost(duration)
+)
+
+lai.end_step()
+```
+
+### Streaming Response Tracking
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Streaming Demo")
+
+lai.create_step(state="Streaming response", action="Generate content")
+
+# Create event for streaming operation
+event_id = lai.create_event(
+    description="Starting streaming generation",
+    model="gpt-4"
+)
+
+# Collect streaming chunks
+full_response = ""
+total_tokens = 0
+
+for chunk in stream_response():
+    full_response += chunk.text
+    total_tokens += chunk.tokens
+
+# End event with accumulated results
+lai.end_event(
+    event_id=event_id,
+    result=full_response[:100] + "...",  # First 100 chars
+    cost_added=calculate_token_cost(total_tokens)
+)
+
+lai.end_step()
+```
+
+### Multi-Stage Event
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Multi-Stage Processing")
+
+lai.create_step(state="Complex workflow", action="Execute pipeline")
+
+# Create event for multi-stage process
+event_id = lai.create_event(
+    description="Pipeline execution started",
+    model="data-pipeline-v2"
+)
+
+stages_completed = []
+total_cost = 0.0
+
+try:
+    # Stage 1
+    result1 = execute_stage_1()
+    stages_completed.append("stage1")
+    total_cost += 0.01
+    
+    # Stage 2
+    result2 = execute_stage_2(result1)
+    stages_completed.append("stage2")
+    total_cost += 0.02
+    
+    # Stage 3
+    result3 = execute_stage_3(result2)
+    stages_completed.append("stage3")
+    total_cost += 0.03
+    
+    # Success - end event
+    lai.end_event(
+        event_id=event_id,
+        result=f"Pipeline completed: {', '.join(stages_completed)}",
+        cost_added=total_cost
+    )
+    
+except Exception as e:
+    # Failure - still end event
+    lai.end_event(
+        event_id=event_id,
+        result=f"Pipeline failed at stage {len(stages_completed)+1}: {str(e)}",
+        cost_added=total_cost
+    )
+    raise
+
+lai.end_step()
+```
+
+### Screenshot Addition on Completion
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Visual Generation")
+
+lai.create_step(state="Generating images", action="Create visualizations")
+
+# Start event
+event_id = lai.create_event(
+    description="Generating data visualizations",
+    model="matplotlib"
+)
+
+# Generate visualizations
+charts = []
+charts.append(create_bar_chart(data))
+charts.append(create_line_graph(data))
+charts.append(create_heatmap(data))
+
+# Convert to base64
+screenshots = [encode_image_base64(chart) for chart in charts]
+
+# End event with screenshots
+lai.end_event(
+    event_id=event_id,
+    result=f"Generated {len(charts)} visualizations",
+    screenshots=screenshots
+)
+
+lai.end_step()
+```
+
+### Auto-End Latest Event
+
+```python
+import lucidicai as lai
+
+lai.init(session_name="Quick Events")
+
+lai.create_step(state="Processing", action="Execute")
+
+# Create multiple events
+lai.create_event(description="First operation")
+lai.create_event(description="Second operation")
+lai.create_event(description="Third operation")
+
+# End the latest event (third operation)
+lai.end_event(
+    result="Third operation completed successfully"
+)
+
+lai.end_step()
+```
+
+## Notes
+
+- Events must be active (not already ended) to be ended
+- If `event_id` is not provided, ends the most recent event
+- Final parameters override any previous values
+- Ending events is optional - they're automatically ended when the step ends
+- Useful for tracking duration and accumulating results
+
+## Error Handling
+
+```python
+from lucidicai.errors import InvalidOperationError
+
+try:
+    lai.end_event(event_id="non-existent-id")
+except InvalidOperationError:
+    print("Event not found or already ended")
+
+# Ending without active events
+try:
+    lai.end_event()  # No events to end
+except Exception:
+    print("No active events in current step")
+```
+
+## Best Practices
+
+1. **Track Duration**: Use for operations that take time
+2. **Accumulate Results**: Gather results before ending
+3. **Always End**: End events even on failure for accurate tracking
+4. **Cost Accuracy**: Calculate final costs when ending
+5. **Meaningful Results**: Provide informative final results
+
+## See Also
+
+- [`create_event`](/api-reference/api_functions/create_event) - Create a new event
+- [`update_event`](/api-reference/api_functions/update_event) - Update an event during execution
+- [`end_step`](/api-reference/api_functions/end_step) - End the containing step

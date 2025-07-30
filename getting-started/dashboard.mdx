@@ -2,37 +2,37 @@
 title: Dashboard Setup (Part 1)
 description: Learn how to set up your project, agent, and API key in the Lucidic dashboard.
 ---
-> 🧠 **Note:** Setup has two parts — (1) connecting it to the [Lucidic Dashboard](/getting-started/dashboard) (below), and (2) [installing LucidicAI and setting up steps, events, and sessions in your code](/getting-started/final-instructions).
+> **Note:** Setup has two parts — (1) connecting it to the [Lucidic Dashboard](/getting-started/dashboard) (below), and (2) [installing LucidicAI and setting up steps, events, and sessions in your code](/getting-started/final-instructions).
 
-# 🖥️ Getting Started in the Dashboard
+# Getting Started in the Dashboard
 
 Before you can track your agent’s sessions in code, you’ll need to set up your environment in the **Lucidic web dashboard**.
 
 ---
 
-## 🔐 1. Create an Account or Sign In
+## 1. Create an Account or Sign In
 
 Go to [dashboard.lucidic.ai](https://dashboard.lucidic.ai) and sign in:
 
 - Use **Google login** or
 - Create an account with your email + password
 
-> 📷 _![login screen](/images/login.png)_
+> _![login screen](/images/login.png)_
 
 ---
 
-## 📁 2. Create a Project
+## 2. Create a Project
 
 Projects are high-level containers for your work — usually one per app, workflow, or team.
 
 - Click **"New Project"**
 - Name it something meaningful (e.g. `wikipedia-agent`, `finetuning-dashboard`, etc.)
 
-> 📷 _![project creation](/images/projectc.png)_
+> _![project creation](/images/projectc.png)_
 
 ---
 
-## 🤖 3. Create an Agent
+## 3. Create an Agent
 
 Inside your project:
 
@@ -41,28 +41,28 @@ Inside your project:
 
 Agents represent individual autonomous systems (e.g. a browser agent, a research assistant, a planner).
 
-> 📷 _![agent creation](/images/agentc.png)_
+> _![agent creation](/images/agentc.png)_
 
 ---
 
-## 🔑 4. Generate an API Key
+## 4. Generate an API Key
 
 You’ll need an API key to authenticate your SDK.
 
 - Go to the **"API Keys"** icon in the bottom left corner in the side bar 
 - Click **"Create API Key"**
 - Copy the key somewhere safe - you won't be able to see it again!
-> 📷 _<img src="/images/apikey.png" alt="api key" width="300"/>_
-> 📷 _![api key2](/images/apikey2.png)_
+> _<img src="/images/apikey.png" alt="api key" width="300"/>_
+> _![api key2](/images/apikey2.png)_
 
 ---
 
-## ⚙️ 5. Plug Into Python
+## 5. Plug Into Python
 
 Once you’ve got:
 
-- ✅ **API Key**
-- ✅ **Agent ID**
+- **API Key**
+- **Agent ID**
 
 You’re ready to run sessions from code.
 
@@ -70,9 +70,8 @@ Paste them into:
 
 ```python
 lai.init(
-    agent_id="your-agent-id",
     lucidic_api_key="your-api-key",
-    session_name="test_run"
+    agent_id="your-agent-id"
 )
 ```
 
@@ -85,19 +84,19 @@ export LUCIDIC_AGENT_ID="your-agent-id"
 
 ---
 
-## 📈 6. (Optional) Create a Mass Simulation
+## 6. (Optional) Create a Mass Simulation
 
 If you want to run many sessions as part of a single evaluation:
 
 - Go to the **"Mass Sims"** tab inside your Agent
-> 📷 _![api key2](/images/masssimcreation.png)_
+> _![api key2](/images/masssimcreation.png)_
 
 - Click **"New Mass Simulation"** on the top right of the table
 - Copy the **Mass Sim ID** into your SDK:
 
 ```python
+# assuming environment variables are set
 lai.init(
-    session_name="run_37",
     mass_sim_id="abc123"
 )
 ```
@@ -107,7 +106,7 @@ To learn more about mass simulations, see [Mass Simulations](/features/mass-simu
 
 ---
 
-## ✅ You’re Ready!
+## You're Ready!
 
 Now that your dashboard is set up, head to [Using the Python SDK](/getting-started/final-instructions) to run your first session.
 

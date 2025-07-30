@@ -5,7 +5,7 @@ description: Get started with understanding how and why our agent observability 
 
 If you're interested in getting set up, check out the [dashboard guide](/getting-started/dashboard).
 
-# 👋 Welcome to Your Agent's Control Room
+# Welcome to Your Agent's Control Room
 
 AI agents don’t just make predictions — they perform **multi-step workflows**, invoke tools, navigate interfaces, and adapt in real-time.
 
@@ -15,7 +15,7 @@ We built this platform to give you **deep observability** into how your agent th
 
 ---
 
-## 🧠 Why Observability Matters
+## Why Observability Matters
 
 Running an agent once doesn't tell you how it behaves.
 
@@ -27,7 +27,7 @@ To build agents you can trust, you need to see what they're doing — and why.
 
 ---
 
-## 🛠 What This Platform Does
+## What This Platform Does
 
 We help you:
 
@@ -41,22 +41,41 @@ We help you:
 
 ---
 
-## 🚀 Next Steps
+## Automatic Instrumentation
+
+Lucidic is designed to be as **non-intrusive** as possible. With just two lines of code, you get:
+
+- **Auto Event Creation**: LLM calls from supported providers (OpenAI, Anthropic, LangChain, PydanticAI) are automatically captured
+- **Auto Step Creation**: If no step exists when an LLM call occurs, one is created automatically
+- **Auto-Ending Steps**: Steps are automatically ended when your session ends
+- **Auto-End Sessions**: Sessions automatically close when your script exits
+- **Zero-Config Tracking**: Just import, initialize with providers, and everything else is handled
+
+This means you can instrument existing workflows with minimal changes:
+
+```python
+import lucidicai as lai
+lai.init(providers=["openai"])  # That's it! All OpenAI calls are now tracked
+```
+
+---
+
+## Next Steps
 
 Ready to dive in?
 
 - **[Get Started in the UI](/getting-started/dashboard)** — Run your first Session and view the dashboard
-- **[Use the Python SDK](/getting-started/final-instructions)** — Record and evaluate agents from your code
+- **[Use the Python SDK](/getting-started/final-instructions)** — Record and evaluate agents from your Python code
+- **[Use the TypeScript SDK](/typescript-sdk/overview)** — Full observability for your TypeScript/JavaScript applications
 
-We’re excited to help you build agents that are **observable**, **debuggable**, and **production-ready**.
+We're excited to help you build agents that are **observable**, **debuggable**, and **production-ready**.
 
 ---
 
-## 💬 Need Help?
+## Need Help?
 
 Questions, feedback, or something not working right?
 
 Reach out to us at [team@lucidic.ai](mailto:team@lucidic.ai) — we’d love to help.
-```
 
 ---
