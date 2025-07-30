@@ -1,0 +1,166 @@
+---
+title: 'initSession'
+description: 'Initialize a new Lucidic session explicitly'
+---
+
+## Overview
+
+The `initSession` function creates a new session for tracking AI agent workflows. Use this when you want explicit control over session creation, separate from SDK initialization.
+
+## Syntax
+
+```typescript
+await lai.initSession(config: SessionConfig): Promise<Session>
+```
+
+## Parameters
+
+<ParamField path="config" type="SessionConfig" required>
+  Session configuration object with the following properties:
+  
+  <Expandable title="properties">
+    <ParamField path="sessionName" type="string" optional>
+      Display name for the session in the dashboard.
+    </ParamField>
+    
+    <ParamField path="sessionId" type="string" optional>
+      Custom ID for the session. Auto-generated if not provided.
+    </ParamField>
+    
+    <ParamField path="task" type="string" optional>
+      High-level description of the task or workflow.
+    </ParamField>
+    
+    <ParamField path="agentId" type="string" optional>
+      Override the default agent ID for this session.
+    </ParamField>
+    
+    <ParamField path="userId" type="string" optional>
+      User identifier for tracking.
+    </ParamField>
+    
+    <ParamField path="groupId" type="string" optional>
+      Group identifier for organization.
+    </ParamField>
+    
+    <ParamField path="testId" type="string" optional>
+      Test run identifier.
+    </ParamField>
+    
+    <ParamField path="tags" type="string[]" optional>
+      Array of tags for categorization.
+    </ParamField>
+    
+    <ParamField path="massSimId" type="string" optional>
+      Mass simulation ID to associate this session with.
+    </ParamField>
+    
+    <ParamField path="rubrics" type="string[]" optional>
+      Evaluation rubrics to apply.
+    </ParamField>
+    
+    <ParamField path="productionMonitoring" type="boolean" optional>
+      Enable production monitoring mode.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to a `Session` object.
+
+## Examples
+
+### Basic Session Creation
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Initialize SDK first
+await lai.init();
+
+// Create a session
+const session = await lai.initSession({
+  sessionName: "Document Analysis",
+  task: "Extract insights from PDF documents"
+});
+```
+
+### With Full Configuration
+
+```typescript
+const session = await lai.initSession({
+  sessionName: "Customer Support Session",
+  task: "Resolve billing inquiry",
+  userId: "customer-123",
+  groupId: "support-team-west",
+  tags: ["billing", "priority-high", "enterprise"],
+  rubrics: ["response-quality", "resolution-time"]
+});
+```
+
+### For Testing
+
+```typescript
+const session = await lai.initSession({
+  sessionName: "Unit Test Run",
+  testId: "test-suite-001",
+  tags: ["test", "ci-cd"],
+  productionMonitoring: false
+});
+```
+
+### With Mass Simulation
+
+```typescript
+// First create a mass simulation
+const massSimId = "mass-sim-123";
+
+// Create sessions as part of the simulation
+for (let i = 0; i < 10; i++) {
+  const session = await lai.initSession({
+    sessionName: `Test Session ${i}`,
+    massSimId: massSimId,
+    task: "Evaluate model performance"
+  });
+  
+  // Run your workflow...
+  
+  await lai.endSession();
+}
+```
+
+## Differences from init()
+
+| Feature | `init()` | `initSession()` |
+|---------|----------|-----------------|
+| SDK Initialization | ✅ Required | ❌ SDK must be initialized first |
+| Session Creation | ✅ Optional | ✅ Always creates session |
+| Provider Setup | ✅ Configures | ❌ No provider config |
+| Multiple Sessions | ❌ One at a time | ✅ Can create multiple |
+
+## Error Handling
+
+```typescript
+try {
+  const session = await lai.initSession({
+    sessionName: "My Session"
+  });
+} catch (error) {
+  console.error("Failed to create session:", error);
+  // SDK not initialized, API error, etc.
+}
+```
+
+## Notes
+
+- SDK must be initialized with `init()` before calling this function
+- Only one session can be active at a time
+- Previous session must be ended before creating a new one
+- Session ID is returned and can be used with `continueSession()`
+
+## See Also
+
+- [init](/typescript-sdk/init) - Initialize SDK and optionally create session
+- [continueSession](/typescript-sdk/continue-session) - Resume existing session
+- [endSession](/typescript-sdk/end-session) - End current session

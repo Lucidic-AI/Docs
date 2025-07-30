@@ -18,7 +18,7 @@
             "pages": [
               "getting-started/introduction",
               "getting-started/dashboard",
-              "getting-started/final-instructions",
+              "getting-started/quickstart",
               "getting-started/masssim"
             ]
           },
@@ -88,7 +88,9 @@
                   "python-sdk/get_prompt",
                   "python-sdk/create_mass_sim"
                 ]
-              }
+              },
+              "python-sdk/decorators",
+              "python-sdk/examples"
             ]
           }
         ]
@@ -106,6 +108,45 @@
             ]
           },
           {
+            "group": "TypeScript SDK Functions",
+            "pages": [
+              "typescript-sdk/index",
+              {
+                "group": "Session Management",
+                "pages": [
+                  "typescript-sdk/init",
+                  "typescript-sdk/init-session",
+                  "typescript-sdk/continue-session",
+                  "typescript-sdk/update-session",
+                  "typescript-sdk/end-session"
+                ]
+              },
+              {
+                "group": "Step Management",
+                "pages": [
+                  "typescript-sdk/create-step",
+                  "typescript-sdk/update-step",
+                  "typescript-sdk/end-step"
+                ]
+              },
+              {
+                "group": "Event Management",
+                "pages": [
+                  "typescript-sdk/create-event",
+                  "typescript-sdk/update-event"
+                ]
+              },
+              {
+                "group": "Advanced Features",
+                "pages": [
+                  "typescript-sdk/get-prompt",
+                  "typescript-sdk/run-mass-simulation"
+                ]
+              },
+              "typescript-sdk/examples"
+            ]
+          },
+          {
             "group": "Integrations",
             "pages": [
               "typescript-sdk/integrations/openai",
@@ -113,10 +154,9 @@
             ]
           },
           {
-            "group": "Advanced",
+            "group": "Advanced Topics",
             "pages": [
-              "typescript-sdk/advanced-features",
-              "typescript-sdk/api-reference"
+              "typescript-sdk/advanced-features"
             ]
           }
         ]

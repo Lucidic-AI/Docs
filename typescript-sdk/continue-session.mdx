@@ -1,0 +1,197 @@
+---
+title: 'continueSession'
+description: 'Continue an existing Lucidic session'
+---
+
+## Overview
+
+The `continueSession` function allows you to resume a previously created session, enabling you to add more steps and events to an existing workflow.
+
+## Syntax
+
+```typescript
+await lai.continueSession(sessionId: string): Promise<Session>
+```
+
+## Parameters
+
+<ParamField path="sessionId" type="string" required>
+  The ID of the session to continue. This is returned when creating a session.
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to the continued `Session` object.
+
+## Examples
+
+### Basic Usage
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Initialize SDK
+await lai.init();
+
+// Continue a previous session
+const session = await lai.continueSession("session-uuid-123");
+
+// Add more steps to the existing session
+await lai.createStep({
+  state: "Resuming analysis",
+  action: "Process additional data"
+});
+
+// Continue your workflow...
+```
+
+### Workflow Continuation Pattern
+
+```typescript
+// Initial run
+const sessionId = await lai.init({
+  sessionName: "Long-running analysis"
+});
+
+// Do some work...
+await lai.createStep({ state: "Phase 1" });
+// ... processing ...
+await lai.endStep();
+
+// Save session ID for later
+saveToDatabase({ sessionId });
+
+// End for now
+await lai.endSession();
+
+// === Later, in a different process ===
+
+// Retrieve saved session ID
+const { sessionId } = loadFromDatabase();
+
+// Continue where we left off
+await lai.init();
+await lai.continueSession(sessionId);
+
+// Add more steps
+await lai.createStep({ state: "Phase 2" });
+// ... more processing ...
+await lai.endStep();
+
+await lai.endSession();
+```
+
+### Error Recovery
+
+```typescript
+try {
+  await lai.continueSession("invalid-session-id");
+} catch (error) {
+  console.error("Failed to continue session:", error);
+  // Session not found, already finished, etc.
+  
+  // Create a new session instead
+  await lai.initSession({
+    sessionName: "Recovery session"
+  });
+}
+```
+
+## Use Cases
+
+### 1. Long-Running Workflows
+
+Perfect for workflows that span multiple executions:
+
+```typescript
+// Job 1: Data collection
+const sessionId = await lai.init({ sessionName: "ETL Pipeline" });
+await collectData();
+await lai.endSession();
+
+// Job 2: Data processing (continues same session)
+await lai.init();
+await lai.continueSession(sessionId);
+await processData();
+await lai.endSession();
+
+// Job 3: Report generation (continues same session)
+await lai.init();
+await lai.continueSession(sessionId);
+await generateReport();
+await lai.endSession(true, "Pipeline completed");
+```
+
+### 2. Distributed Processing
+
+When different services handle different parts of a workflow:
+
+```typescript
+// Service A
+const session = await lai.initSession({
+  sessionName: "Multi-service workflow"
+});
+const sessionId = session.sessionId;
+
+// Publish session ID to message queue
+await publishMessage({ sessionId, nextService: "B" });
+
+// Service B (different process/container)
+const { sessionId } = await consumeMessage();
+await lai.init();
+await lai.continueSession(sessionId);
+// Continue processing...
+```
+
+### 3. Retry Logic
+
+```typescript
+async function processWithRetry(sessionId: string, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await lai.init();
+      await lai.continueSession(sessionId);
+      
+      await lai.createStep({
+        state: `Attempt ${i + 1}`,
+        action: "Process data"
+      });
+      
+      await riskyOperation();
+      
+      await lai.endStep({ evalScore: 100 });
+      return; // Success
+      
+    } catch (error) {
+      await lai.endStep({
+        evalScore: 0,
+        evalDescription: `Failed: ${error.message}`
+      });
+      
+      if (i === maxRetries - 1) throw error;
+      await new Promise(r => setTimeout(r, 1000 * (i + 1))); // Backoff
+    }
+  }
+}
+```
+
+## Important Notes
+
+- The session must exist and not be finished
+- SDK must be initialized before calling this function
+- Only one session can be active at a time
+- Previous active session (if any) will be replaced
+
+## Error Cases
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "SDK not initialized" | `init()` not called | Call `lai.init()` first |
+| "Session not found" | Invalid session ID | Verify session ID exists |
+| "Session already finished" | Session was ended | Create a new session |
+
+## See Also
+
+- [initSession](/typescript-sdk/init-session) - Create a new session
+- [updateSession](/typescript-sdk/update-session) - Update session metadata
+- [endSession](/typescript-sdk/end-session) - End the current session

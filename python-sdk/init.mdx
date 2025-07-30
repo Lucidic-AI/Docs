@@ -80,6 +80,84 @@ lai.init(
 
 Returns the session ID as a string.
 
+## Authentication
+
+### Setting up Credentials
+
+You need to provide your Lucidic API key and Agent ID to use the SDK. There are several ways to do this:
+
+#### Option 1: Environment Variables (Recommended)
+
+Set these environment variables in your shell or `.env` file:
+
+```bash
+export LUCIDIC_API_KEY=your-api-key
+export LUCIDIC_AGENT_ID=your-agent-id
+```
+
+Then initialize without passing credentials:
+
+```python
+import lucidicai as lai
+
+lai.init(
+    session_name="My Session",
+    providers=["openai"]
+)
+```
+
+#### Option 2: Direct Parameters
+
+Pass credentials directly to the init function:
+
+```python
+import lucidicai as lai
+
+lai.init(
+    session_name="My Session",
+    lucidic_api_key="your-api-key",   
+    agent_id="your-agent-id",         
+    providers=["openai"]
+)
+```
+
+#### Option 3: Using python-dotenv
+
+For local development, you can use a `.env` file:
+
+```bash
+# .env file
+LUCIDIC_API_KEY=your-api-key
+LUCIDIC_AGENT_ID=your-agent-id
+```
+
+```python
+from dotenv import load_dotenv
+import lucidicai as lai
+
+load_dotenv()  # Load environment variables from .env file
+
+lai.init(
+    session_name="My Session",
+    providers=["anthropic"]
+)
+```
+
+### Getting Your Credentials
+
+1. Log in to the [Lucidic Dashboard](https://dashboard.lucidic.ai)
+2. Navigate to your agent settings
+3. Copy your API Key and Agent ID
+4. Store them securely - never commit them to version control
+
+### Security Best Practices
+
+- **Never hardcode credentials** in your source code
+- **Use environment variables** for production deployments
+- **Add `.env` to `.gitignore`** if using dotenv
+- **Rotate API keys regularly** for enhanced security
+- **Use different keys** for development and production
+
 ## Examples
 
 ### Basic Usage

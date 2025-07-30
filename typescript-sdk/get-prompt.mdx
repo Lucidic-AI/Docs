@@ -1,0 +1,274 @@
+---
+title: 'getPrompt'
+description: 'Retrieve prompts from the Lucidic platform'
+---
+
+## Overview
+
+The `getPrompt` function retrieves prompts stored in the Lucidic platform, enabling centralized prompt management across your applications.
+
+## Syntax
+
+```typescript
+await lai.getPrompt(
+  promptName: string,
+  withCache: boolean = true
+): Promise<string>
+```
+
+## Parameters
+
+<ParamField path="promptName" type="string" required>
+  The name/identifier of the prompt to retrieve.
+</ParamField>
+
+<ParamField path="withCache" type="boolean" default="true">
+  Whether to use cached prompts for better performance.
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to the prompt content as a string.
+
+## Examples
+
+### Basic Usage
+
+```typescript
+// Retrieve a prompt
+const prompt = await lai.getPrompt("customer_support_greeting");
+
+// Use with OpenAI
+const response = await openai.chat.completions.create({
+  model: "gpt-4",
+  messages: [
+    { role: "system", content: prompt },
+    { role: "user", content: userMessage }
+  ]
+});
+```
+
+### With Cache Control
+
+```typescript
+// Force fresh fetch (bypass cache)
+const latestPrompt = await lai.getPrompt("dynamic_prompt", false);
+
+// Use cache for better performance (default)
+const cachedPrompt = await lai.getPrompt("static_prompt", true);
+```
+
+### Error Handling
+
+```typescript
+try {
+  const prompt = await lai.getPrompt("missing_prompt");
+} catch (error) {
+  console.error("Prompt not found:", error);
+  // Fall back to default prompt
+  const prompt = "You are a helpful assistant.";
+}
+```
+
+### Prompt Versioning Pattern
+
+```typescript
+// Use environment-specific prompts
+const environment = process.env.NODE_ENV || "development";
+const promptName = `assistant_prompt_${environment}`;
+
+const prompt = await lai.getPrompt(promptName);
+```
+
+### Multiple Prompts
+
+```typescript
+// Load multiple prompts
+const [systemPrompt, userPrompt, errorPrompt] = await Promise.all([
+  lai.getPrompt("system_instructions"),
+  lai.getPrompt("user_template"),
+  lai.getPrompt("error_handler")
+]);
+
+// Use in conversation
+const messages = [
+  { role: "system", content: systemPrompt },
+  { role: "user", content: userPrompt.replace("{{input}}", userInput) }
+];
+```
+
+## Common Patterns
+
+### 1. Template Replacement
+
+```typescript
+async function getPromptWithVariables(
+  promptName: string,
+  variables: Record<string, string>
+): Promise<string> {
+  let prompt = await lai.getPrompt(promptName);
+  
+  // Replace variables in prompt
+  for (const [key, value] of Object.entries(variables)) {
+    prompt = prompt.replace(new RegExp(`{{${key}}}`, 'g'), value);
+  }
+  
+  return prompt;
+}
+
+// Usage
+const prompt = await getPromptWithVariables("email_template", {
+  customerName: "John Doe",
+  product: "Premium Plan",
+  date: new Date().toLocaleDateString()
+});
+```
+
+### 2. Prompt Caching Strategy
+
+```typescript
+class PromptManager {
+  private cache = new Map<string, { prompt: string; timestamp: number }>();
+  private cacheTTL = 5 * 60 * 1000; // 5 minutes
+
+  async getPrompt(name: string): Promise<string> {
+    const cached = this.cache.get(name);
+    
+    if (cached && Date.now() - cached.timestamp < this.cacheTTL) {
+      return cached.prompt;
+    }
+    
+    // Force fresh fetch for expired cache
+    const prompt = await lai.getPrompt(name, false);
+    this.cache.set(name, { prompt, timestamp: Date.now() });
+    
+    return prompt;
+  }
+}
+```
+
+### 3. Fallback Prompts
+
+```typescript
+async function getPromptWithFallback(
+  primaryName: string,
+  fallbackName: string
+): Promise<string> {
+  try {
+    return await lai.getPrompt(primaryName);
+  } catch (error) {
+    console.warn(`Primary prompt ${primaryName} not found, using fallback`);
+    try {
+      return await lai.getPrompt(fallbackName);
+    } catch (fallbackError) {
+      // Ultimate fallback
+      return "You are a helpful AI assistant.";
+    }
+  }
+}
+```
+
+## Integration Example
+
+```typescript
+class AIAssistant {
+  private openai: any;
+
+  async initialize() {
+    await lai.init({ providers: ["openai"] });
+    const OpenAI = (await import('openai')).default;
+    this.openai = new OpenAI();
+  }
+
+  async respond(userInput: string, context?: string): Promise<string> {
+    // Get prompts from platform
+    const systemPrompt = await lai.getPrompt("assistant_system");
+    const contextPrompt = context 
+      ? await lai.getPrompt("assistant_with_context")
+      : "";
+
+    const messages = [
+      { role: "system", content: systemPrompt },
+    ];
+
+    if (context && contextPrompt) {
+      messages.push({
+        role: "system",
+        content: contextPrompt.replace("{{context}}", context)
+      });
+    }
+
+    messages.push({ role: "user", content: userInput });
+
+    const response = await this.openai.chat.completions.create({
+      model: "gpt-4",
+      messages
+    });
+
+    return response.choices[0].message.content;
+  }
+}
+```
+
+## Best Practices
+
+### 1. Naming Conventions
+
+```typescript
+// Use descriptive, hierarchical names
+await lai.getPrompt("support/greeting/enterprise");
+await lai.getPrompt("analysis/financial/quarterly");
+await lai.getPrompt("generation/email/followup");
+```
+
+### 2. Error Recovery
+
+```typescript
+// Always have a fallback strategy
+async function safeGetPrompt(name: string, defaultPrompt: string): Promise<string> {
+  try {
+    return await lai.getPrompt(name);
+  } catch (error) {
+    await lai.createEvent({
+      description: "Prompt fetch failed",
+      result: `Failed to get ${name}: ${error.message}`
+    });
+    return defaultPrompt;
+  }
+}
+```
+
+### 3. Performance Optimization
+
+```typescript
+// Pre-load critical prompts
+async function preloadPrompts(promptNames: string[]) {
+  const prompts = await Promise.all(
+    promptNames.map(name => lai.getPrompt(name, true))
+  );
+  
+  return Object.fromEntries(
+    promptNames.map((name, i) => [name, prompts[i]])
+  );
+}
+
+// Usage at startup
+const criticalPrompts = await preloadPrompts([
+  "system_instructions",
+  "error_handler",
+  "greeting_message"
+]);
+```
+
+## Notes
+
+- Prompts must be created in the Lucidic dashboard first
+- Caching improves performance for frequently used prompts
+- Prompt names are case-sensitive
+- Network errors will throw exceptions
+
+## See Also
+
+- [Prompt DB Feature Guide](/features/prompt-db) - Learn about prompt management
+- [Examples](/typescript-sdk/examples) - More usage patterns
+- [Python SDK getPrompt](/python-sdk/get_prompt) - Python equivalent

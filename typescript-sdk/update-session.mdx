@@ -1,0 +1,254 @@
+---
+title: 'updateSession'
+description: 'Update the current session metadata'
+---
+
+## Overview
+
+The `updateSession` function updates properties of the active session, such as task description, tags, or completion status.
+
+## Syntax
+
+```typescript
+await lai.updateSession(
+  task?: string,
+  tags?: Record<string, any>,
+  isFinished?: boolean,
+  isSuccessful?: boolean,
+  isSuccessfulReason?: string
+): Promise<void>
+```
+
+## Parameters
+
+<ParamField path="task" type="string" optional>
+  Updated task description for the session.
+</ParamField>
+
+<ParamField path="tags" type="Record<string, any>" optional>
+  Key-value pairs to tag and categorize the session.
+</ParamField>
+
+<ParamField path="isFinished" type="boolean" optional>
+  Whether the session is finished. Usually handled by `endSession()`.
+</ParamField>
+
+<ParamField path="isSuccessful" type="boolean" optional>
+  Whether the session completed successfully.
+</ParamField>
+
+<ParamField path="isSuccessfulReason" type="string" optional>
+  Explanation of success or failure reason.
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to void.
+
+## Examples
+
+### Update Task Description
+
+```typescript
+// Initial session
+await lai.init({
+  sessionName: "Data processor",
+  task: "Process unknown dataset"
+});
+
+// After understanding the data
+await lai.updateSession(
+  "Process customer transaction data for Q4 2023"
+);
+```
+
+### Add Tags
+
+```typescript
+// Add metadata tags
+await lai.updateSession(
+  undefined, // Don't change task
+  {
+    environment: "production",
+    version: "2.1.0",
+    customer: "enterprise-client-123",
+    dataSize: "10GB",
+    priority: "high"
+  }
+);
+```
+
+### Progressive Updates
+
+```typescript
+// Start with basic info
+await lai.init({ sessionName: "Analysis workflow" });
+
+// Add context as you learn more
+await lai.updateSession(
+  "Analyze user behavior patterns",
+  { phase: "discovery" }
+);
+
+// Update after initial findings
+await lai.updateSession(
+  "Analyze shopping cart abandonment patterns",
+  { 
+    phase: "analysis",
+    findingType: "cart-abandonment",
+    timeRange: "30-days"
+  }
+);
+```
+
+### Error Tracking
+
+```typescript
+try {
+  await performCriticalOperation();
+} catch (error) {
+  // Mark session state before ending
+  await lai.updateSession(
+    undefined,
+    {
+      error: error.message,
+      errorType: error.constructor.name,
+      failurePoint: "critical-operation"
+    }
+  );
+  
+  // Then end session
+  await lai.endSession(false, error.message);
+}
+```
+
+### Workflow Phases
+
+```typescript
+async function multiPhaseWorkflow() {
+  await lai.init({ sessionName: "ETL Pipeline" });
+
+  // Phase 1
+  await lai.updateSession("Extract data from sources", { phase: "extract" });
+  await extractData();
+
+  // Phase 2  
+  await lai.updateSession("Transform and validate data", { phase: "transform" });
+  await transformData();
+
+  // Phase 3
+  await lai.updateSession("Load data to warehouse", { phase: "load" });
+  await loadData();
+
+  // Final update
+  await lai.updateSession(
+    "ETL pipeline completed",
+    { 
+      phase: "complete",
+      recordsProcessed: 50000,
+      duration: "45min"
+    }
+  );
+}
+```
+
+## Common Use Cases
+
+### 1. A/B Testing
+
+```typescript
+const variant = Math.random() > 0.5 ? 'A' : 'B';
+
+await lai.updateSession(
+  undefined,
+  {
+    experiment: "prompt-optimization",
+    variant: variant,
+    testGroup: "treatment"
+  }
+);
+```
+
+### 2. Performance Tracking
+
+```typescript
+const startTime = Date.now();
+const result = await complexOperation();
+const duration = Date.now() - startTime;
+
+await lai.updateSession(
+  undefined,
+  {
+    performanceMs: duration,
+    resultSize: result.length,
+    cacheHit: result.fromCache
+  }
+);
+```
+
+### 3. User Context
+
+```typescript
+await lai.updateSession(
+  undefined,
+  {
+    userId: user.id,
+    userTier: user.subscription,
+    userRegion: user.location,
+    sessionSource: "web-app"
+  }
+);
+```
+
+## Best Practices
+
+### 1. Use Tags for Filtering
+
+```typescript
+// Good - enables dashboard filtering
+await lai.updateSession(undefined, {
+  env: "prod",
+  feature: "chat",
+  model: "gpt-4",
+  customer: customerId
+});
+```
+
+### 2. Update Task as Context Emerges
+
+```typescript
+// Start generic
+await lai.init({ task: "Process user request" });
+
+// Update with specifics
+await lai.updateSession(
+  `Generate ${reportType} report for ${dateRange}`
+);
+```
+
+### 3. Don't Use for Step Data
+
+```typescript
+// ❌ Wrong - use step functions instead
+await lai.updateSession("Working on step 2");
+
+// ✅ Correct - session-level info only
+await lai.updateSession(
+  "Multi-step analysis workflow",
+  { totalSteps: 5 }
+);
+```
+
+## Notes
+
+- Only updates the active session
+- All parameters are optional
+- `isFinished` is typically handled by `endSession()`
+- Tags are merged with existing tags, not replaced
+- Cannot update a finished session
+
+## See Also
+
+- [initSession](/typescript-sdk/init-session) - Create a new session
+- [endSession](/typescript-sdk/end-session) - End the session
+- [continueSession](/typescript-sdk/continue-session) - Continue existing session

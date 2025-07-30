@@ -1,0 +1,266 @@
+---
+title: 'endSession'
+description: 'End the current session'
+---
+
+## Overview
+
+The `endSession` function ends the active session, marking it as complete with a success status and optional reason.
+
+## Syntax
+
+```typescript
+await lai.endSession(
+  isSuccessful: boolean = true,
+  reason?: string
+): Promise<void>
+```
+
+## Parameters
+
+<ParamField path="isSuccessful" type="boolean" default="true">
+  Whether the session completed successfully.
+</ParamField>
+
+<ParamField path="reason" type="string" optional>
+  Explanation of why the session succeeded or failed.
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to void.
+
+## Examples
+
+### Basic Usage
+
+```typescript
+// End successfully with default
+await lai.endSession();
+
+// End successfully with reason
+await lai.endSession(true, "All tasks completed");
+
+// End with failure
+await lai.endSession(false, "API rate limit exceeded");
+```
+
+### With Error Handling
+
+```typescript
+async function runWorkflow() {
+  try {
+    await lai.init({ sessionName: "Data processing" });
+    
+    await processData();
+    await generateReport();
+    
+    // Success case
+    await lai.endSession(true, "Workflow completed successfully");
+    
+  } catch (error) {
+    // Failure case
+    await lai.endSession(false, `Workflow failed: ${error.message}`);
+    throw error;
+  }
+}
+```
+
+### Conditional Success
+
+```typescript
+async function batchProcessor(items: any[]) {
+  await lai.init({ sessionName: "Batch processing" });
+  
+  const results = await processItems(items);
+  
+  const successCount = results.filter(r => r.success).length;
+  const successRate = successCount / results.length;
+  
+  if (successRate === 1) {
+    await lai.endSession(true, "All items processed successfully");
+  } else if (successRate > 0.8) {
+    await lai.endSession(true, `Partial success: ${successCount}/${results.length} items processed`);
+  } else {
+    await lai.endSession(false, `Too many failures: only ${successCount}/${results.length} succeeded`);
+  }
+}
+```
+
+### With Cleanup
+
+```typescript
+async function robustWorkflow() {
+  let session;
+  
+  try {
+    session = await lai.init({ sessionName: "Critical workflow" });
+    
+    // Your workflow
+    await performCriticalOperations();
+    
+    await lai.endSession(true, "Operations completed");
+    
+  } catch (error) {
+    // Ensure session ends even on error
+    if (session) {
+      await lai.endSession(false, error.message);
+    }
+    throw error;
+    
+  } finally {
+    // Additional cleanup
+    await cleanup();
+  }
+}
+```
+
+## Auto-End Behavior
+
+When `autoEnd` is enabled (default), sessions automatically end on:
+- Process exit
+- Uncaught exceptions
+- SIGINT/SIGTERM signals
+
+```typescript
+// Auto-end enabled by default
+await lai.init({ sessionName: "My session" });
+
+// Session will auto-end on exit - no need to call endSession()
+process.exit(0);
+```
+
+To disable auto-end:
+
+```typescript
+await lai.init({
+  sessionName: "Manual session",
+  autoEnd: false  // Must manually call endSession()
+});
+```
+
+## Common Patterns
+
+### 1. Success Criteria
+
+```typescript
+async function taskWithCriteria() {
+  await lai.init({ sessionName: "Goal-based task" });
+  
+  const goals = {
+    accuracy: 0.95,
+    performance: 1000, // ms
+    errorRate: 0.01
+  };
+  
+  const results = await runTask();
+  
+  const success = 
+    results.accuracy >= goals.accuracy &&
+    results.performanceMs <= goals.performance &&
+    results.errorRate <= goals.errorRate;
+    
+  await lai.endSession(
+    success,
+    success 
+      ? "All goals met"
+      : `Failed criteria: accuracy=${results.accuracy}, performance=${results.performanceMs}ms`
+  );
+}
+```
+
+### 2. Multi-Phase Workflows
+
+```typescript
+const phases = ['extract', 'transform', 'load'];
+let completedPhases = [];
+
+try {
+  await lai.init({ sessionName: "ETL Pipeline" });
+  
+  for (const phase of phases) {
+    await executePhase(phase);
+    completedPhases.push(phase);
+  }
+  
+  await lai.endSession(true, "All phases completed");
+  
+} catch (error) {
+  await lai.endSession(
+    false, 
+    `Failed at ${phases[completedPhases.length]}: ${error.message}`
+  );
+}
+```
+
+### 3. Timeout Handling
+
+```typescript
+async function timedOperation() {
+  await lai.init({ sessionName: "Time-sensitive task" });
+  
+  const timeout = setTimeout(async () => {
+    await lai.endSession(false, "Operation timed out after 5 minutes");
+    process.exit(1);
+  }, 5 * 60 * 1000);
+  
+  try {
+    await performOperation();
+    clearTimeout(timeout);
+    await lai.endSession(true, "Completed within time limit");
+  } catch (error) {
+    clearTimeout(timeout);
+    await lai.endSession(false, error.message);
+  }
+}
+```
+
+## Best Practices
+
+### 1. Always End Sessions
+
+```typescript
+// Use try-finally to ensure ending
+try {
+  await lai.init({ sessionName: "Important task" });
+  await doWork();
+} finally {
+  await lai.endSession();
+}
+```
+
+### 2. Meaningful Reasons
+
+```typescript
+// ✅ Good - specific and actionable
+await lai.endSession(false, "Database connection failed after 3 retries: timeout");
+
+// ❌ Less helpful
+await lai.endSession(false, "Error occurred");
+```
+
+### 3. Success Doesn't Mean Perfect
+
+```typescript
+// Partial success is still success
+const processed = 95;
+const total = 100;
+
+await lai.endSession(
+  true,  // Still successful
+  `Processed ${processed}/${total} items, ${total - processed} skipped due to validation`
+);
+```
+
+## Notes
+
+- Only the active session can be ended
+- Steps are automatically ended when session ends
+- After ending, a new session can be started
+- The SDK uninstruments providers after session end
+
+## See Also
+
+- [init](/typescript-sdk/init) - Initialize SDK and create session
+- [initSession](/typescript-sdk/init-session) - Create new session
+- [updateSession](/typescript-sdk/update-session) - Update session before ending

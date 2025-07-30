@@ -1,0 +1,149 @@
+---
+title: Quick Start
+description: Get complete AI observability with just 2 lines of code
+---
+
+> **Note:** Setup has two parts — (1) connecting it to the [Lucidic Dashboard](/getting-started/dashboard), and (2) installing LucidicAI in your code (below).
+
+## The Magic of Drop-in Observability
+
+With just 2 lines of code, get complete visibility into your AI workflows:
+
+```python
+import lucidicai as lai
+lai.init(providers=["openai"])  # That's it!
+```
+
+## What Happens Automatically
+
+When you add these 2 lines to any Python script:
+
+- **Every LLM call is tracked** - Automatic event creation for all API calls
+- **Steps are created automatically** - No manual step management needed
+- **Sessions end gracefully** - Automatic cleanup on script exit
+- **All data flows to your dashboard** - Real-time visibility
+- **Works with existing code** - No refactoring required
+
+## Installation
+
+```bash
+pip install lucidicai
+```
+
+Set your credentials (get them from the [dashboard](/getting-started/dashboard)):
+```bash
+export LUCIDIC_API_KEY=your-api-key
+export LUCIDIC_AGENT_ID=your-agent-id
+```
+
+## Complete Example
+
+Here's a real-world example showing how minimal the setup can be:
+
+```python
+import lucidicai as lai
+from openai import OpenAI
+
+# Just these 2 lines to add complete observability:
+lai.init(providers=["openai"])
+
+# Your existing code remains unchanged
+client = OpenAI()
+
+def analyze_text(text):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"Analyze this: {text}"}]
+    )
+    return response.choices[0].message.content
+
+def summarize_text(text):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"Summarize this: {text}"}]
+    )
+    return response.choices[0].message.content
+
+# Your workflow runs normally
+text = "The quick brown fox jumps over the lazy dog."
+analysis = analyze_text(text)
+summary = summarize_text(analysis)
+print(summary)
+
+# When script exits, Lucidic automatically:
+# 1. Creates steps for each distinct operation
+# 2. Creates events for each LLM call
+# 3. Ends all steps properly
+# 4. Ends the session
+# 5. Sends everything to your dashboard
+```
+
+## Supported Providers
+
+Just change the provider name in `init()`:
+
+```python
+# OpenAI
+lai.init(providers=["openai"])
+
+# Anthropic
+lai.init(providers=["anthropic"])
+
+# Multiple providers
+lai.init(providers=["openai", "anthropic"])
+
+# Other supported providers
+lai.init(providers=["langchain"])       # LangChain
+lai.init(providers=["pydantic_ai"])     # PydanticAI
+lai.init(providers=["openai_agents"])   # OpenAI Agents
+```
+
+## Want More Control?
+
+While the 2-line setup handles everything automatically, you can take control when needed:
+
+<CardGroup cols={2}>
+  <Card title="Use Decorators" icon="at" href="/python-sdk/decorators">
+    Simplify tracking with @step and @event decorators
+  </Card>
+  <Card title="Session Management" icon="play" href="/python-sdk/init">
+    Configure sessions with custom names, IDs, and metadata
+  </Card>
+  <Card title="Manual Steps" icon="plus" href="/core-concepts/steps">
+    Create and manage steps explicitly for complex workflows
+  </Card>
+  <Card title="Custom Events" icon="bolt" href="/core-concepts/events">
+    Track custom events beyond LLM calls
+  </Card>
+</CardGroup>
+
+<Card title="Full Examples" icon="code" href="/python-sdk/examples">
+  See complete examples with manual control and decorators
+</Card>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="View Your Sessions" icon="chart-line" href="/features/workflow-sandbox">
+    See your tracked sessions in the dashboard
+  </Card>
+  <Card title="Add Evaluations" icon="star" href="/features/rubrics">
+    Score and evaluate your agent's performance
+  </Card>
+  <Card title="Run Mass Simulations" icon="layer-group" href="/getting-started/masssim">
+    Test your agent at scale
+  </Card>
+  <Card title="Explore Integrations" icon="plug" href="/integrations/openai">
+    Learn about provider-specific features
+  </Card>
+</CardGroup>
+
+---
+
+## Minimum Requirements
+
+- Python **3.8+**
+- Compatible with all major LLM frameworks
+- Works in local, server, or cloud environments
+
+That's it! You now have complete observability into your AI workflows with just 2 lines of code.

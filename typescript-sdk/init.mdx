@@ -1,0 +1,173 @@
+---
+title: 'init'
+description: 'Initialize the Lucidic SDK and optionally create a session'
+---
+
+## Overview
+
+The `init` function initializes the Lucidic SDK with your credentials, configures providers, and optionally starts a new session. This must be called before any other SDK operations.
+
+## Syntax
+
+```typescript
+await lai.init(config?: LucidicConfig): Promise<string>
+```
+
+## Parameters
+
+<ParamField path="config" type="LucidicConfig" optional>
+  Configuration object with the following properties:
+  
+  <Expandable title="properties">
+    <ParamField path="apiKey" type="string" optional>
+      Your Lucidic API key. If not provided, uses `LUCIDIC_API_KEY` environment variable.
+    </ParamField>
+    
+    <ParamField path="agentId" type="string" optional>
+      Your agent identifier. If not provided, uses `LUCIDIC_AGENT_ID` environment variable.
+    </ParamField>
+    
+    <ParamField path="sessionName" type="string" optional>
+      If provided, automatically creates a session with this name.
+    </ParamField>
+    
+    <ParamField path="sessionId" type="string" optional>
+      If provided, continues an existing session instead of creating a new one.
+    </ParamField>
+    
+    <ParamField path="task" type="string" optional>
+      High-level description of the task or workflow.
+    </ParamField>
+    
+    <ParamField path="providers" type="string[]" optional>
+      List of LLM providers to instrument. Options: `"openai"`, `"anthropic"`.
+    </ParamField>
+    
+    <ParamField path="userId" type="string" optional>
+      User identifier for tracking.
+    </ParamField>
+    
+    <ParamField path="groupId" type="string" optional>
+      Group identifier for organization.
+    </ParamField>
+    
+    <ParamField path="testId" type="string" optional>
+      Test run identifier.
+    </ParamField>
+    
+    <ParamField path="maskingFunction" type="(text: string) => string" optional>
+      Custom function to mask sensitive data.
+    </ParamField>
+    
+    <ParamField path="autoEnd" type="boolean" optional default="true">
+      Automatically end session on process exit.
+    </ParamField>
+    
+    <ParamField path="debug" type="boolean" optional default="false">
+      Enable debug logging.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to the session ID (string) if a session was created, or an empty string if only SDK was initialized.
+
+## Examples
+
+### Basic Initialization
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Initialize with environment variables
+await lai.init();
+```
+
+### With Session Creation
+
+```typescript
+await lai.init({
+  sessionName: "Customer Support Bot",
+  providers: ["openai"],
+  task: "Answer customer questions"
+});
+
+// Now import OpenAI AFTER init
+const OpenAI = (await import('openai')).default;
+const openai = new OpenAI();
+```
+
+### With Custom Configuration
+
+```typescript
+await lai.init({
+  apiKey: "your-api-key",
+  agentId: "your-agent-id",
+  sessionName: "Production Agent",
+  providers: ["openai", "anthropic"],
+  maskingFunction: (text) => text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, 'XXX-XX-XXXX'),
+  debug: true
+});
+```
+
+### Continue Existing Session
+
+```typescript
+await lai.init({
+  sessionId: "existing-session-uuid",
+  providers: ["anthropic"]
+});
+```
+
+## Important Notes
+
+### Provider Import Order
+
+Providers MUST be imported AFTER `init()` for instrumentation to work:
+
+```typescript
+// ✅ CORRECT
+await lai.init({ providers: ["openai"] });
+const OpenAI = (await import('openai')).default;
+
+// ❌ WRONG - OpenAI won't be instrumented
+import OpenAI from 'openai';
+await lai.init({ providers: ["openai"] });
+```
+
+### Auto-End Behavior
+
+When `autoEnd` is true (default), the SDK:
+- Registers exit handlers for graceful shutdown
+- Automatically ends active sessions on process exit
+- Cleans up telemetry instrumentation
+
+### Environment Variables
+
+The SDK checks these environment variables if not provided in config:
+- `LUCIDIC_API_KEY` - API key for authentication
+- `LUCIDIC_AGENT_ID` - Agent identifier
+
+## Error Handling
+
+```typescript
+try {
+  await lai.init({
+    sessionName: "My Session",
+    providers: ["openai"]
+  });
+} catch (error) {
+  if (error.message.includes('API key')) {
+    console.error('Invalid API credentials');
+  } else {
+    console.error('Initialization failed:', error);
+  }
+}
+```
+
+## See Also
+
+- [initSession](/typescript-sdk/init-session) - Create sessions explicitly
+- [continueSession](/typescript-sdk/continue-session) - Continue existing sessions
+- [Quick Start Guide](/typescript-sdk/quick-start) - Getting started tutorial

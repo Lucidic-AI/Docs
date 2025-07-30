@@ -37,35 +37,9 @@ const response = await openai.chat.completions.create({
 // - Linked to the event
 ```
 
-### Manual Image Upload
-
-```typescript
-// Upload images directly
-const imageBuffer = fs.readFileSync('chart.png');
-const imageUrl = await lai.uploadImage(imageBuffer);
-
-// Or upload base64
-const base64Image = 'iVBORw0KGgoAAAANSUhEUgA...';
-const imageUrl2 = await lai.uploadImage(base64Image);
-```
-
-### Storage Context Wrapper
-
-For custom implementations that need image tracking:
-
-```typescript
-import { withStorageContext } from 'lucidicai';
-
-const myCustomFunction = withStorageContext(async () => {
-  // Any images processed here will be tracked
-  const result = await processImagesWithCustomAPI();
-  return result;
-});
-```
-
 ---
 
-## 🔒 Data Masking
+## Data Masking
 
 Protect sensitive information before it's sent to Lucidic.
 
@@ -221,7 +195,7 @@ In the Lucidic dashboard, you can:
 
 ---
 
-## 🏷️ Session Tags and Metadata
+## Session Tags and Metadata
 
 Add custom metadata to sessions for better organization.
 
