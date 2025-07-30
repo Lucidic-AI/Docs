@@ -11,10 +11,10 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Python SDK",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "GetsStarted",
             "pages": [
               "getting-started/introduction",
               "getting-started/dashboard",
@@ -27,11 +27,11 @@
             "group": "Features",
             "pages": [
               "features/workflow-sandbox",
-              "features/mass-simulation-overview",
-              "features/workflow-trajectory",
               "features/rubrics",
               "features/prompt-db",
-              "features/time-travel"
+              "features/time-travel",
+              "features/mass-simulation-overview",
+              "features/workflow-trajectory"
             ]
           },
           {
@@ -40,8 +40,7 @@
               "integrations/openai",
               "integrations/anthropic",
               "integrations/pydantic-ai",
-              "integrations/langchain",
-              "integrations/browser-use"
+              "integrations/langchain"
             ]
           }, 
           {
@@ -50,50 +49,44 @@
               "core-concepts/sessions",
               "core-concepts/steps",
               "core-concepts/events",
-              "core-concepts/mass-simulations",
-              "core-concepts/evaluations-rubrics"
+              "core-concepts/mass-simulations"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "API Reference",
-        "groups": [
+          },
           {
             "group": "Python SDK Functions",
             "pages": [
-              "api-reference/index",
+              "python-sdk/index",
               {
                 "group": "Session Management",
                 "pages": [
-                  "api-reference/init",
-                  "api-reference/continue_session",
-                  "api-reference/update_session",
-                  "api-reference/end_session",
-                  "api-reference/reset_sdk"
+                  "python-sdk/init",
+                  "python-sdk/continue_session",
+                  "python-sdk/update_session",
+                  "python-sdk/end_session",
+                  "python-sdk/reset_sdk"
                 ]
               },
               {
                 "group": "Step Management",
                 "pages": [
-                  "api-reference/create_step",
-                  "api-reference/update_step",
-                  "api-reference/end_step"
+                  "python-sdk/create_step",
+                  "python-sdk/update_step",
+                  "python-sdk/end_step"
                 ]
               },
               {
                 "group": "Event Management",
                 "pages": [
-                  "api-reference/create_event",
-                  "api-reference/update_event",
-                  "api-reference/end_event"
+                  "python-sdk/create_event",
+                  "python-sdk/update_event",
+                  "python-sdk/end_event"
                 ]
               },
               {
                 "group": "Advanced Features",
                 "pages": [
-                  "api-reference/get_prompt",
-                  "api-reference/create_mass_sim"
+                  "python-sdk/get_prompt",
+                  "python-sdk/create_mass_sim"
                 ]
               }
             ]
