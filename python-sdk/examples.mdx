@@ -1,0 +1,407 @@
+---
+title: 'Examples'
+description: 'Complete examples showing manual control and advanced features'
+---
+
+## Overview
+
+This page contains detailed examples showing how to use Lucidic's Python SDK with full control over sessions, steps, and events. While the [2-line setup](/getting-started/quickstart) handles everything automatically, these examples demonstrate manual control for complex workflows.
+
+## Basic Session with Manual Steps
+
+```python
+import lucidicai as lai
+
+# Initialize with session configuration
+lai.init(
+    session_name="wiki_search",
+    agent_id="agent-123",
+    providers=["openai"],
+    task="Search for Stanford University",
+    rubrics=["default"]
+)
+
+# Create a step
+lai.create_step(state="Home", goal="Search for Stanford")
+
+# Your agent logic here
+# ...
+
+# Create events for non-LLM operations
+lai.create_event(description="Navigate to search")
+# Navigation code here
+lai.end_event(result="Reached search page")
+
+# LLM calls are auto-tracked if providers are set
+# But you can still create events manually if needed
+lai.create_event(description="Custom OpenAI analysis")
+# Your LLM call
+lai.end_event(result="Analysis complete")
+
+# End the step with evaluation
+lai.end_step(
+    action="Used search", 
+    eval_score=5, 
+    eval_description="Successfully found Stanford University"
+)
+
+# End session with evaluation
+lai.end_session(is_successful=True, session_eval_reason="Task completed successfully")
+```
+
+## Step Updates During Execution
+
+```python
+import lucidicai as lai
+
+lai.init(
+    session_name="document_processor",
+    providers=["openai", "anthropic"]
+)
+
+# Create initial step
+lai.create_step(
+    state="Document uploaded",
+    action="Processing document",
+    goal="Extract key information"
+)
+
+# Update step as processing progresses
+lai.update_step(
+    state="Parsing complete",
+    action="Extracting entities"
+)
+
+# Add screenshot mid-step
+lai.update_step(
+    screenshot_path="/path/to/progress.png"
+)
+
+# Final update before ending
+lai.update_step(
+    state="Entities extracted",
+    eval_score=4,
+    eval_description="Extracted 95% of entities correctly"
+)
+
+lai.end_step()
+```
+
+## Working with Events
+
+### Manual Event Creation
+
+```python
+lai.create_event(
+    description="Database query",
+    metadata={"query": "SELECT * FROM users WHERE active = true"}
+)
+# Execute your database query
+result = db.execute(query)
+lai.end_event(
+    result=f"Found {len(result)} active users",
+    cost_added=0.001  # Track custom costs
+)
+```
+
+### Events with Screenshots
+
+```python
+lai.create_event(
+    description="UI interaction",
+    screenshots=["/path/to/before.png"]
+)
+# Perform UI action
+click_button("Submit")
+lai.end_event(
+    result="Form submitted successfully",
+    screenshots=["/path/to/after.png"]  # Screenshots are appended
+)
+```
+
+## Authentication Examples
+
+### Using Environment Variables (Recommended)
+
+```python
+# Set these in your environment or .env file:
+# LUCIDIC_API_KEY=your-api-key
+# LUCIDIC_AGENT_ID=your-agent-id
+
+import lucidicai as lai
+lai.init(providers=["openai"])  # Credentials loaded automatically
+```
+
+### Direct Parameters
+
+```python
+import lucidicai as lai
+
+lai.init(
+    lucidic_api_key="your-api-key",   
+    agent_id="your-agent-id",         
+    providers=["openai"],
+    session_name="My Session"
+)
+```
+
+### Using dotenv
+
+```python
+from dotenv import load_dotenv
+import lucidicai as lai
+
+load_dotenv()  # Load from .env file
+lai.init(providers=["anthropic"])
+```
+
+## Using Prompt Database
+
+```python
+import lucidicai as lai
+
+lai.init(providers=["openai"])
+
+# Pull prompt from Prompt DB
+prompt = lai.get_prompt(
+    prompt_name="summarize_webpage",
+    variables={
+        "page_text": "Stanford University is a private research university...",
+        "max_length": "100 words"
+    },
+    label="production",  # Use production version
+    cache_ttl=60  # Cache for 60 seconds
+)
+
+# Use the prompt in your LLM call
+from openai import OpenAI
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": prompt}]
+)
+```
+
+## Custom Evaluation Rubrics
+
+```python
+import lucidicai as lai
+
+# Initialize with custom rubrics
+lai.init(
+    session_name="customer_support",
+    providers=["openai"],
+    rubrics=["default", "customer_satisfaction", "response_time"]
+)
+
+# Your agent workflow...
+
+# Custom evaluation function
+def evaluate_customer_interaction(transcript, response_time):
+    satisfaction_score = analyze_sentiment(transcript)
+    time_score = 5 if response_time < 30 else 3
+    return (satisfaction_score + time_score) / 2
+
+# End session with custom evaluation
+score, reason = evaluate_customer_interaction(
+    conversation_transcript, 
+    total_response_time
+)
+
+lai.end_session(
+    is_successful=score >= 4,
+    session_eval=score,
+    session_eval_reason=reason
+)
+```
+
+## Continuing Existing Sessions
+
+```python
+import lucidicai as lai
+
+# Continue a previous session
+lai.continue_session(
+    session_id="existing-session-uuid",
+    providers=["openai"]
+)
+
+# Add more steps to the existing session
+lai.create_step(state="Resuming task", goal="Complete remaining items")
+# ... your logic ...
+lai.end_step()
+
+lai.end_session()
+```
+
+## Error Handling
+
+```python
+import lucidicai as lai
+from lucidicai.errors import (
+    APIKeyVerificationError,
+    InvalidOperationError,
+    LucidicNotInitializedError
+)
+
+try:
+    lai.init(session_name="My Session", providers=["openai"])
+    
+    try:
+        lai.create_step(state="Processing")
+        # Your agent logic that might fail
+        process_data()
+    finally:
+        # Ensure step is ended even if error occurs
+        lai.end_step(eval_score=0, eval_description="Failed during processing")
+        
+except APIKeyVerificationError:
+    print("Invalid API credentials. Check your keys.")
+except InvalidOperationError as e:
+    print(f"Operation error: {e}")
+finally:
+    # Session auto-ends, but you can end explicitly
+    if lai.is_session_active():
+        lai.end_session(is_successful=False)
+```
+
+## Mass Simulation Example
+
+```python
+import lucidicai as lai
+
+# Create a mass simulation
+mass_sim_id = lai.create_mass_sim(
+    name="Wikipedia Search Variations",
+    runs=10,
+    parallel=True
+)
+
+# Run multiple sessions with the same mass_sim_id
+for i in range(10):
+    lai.init(
+        session_name=f"Wiki Search Run {i}",
+        providers=["openai"],
+        mass_sim_id=mass_sim_id,
+        task="Search for Stanford University"
+    )
+    
+    # Your agent logic with variations
+    run_agent_with_variation(i)
+    
+    lai.end_session()
+```
+
+## Production Monitoring
+
+```python
+import lucidicai as lai
+
+# Enable production monitoring mode
+lai.init(
+    providers=["openai", "anthropic"],
+    production_monitoring=True,  # Optimized for production
+    auto_end=True  # Ensure cleanup on exit
+)
+
+# Your production workflow
+process_user_request()
+
+# Session automatically ends and data is sent efficiently
+```
+
+## Complete Multi-Step Workflow
+
+```python
+import lucidicai as lai
+from openai import OpenAI
+import time
+
+# Initialize
+lai.init(
+    session_name="research_assistant",
+    providers=["openai"],
+    task="Research and summarize recent AI developments"
+)
+
+client = OpenAI()
+
+# Step 1: Search for topics
+lai.create_step(
+    state="Starting research",
+    goal="Find recent AI papers",
+    action="Searching arXiv"
+)
+
+papers = search_arxiv("artificial intelligence", limit=5)
+lai.update_step(state=f"Found {len(papers)} papers")
+
+lai.end_step(eval_score=5, eval_description="Found relevant papers")
+
+# Step 2: Analyze each paper
+for i, paper in enumerate(papers):
+    lai.create_step(
+        state=f"Analyzing paper {i+1}/{len(papers)}",
+        goal="Extract key insights",
+        action="Reading abstract"
+    )
+    
+    # LLM call (auto-tracked)
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{
+            "role": "user", 
+            "content": f"Summarize this paper: {paper.abstract}"
+        }]
+    )
+    
+    summary = response.choices[0].message.content
+    
+    lai.end_step(
+        state=f"Paper {i+1} analyzed",
+        eval_score=4,
+        eval_description="Good summary extracted"
+    )
+    
+    time.sleep(1)  # Rate limiting
+
+# Step 3: Create final report
+lai.create_step(
+    state="Creating final report",
+    goal="Synthesize all findings",
+    action="Generating comprehensive summary"
+)
+
+# Another LLM call (auto-tracked)
+final_response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{
+        "role": "user",
+        "content": "Create a comprehensive report from these summaries..."
+    }]
+)
+
+report = final_response.choices[0].message.content
+
+lai.end_step(
+    eval_score=5,
+    eval_description="Comprehensive report generated"
+)
+
+# End session
+lai.end_session(
+    is_successful=True,
+    session_eval=5,
+    session_eval_reason="Successfully researched and summarized 5 papers"
+)
+
+print(f"Report generated: {report[:200]}...")
+```
+
+## Next Steps
+
+- Learn about [Session Management](/python-sdk/init)
+- Explore [Step Management](/core-concepts/steps)
+- Understand [Event Tracking](/core-concepts/events)
+- Set up [Custom Rubrics](/features/rubrics)
+- Use the [Prompt Database](/features/prompt-db)
