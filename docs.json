@@ -57,34 +57,6 @@
         ]
       },
       {
-        "tab": "TypeScript SDK",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "typescript-sdk/overview",
-              "typescript-sdk/installation",
-              "typescript-sdk/quick-start",
-              "typescript-sdk/core-concepts"
-            ]
-          },
-          {
-            "group": "Integrations",
-            "pages": [
-              "typescript-sdk/integrations/openai",
-              "typescript-sdk/integrations/anthropic"
-            ]
-          },
-          {
-            "group": "Advanced",
-            "pages": [
-              "typescript-sdk/advanced-features",
-              "typescript-sdk/api-reference"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "API Reference",
         "groups": [
           {
@@ -124,6 +96,34 @@
                   "api-reference/create_mass_sim"
                 ]
               }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "TypeScript SDK",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "typescript-sdk/overview",
+              "typescript-sdk/installation",
+              "typescript-sdk/quick-start",
+              "typescript-sdk/core-concepts"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "typescript-sdk/integrations/openai",
+              "typescript-sdk/integrations/anthropic"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "typescript-sdk/advanced-features",
+              "typescript-sdk/api-reference"
             ]
           }
         ]
