@@ -91,6 +91,17 @@ lai.end_session()
   </Card>
 </CardGroup>
 
+## Decorators
+
+<CardGroup cols={2}>
+  <Card title="@step" icon="at" href="/python-sdk/decorators#the-step-decorator">
+    Automatically wrap functions with step tracking
+  </Card>
+  <Card title="@event" icon="at" href="/python-sdk/decorators#the-event-decorator">
+    Create events from function calls
+  </Card>
+</CardGroup>
+
 ## Function Categories
 
 ### Session Lifecycle
@@ -104,17 +115,24 @@ lai.end_session()
 1. **Creation**: Use `create_step()` to begin tracking a unit of work
 2. **Progress**: Update step data with `update_step()`
 3. **Completion**: Finish with `end_step()` including evaluation
+4. **Decorators**: Use `@step` decorator for automatic management
 
 ### Event Tracking
 
 1. **Automatic**: LLM calls through instrumented providers create events automatically
 2. **Manual**: Use `create_event()` for custom events
 3. **Updates**: Modify events with `update_event()` and `end_event()`
+4. **Decorators**: Use `@event` decorator for function-level tracking
 
 ### Utilities
 
 1. **Prompts**: Centralized prompt management with `get_prompt()`
 2. **Mass Simulations**: Batch operations with `create_mass_sim()`
+
+### Decorators
+
+1. **@step**: Wrap functions with automatic step tracking
+2. **@event**: Create events from function calls automatically
 
 ## Provider Support
 

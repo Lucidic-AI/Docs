@@ -56,7 +56,6 @@
             "group": "Python SDK Functions",
             "pages": [
               "python-sdk/index",
-              "python-sdk/examples",
               {
                 "group": "Session Management",
                 "pages": [
@@ -89,7 +88,9 @@
                   "python-sdk/get_prompt",
                   "python-sdk/create_mass_sim"
                 ]
-              }
+              },
+              "python-sdk/decorators",
+              "python-sdk/examples"
             ]
           }
         ]

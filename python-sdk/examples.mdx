@@ -310,6 +310,107 @@ process_user_request()
 # Session automatically ends and data is sent efficiently
 ```
 
+## Using Decorators
+
+Decorators provide a cleaner way to track steps and events:
+
+### Basic Decorator Usage
+
+```python
+import lucidicai as lai
+
+lai.init(providers=["openai"])
+
+# Automatic step tracking
+@lai.step(
+    state="Processing request",
+    action="Validate and handle user input",
+    goal="Generate response"
+)
+def handle_user_request(request: dict) -> dict:
+    # Validate input
+    if not validate_request(request):
+        raise ValueError("Invalid request")
+    
+    # Process request (this creates an event automatically)
+    response = process_request(request)
+    
+    return response
+
+# Automatic event tracking
+@lai.event(description="Validate user request")
+def validate_request(request: dict) -> bool:
+    # Validation logic
+    return "user_id" in request and "message" in request
+
+@lai.event()  # Auto-generates description from function signature
+def process_request(request: dict) -> dict:
+    # Your processing logic
+    return {"status": "success", "data": request}
+```
+
+### Decorators with Async Functions
+
+```python
+@lai.step(state="Async workflow", action="Fetch and process data")
+async def async_workflow(urls: list) -> dict:
+    results = []
+    
+    for url in urls:
+        # Each call creates an event
+        data = await fetch_data(url)
+        results.append(data)
+    
+    return {"fetched": len(results), "data": results}
+
+@lai.event(description="Fetch data from URL")
+async def fetch_data(url: str) -> dict:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
+```
+
+### Nested Decorators
+
+```python
+@lai.step(state="Parent process", action="Orchestrate workflow")
+def parent_workflow(items: list) -> dict:
+    """Parent step that contains child steps."""
+    results = []
+    
+    for item in items:
+        # Each call creates a new step
+        result = process_item_with_step(item)
+        results.append(result)
+    
+    # This creates an event within the parent step
+    summary = summarize_results(results)
+    
+    return {"processed": len(results), "summary": summary}
+
+@lai.step(state="Processing item", action="Transform data")
+def process_item_with_step(item: dict) -> dict:
+    """Child step for each item."""
+    # These create events within this step
+    validated = validate_item(item)
+    transformed = transform_item(validated)
+    return transformed
+
+@lai.event(description="Validate item")
+def validate_item(item: dict) -> dict:
+    # Validation logic
+    return item
+
+@lai.event()
+def transform_item(item: dict) -> dict:
+    # Transformation logic
+    return {"transformed": item}
+
+@lai.event(description="Generate summary")
+def summarize_results(results: list) -> str:
+    return f"Processed {len(results)} items successfully"
+```
+
 ## Complete Multi-Step Workflow
 
 ```python
