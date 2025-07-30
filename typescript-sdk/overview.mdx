@@ -3,13 +3,13 @@ title: TypeScript SDK Overview
 description: Official TypeScript SDK for Lucidic AI - LLM observability for your TypeScript applications
 ---
 
-# 🟦 TypeScript SDK
+# TypeScript SDK
 
 The Lucidic AI TypeScript SDK provides full observability for your AI applications built with TypeScript/JavaScript. It offers automatic instrumentation for OpenAI and Anthropic, with the same powerful features as our Python SDK.
 
 ---
 
-## 📦 Installation
+## Installation
 
 Install the SDK via npm:
 
@@ -25,7 +25,7 @@ yarn add lucidicai
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```typescript
 import * as lai from 'lucidicai';
@@ -53,20 +53,20 @@ const response = await openai.chat.completions.create({
 
 ---
 
-## ⚡ Key Features
+## Key Features
 
-### 🎯 Automatic Instrumentation
+### Automatic Instrumentation
 - **Zero-config tracking** for OpenAI and Anthropic
 - **Auto event creation** for every LLM call
 - **Auto step creation** when no active step exists
 - **Auto session ending** on process exit
 
-### 🔄 Full TypeScript Support
+### Full TypeScript Support
 - Comprehensive type definitions
 - Async/await support throughout
 - Type-safe configuration
 
-### 📊 Advanced Features
+### Advanced Features
 - **Multimodal support** (text and images)
 - **Cost tracking** with built-in pricing data
 - **Data masking** for sensitive information
@@ -75,7 +75,7 @@ const response = await openai.chat.completions.create({
 
 ---
 
-## 🆚 TypeScript vs Python SDK
+## TypeScript vs Python SDK
 
 | Feature | TypeScript SDK | Python SDK |
 |---------|---------------|------------|
@@ -95,7 +95,7 @@ const response = await openai.chat.completions.create({
 
 For automatic tracking to work, you **must** initialize Lucidic **before** importing LLM libraries:
 
-### ✅ Correct
+### Correct
 ```typescript
 // 1. First, initialize Lucidic
 await lai.init({ providers: ['openai'] });
@@ -104,7 +104,7 @@ await lai.init({ providers: ['openai'] });
 const OpenAI = (await import('openai')).default;
 ```
 
-### ❌ Incorrect
+### Incorrect
 ```typescript
 // DON'T DO THIS - events won't be tracked!
 import OpenAI from 'openai';
@@ -113,7 +113,7 @@ await lai.init({ providers: ['openai'] });
 
 ---
 
-## 🔗 Next Steps
+## Next Steps
 
 - [Installation & Setup](/typescript-sdk/installation) - Detailed setup guide
 - [Core Concepts](/typescript-sdk/core-concepts) - Sessions, Steps, and Events
