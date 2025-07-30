@@ -18,7 +18,7 @@
             "pages": [
               "getting-started/introduction",
               "getting-started/dashboard",
-              "getting-started/final-instructions",
+              "getting-started/quickstart",
               "getting-started/masssim"
             ]
           },
@@ -56,6 +56,7 @@
             "group": "Python SDK Functions",
             "pages": [
               "python-sdk/index",
+              "python-sdk/examples",
               {
                 "group": "Session Management",
                 "pages": [

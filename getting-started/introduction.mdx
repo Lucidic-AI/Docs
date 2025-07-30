@@ -48,10 +48,26 @@ Lucidic is designed to be as **non-intrusive** as possible. With just two lines 
 - **Auto Event Creation**: LLM calls from supported providers (OpenAI, Anthropic, LangChain, PydanticAI) are automatically captured
 - **Auto Step Creation**: If no step exists when an LLM call occurs, one is created automatically
 - **Auto-Ending Steps**: Steps are automatically ended when your session ends
-- **Auto-End Sessions**: Sessions automatically close when your script exits
-- **Zero-Config Tracking**: Just import, initialize with providers, and everything else is handled
+- **Auto Session Ending**: Sessions automatically end when your script exits via an `atexit` handler
+- **Auto Cost Tracking**: Token usage and costs are calculated automatically for each LLM call
+- **Auto Error Handling**: Failed operations are tracked without breaking your workflow
 
-This means you can instrument existing workflows with minimal changes:
+### How It Works
+
+When you initialize Lucidic with a provider:
+
+```python
+import lucidicai as lai
+lai.init(providers=["openai"])
+```
+
+The SDK:
+1. **Instruments the provider** using OpenTelemetry under the hood
+2. **Intercepts all API calls** to track inputs, outputs, tokens, and timing
+3. **Creates steps and events automatically** as your code runs
+4. **Handles cleanup gracefully** even if your script crashes
+
+This means you can add Lucidic to existing codebases without any refactoring - just add the two lines at the top of your script and you're done!
 
 ```python
 import lucidicai as lai
@@ -65,7 +81,7 @@ lai.init(providers=["openai"])  # That's it! All OpenAI calls are now tracked
 Ready to dive in?
 
 - **[Get Started in the UI](/getting-started/dashboard)** — Run your first Session and view the dashboard
-- **[Use the Python SDK](/getting-started/final-instructions)** — Record and evaluate agents from your Python code
+- **[Quick Start](/getting-started/quickstart)** — Add 2 lines of code to track your agents
 - **[Use the TypeScript SDK](/typescript-sdk/overview)** — Full observability for your TypeScript/JavaScript applications
 
 We're excited to help you build agents that are **observable**, **debuggable**, and **production-ready**.
