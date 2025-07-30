@@ -1,0 +1,258 @@
+---
+title: Installation & Setup
+description: Get started with the Lucidic AI TypeScript SDK in your Node.js or TypeScript project
+---
+
+# 📦 Installation & Setup
+
+This guide will walk you through installing and configuring the Lucidic AI TypeScript SDK.
+
+---
+
+## 🔧 Prerequisites
+
+- **Node.js** version 14.0 or higher
+- **TypeScript** version 4.0 or higher (for TypeScript projects)
+- A **Lucidic account** with API key and Agent ID
+
+---
+
+## 📥 Install the SDK
+
+### Using npm
+```bash
+npm install lucidicai
+```
+
+### Using yarn
+```bash
+yarn add lucidicai
+```
+
+### Using pnpm
+```bash
+pnpm add lucidicai
+```
+
+---
+
+## 🔑 Configuration
+
+### Environment Variables
+
+Create a `.env` file in your project root:
+
+```bash
+LUCIDIC_API_KEY=your-api-key
+LUCIDIC_AGENT_ID=your-agent-id
+LUCIDIC_DEBUG=false  # Set to 'True' for debug logging
+```
+
+### TypeScript Configuration
+
+If using TypeScript, ensure your `tsconfig.json` includes:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
+```
+
+---
+
+## 🚀 Basic Setup
+
+### TypeScript/ES Modules
+
+```typescript
+import * as lai from 'lucidicai';
+
+async function main() {
+  // Initialize with environment variables
+  await lai.init({
+    providers: ['openai', 'anthropic']
+  });
+
+  // Import providers AFTER init
+  const OpenAI = (await import('openai')).default;
+  const openai = new OpenAI();
+
+  // Your code here...
+}
+
+main().catch(console.error);
+```
+
+### CommonJS
+
+```javascript
+const lai = require('lucidicai');
+
+async function main() {
+  // Initialize with explicit config
+  await lai.init({
+    apiKey: 'your-api-key',
+    agentId: 'your-agent-id',
+    sessionName: 'My Session',
+    providers: ['openai']
+  });
+
+  // Import providers AFTER init
+  const { default: OpenAI } = await import('openai');
+  const openai = new OpenAI();
+
+  // Your code here...
+}
+
+main().catch(console.error);
+```
+
+---
+
+## ⚙️ Initialization Options
+
+```typescript
+interface LucidicConfig {
+  // Authentication
+  apiKey?: string;         // Defaults to LUCIDIC_API_KEY env var
+  agentId?: string;        // Defaults to LUCIDIC_AGENT_ID env var
+  
+  // Session Configuration
+  sessionName?: string;    // Auto-create session with this name
+  sessionId?: string;      // Continue existing session
+  task?: string;           // Session task description
+  userId?: string;         // User identifier
+  groupId?: string;        // Group identifier
+  testId?: string;         // Test run identifier
+  
+  // Provider Configuration
+  providers?: string[];    // ['openai', 'anthropic']
+  
+  // Advanced Options
+  maskingFunction?: (text: string) => string;  // Data masking
+}
+```
+
+---
+
+## 🎯 Minimal Setup
+
+The absolute minimum setup requires just 2 lines:
+
+```typescript
+import * as lai from 'lucidicai';
+await lai.init({ providers: ['openai'] });
+
+// That's it! All OpenAI calls are now tracked
+```
+
+---
+
+## 🔌 Provider Setup
+
+### OpenAI
+```typescript
+await lai.init({ providers: ['openai'] });
+
+// Must import AFTER init
+const OpenAI = (await import('openai')).default;
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
+```
+
+### Anthropic
+```typescript
+await lai.init({ providers: ['anthropic'] });
+
+// Must import AFTER init
+const Anthropic = (await import('@anthropic-ai/sdk')).default;
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY
+});
+```
+
+---
+
+## 🐛 Debugging
+
+Enable debug logging to troubleshoot issues:
+
+```bash
+# In your .env file
+LUCIDIC_DEBUG=True
+```
+
+Or programmatically:
+```typescript
+process.env.LUCIDIC_DEBUG = 'True';
+await lai.init({ providers: ['openai'] });
+```
+
+---
+
+## ✅ Verify Installation
+
+Run this test script to verify everything is working:
+
+```typescript
+import * as lai from 'lucidicai';
+
+async function verifyInstallation() {
+  try {
+    // Initialize SDK
+    const sessionId = await lai.init({
+      sessionName: 'Installation Test',
+      providers: ['openai']
+    });
+    
+    console.log('✅ SDK initialized successfully');
+    console.log(`📋 Session ID: ${sessionId}`);
+    
+    // Import OpenAI
+    const OpenAI = (await import('openai')).default;
+    const openai = new OpenAI();
+    
+    // Create a step
+    await lai.createStep({
+      state: 'Testing',
+      goal: 'Verify installation'
+    });
+    
+    // Make a test call
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: 'Say "Installation successful!"' }]
+    });
+    
+    console.log('✅ OpenAI call tracked successfully');
+    console.log(`📝 Response: ${response.choices[0].message.content}`);
+    
+    // End session
+    await lai.endSession(true, 'Installation verified');
+    console.log('✅ Installation verification complete!');
+    
+  } catch (error) {
+    console.error('❌ Installation verification failed:', error);
+  }
+}
+
+verifyInstallation();
+```
+
+---
+
+## 🔗 Next Steps
+
+- [Core Concepts](/typescript-sdk/core-concepts) - Learn about Sessions, Steps, and Events
+- [Quick Start Guide](/typescript-sdk/quick-start) - Build your first tracked application
+- [API Reference](/typescript-sdk/api-reference) - Complete function documentation
+
+---

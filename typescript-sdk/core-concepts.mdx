@@ -1,0 +1,291 @@
+---
+title: Core Concepts
+description: Understanding Sessions, Steps, and Events in the TypeScript SDK
+---
+
+# 🎯 Core Concepts
+
+The Lucidic AI TypeScript SDK uses the same hierarchical structure as the Python SDK to track your AI workflows.
+
+---
+
+## 📊 Hierarchy Overview
+
+```
+Session
+├── Step 1
+│   ├── Event 1 (LLM call)
+│   └── Event 2 (LLM call)
+├── Step 2
+│   ├── Event 3 (LLM call)
+│   └── Event 4 (LLM call)
+└── Step 3
+    └── Event 5 (LLM call)
+```
+
+---
+
+## 🗂️ Sessions
+
+A **Session** represents a complete AI workflow or conversation. It's the top-level container for all tracking data.
+
+### Creating Sessions
+
+```typescript
+// Option 1: Auto-create during init
+await lai.init({
+  sessionName: 'Customer Support Chat',
+  task: 'Help user reset password',
+  providers: ['openai']
+});
+
+// Option 2: Explicit creation
+await lai.init({ providers: ['openai'] });
+const session = await lai.initSession({
+  sessionName: 'Data Analysis',
+  task: 'Analyze Q4 sales data',
+  userId: 'user123',
+  groupId: 'analytics-team'
+});
+```
+
+### Session Properties
+
+```typescript
+interface SessionConfig {
+  sessionName?: string;    // Human-readable name
+  sessionId?: string;      // Continue existing session
+  task?: string;           // What the session aims to achieve
+  agentId?: string;        // Override default agent
+  userId?: string;         // User identifier
+  groupId?: string;        // Group/team identifier
+  testId?: string;         // Test run identifier
+}
+```
+
+### Managing Sessions
+
+```typescript
+// Update session
+await lai.updateSession(
+  'Updated task description',
+  { priority: 'high', category: 'support' },  // tags
+  false,  // isFinished
+  true,   // isSuccessful
+  'Successfully resolved issue'
+);
+
+// End session
+await lai.endSession(true, 'Task completed successfully');
+
+// Get current session
+const currentSession = lai.getSession();
+```
+
+---
+
+## 📋 Steps
+
+**Steps** represent logical units of work within a session. Each step tracks state, action, and goal.
+
+### Creating Steps
+
+```typescript
+const step = await lai.createStep({
+  state: 'Analyzing user query',
+  action: 'Extract intent and entities',
+  goal: 'Understand user needs'
+});
+```
+
+### Step Properties
+
+```typescript
+interface StepConfig {
+  state?: string;          // Current state/context
+  action?: string;         // What the agent is doing
+  goal?: string;           // What the agent aims to achieve
+  evalScore?: number;      // Performance score (0-100)
+  evalDescription?: string; // Explanation of score
+}
+```
+
+### Managing Steps
+
+```typescript
+// Update current step
+await lai.updateStep(
+  step.stepId,
+  false,  // isFinished
+  85,     // evalScore
+  'Partially extracted entities'
+);
+
+// End current step
+await lai.endStep(95, 'Successfully identified all intents');
+
+// Get active step
+const activeStep = lai.getActiveStep();
+```
+
+### Automatic Step Creation
+
+If you make an LLM call without an active step, one is created automatically:
+
+```typescript
+// No step created yet
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+// Lucidic auto-creates a step for this call
+```
+
+---
+
+## 🎪 Events
+
+**Events** represent individual operations within steps - typically LLM API calls.
+
+### Automatic Event Creation
+
+When using instrumented providers, events are created automatically:
+
+```typescript
+// This OpenAI call automatically creates an event
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Explain quantum computing' }]
+});
+
+// Event captures:
+// - Input messages
+// - Model used
+// - Response content
+// - Token usage
+// - Cost
+// - Timing
+```
+
+### Manual Event Creation
+
+For custom tracking or unsupported providers:
+
+```typescript
+const event = await lai.createEvent({
+  description: 'Custom LLM call',
+  result: 'Model response here',
+  model: 'custom-model-v1',
+  costAdded: 0.05
+});
+
+// Update event
+await lai.updateEvent(
+  event.eventId,
+  'Updated response',
+  true,   // isFinished
+  0.02,   // additional cost
+  'custom-model-v2'
+);
+```
+
+### Event Properties
+
+```typescript
+interface EventConfig {
+  description?: string;    // Event description/input
+  result?: string;         // Output/response
+  model?: string;          // Model name
+  costAdded?: number;      // Cost in USD
+}
+```
+
+---
+
+## 🎯 Automatic Behaviors
+
+The TypeScript SDK includes several automatic features:
+
+### 1. Auto Session Ending
+Sessions automatically end when the process exits:
+
+```typescript
+await lai.init({ providers: ['openai'] });
+// Do work...
+// No need to call endSession() - happens automatically
+```
+
+### 2. Auto Step Ending
+Active steps are automatically ended when the session ends:
+
+```typescript
+await lai.createStep({ state: 'Processing' });
+// Forgot to end step? No problem!
+// Step auto-ends when session ends
+```
+
+### 3. Auto Event Creation
+LLM calls from instrumented providers create events automatically:
+
+```typescript
+// Just make the call - event is created automatically
+await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+```
+
+---
+
+## 💡 Best Practices
+
+### 1. Meaningful Names
+```typescript
+// Good
+await lai.createStep({
+  state: 'Search results page with 10 items',
+  action: 'Filtering by price range',
+  goal: 'Find products under $50'
+});
+
+// Less helpful
+await lai.createStep({
+  state: 'Page',
+  action: 'Clicking',
+  goal: 'Continue'
+});
+```
+
+### 2. Consistent Evaluation
+```typescript
+// Define clear scoring criteria
+const score = calculateScore(results);
+await lai.endStep(
+  score,
+  score >= 90 ? 'Excellent performance' :
+  score >= 70 ? 'Good performance' :
+  'Needs improvement'
+);
+```
+
+### 3. Error Handling
+```typescript
+try {
+  await lai.createStep({ state: 'Processing' });
+  // Do work...
+  await lai.endStep(100, 'Success');
+} catch (error) {
+  await lai.endStep(0, `Error: ${error.message}`);
+  throw error;
+}
+```
+
+---
+
+## 🔗 Next Steps
+
+- [Provider Integrations](/typescript-sdk/integrations) - OpenAI and Anthropic setup
+- [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking, and more
+- [API Reference](/typescript-sdk/api-reference) - Complete function documentation
+
+---

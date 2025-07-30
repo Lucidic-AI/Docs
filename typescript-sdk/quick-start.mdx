@@ -1,0 +1,359 @@
+---
+title: Quick Start Guide
+description: Build your first tracked AI application with the TypeScript SDK in 5 minutes
+---
+
+# 🚀 Quick Start Guide
+
+Let's build a simple AI assistant that's fully tracked by Lucidic. This guide will have you up and running in 5 minutes.
+
+---
+
+## 📋 What We'll Build
+
+A customer support assistant that:
+1. Understands user questions
+2. Searches for relevant information  
+3. Provides helpful responses
+4. Tracks everything automatically
+
+---
+
+## 🛠️ Step 1: Setup
+
+First, install the SDK and create a new project:
+
+```bash
+mkdir my-ai-assistant
+cd my-ai-assistant
+npm init -y
+npm install lucidicai openai dotenv
+npm install --save-dev @types/node typescript ts-node
+```
+
+Create a `tsconfig.json`:
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+Create `.env`:
+```bash
+LUCIDIC_API_KEY=your-lucidic-api-key
+LUCIDIC_AGENT_ID=your-agent-id
+OPENAI_API_KEY=your-openai-api-key
+```
+
+---
+
+## 🎯 Step 2: Minimal Example
+
+Create `minimal.ts`:
+
+```typescript
+import * as lai from 'lucidicai';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+async function main() {
+  // Just 2 lines for full tracking!
+  await lai.init({ providers: ['openai'] });
+  
+  const OpenAI = (await import('openai')).default;
+  const openai = new OpenAI();
+
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'What is TypeScript?' }]
+  });
+
+  console.log(response.choices[0].message.content);
+}
+
+main();
+```
+
+Run it:
+```bash
+npx ts-node minimal.ts
+```
+
+That's it! Your LLM call is now tracked in the Lucidic dashboard.
+
+---
+
+## 🏗️ Step 3: Full Example
+
+Now let's build a more complete assistant with steps and evaluation.
+
+Create `assistant.ts`:
+
+```typescript
+import * as lai from 'lucidicai';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+interface UserQuery {
+  question: string;
+  context?: string;
+}
+
+class CustomerSupportAssistant {
+  private openai: any;
+
+  async initialize() {
+    // Initialize Lucidic with session details
+    await lai.init({
+      sessionName: 'Customer Support Session',
+      task: 'Answer customer questions about our product',
+      providers: ['openai']
+    });
+
+    // Import OpenAI after init
+    const OpenAI = (await import('openai')).default;
+    this.openai = new OpenAI();
+  }
+
+  async processQuery(query: UserQuery): Promise<string> {
+    try {
+      // Step 1: Analyze the question
+      await lai.createStep({
+        state: 'Received user question',
+        action: 'Analyzing intent and context',
+        goal: 'Understand what the user needs'
+      });
+
+      const analysis = await this.analyzeIntent(query.question);
+      
+      await lai.endStep(90, 'Successfully identified intent');
+
+      // Step 2: Search for information
+      await lai.createStep({
+        state: 'Intent identified',
+        action: 'Searching knowledge base',
+        goal: 'Find relevant information'
+      });
+
+      const searchResults = await this.searchKnowledge(analysis);
+      
+      await lai.endStep(85, 'Found relevant articles');
+
+      // Step 3: Generate response
+      await lai.createStep({
+        state: 'Information gathered',
+        action: 'Generating helpful response',
+        goal: 'Provide clear answer to user'
+      });
+
+      const response = await this.generateResponse(
+        query.question,
+        searchResults
+      );
+
+      await lai.endStep(95, 'Generated comprehensive response');
+
+      return response;
+
+    } catch (error) {
+      await lai.endStep(0, `Error: ${error.message}`);
+      throw error;
+    }
+  }
+
+  private async analyzeIntent(question: string): Promise<string> {
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'Extract the intent and key topics from the user question.'
+        },
+        {
+          role: 'user',
+          content: question
+        }
+      ],
+      temperature: 0.3
+    });
+
+    return response.choices[0].message.content;
+  }
+
+  private async searchKnowledge(intent: string): Promise<string> {
+    // Simulate knowledge base search
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'Based on the intent, provide relevant product information.'
+        },
+        {
+          role: 'user',
+          content: `Intent: ${intent}\n\nProvide relevant information about our product.`
+        }
+      ]
+    });
+
+    return response.choices[0].message.content;
+  }
+
+  private async generateResponse(
+    question: string,
+    information: string
+  ): Promise<string> {
+    const response = await this.openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful customer support assistant. Use the provided information to answer the user\'s question clearly and concisely.'
+        },
+        {
+          role: 'user',
+          content: `Question: ${question}\n\nRelevant Information: ${information}\n\nProvide a helpful response.`
+        }
+      ],
+      temperature: 0.7
+    });
+
+    return response.choices[0].message.content;
+  }
+
+  async close(success: boolean = true) {
+    await lai.endSession(
+      success,
+      success ? 'Support session completed' : 'Session ended with errors'
+    );
+  }
+}
+
+// Example usage
+async function main() {
+  const assistant = new CustomerSupportAssistant();
+  
+  try {
+    await assistant.initialize();
+
+    const response = await assistant.processQuery({
+      question: 'How do I reset my password?',
+      context: 'User has been locked out of their account'
+    });
+
+    console.log('\n📝 Response:', response);
+
+    await assistant.close(true);
+    console.log('\n✅ Session completed and tracked!');
+
+  } catch (error) {
+    console.error('❌ Error:', error);
+    await assistant.close(false);
+  }
+}
+
+main();
+```
+
+Run it:
+```bash
+npx ts-node assistant.ts
+```
+
+---
+
+## 📊 Step 4: View in Dashboard
+
+After running the examples:
+
+1. Go to your [Lucidic Dashboard](https://app.lucidic.ai)
+2. Find your session in the Sessions list
+3. Click to view the detailed workflow
+4. See every step, event, and LLM call
+
+You'll see:
+- 🗂️ **Session overview** with success status
+- 📋 **Steps** showing the workflow progression
+- 🎪 **Events** with all LLM calls, costs, and timings
+- 📈 **Metrics** including total cost and token usage
+
+---
+
+## 🎨 Step 5: Add Advanced Features
+
+### Multimodal Support
+
+```typescript
+// Automatic image handling
+const response = await openai.chat.completions.create({
+  model: 'gpt-4-vision-preview',
+  messages: [{
+    role: 'user',
+    content: [
+      { type: 'text', text: 'What is in this image?' },
+      { 
+        type: 'image_url', 
+        image_url: { url: 'data:image/jpeg;base64,...' } 
+      }
+    ]
+  }]
+});
+```
+
+### Data Masking
+
+```typescript
+// Protect sensitive information
+lai.setMaskingFunction((text: string) => {
+  return text
+    .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '***-**-****')  // SSN
+    .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '***@***.***'); // Email
+});
+```
+
+### Error Handling
+
+```typescript
+import { APIError, ConfigurationError } from 'lucidicai';
+
+try {
+  await lai.init({ apiKey: 'invalid' });
+} catch (error) {
+  if (error instanceof ConfigurationError) {
+    console.error('Configuration issue:', error.message);
+  } else if (error instanceof APIError) {
+    console.error('API error:', error.message);
+  }
+}
+```
+
+---
+
+## 🚢 Next Steps
+
+You now have a fully tracked AI assistant! Here's what to explore next:
+
+- [Provider Integrations](/typescript-sdk/integrations) - Set up Anthropic tracking
+- [Advanced Features](/typescript-sdk/advanced-features) - Mass simulations, prompt management
+- [API Reference](/typescript-sdk/api-reference) - Complete function documentation
+- [Examples](/typescript-sdk/examples) - More complex implementations
+
+---
+
+## 💡 Tips
+
+1. **Always init before importing** - This ensures proper instrumentation
+2. **Use meaningful step names** - Makes debugging much easier
+3. **Add evaluation scores** - Helps track performance over time
+4. **Let auto-features work** - No need to manually end sessions
+5. **Check the dashboard** - Visual insights are powerful!
+
+---

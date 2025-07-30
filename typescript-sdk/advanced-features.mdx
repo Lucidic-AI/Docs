@@ -1,0 +1,365 @@
+---
+title: Advanced Features
+description: Multimodal support, data masking, mass simulations, and more
+---
+
+# 🚀 Advanced Features
+
+The TypeScript SDK includes powerful features beyond basic tracking to help you build production-ready AI applications.
+
+---
+
+## 🖼️ Multimodal Support
+
+The SDK automatically handles text and image inputs for supported providers.
+
+### Automatic Image Tracking
+
+```typescript
+// Images in OpenAI calls are automatically tracked
+const response = await openai.chat.completions.create({
+  model: 'gpt-4-vision-preview',
+  messages: [{
+    role: 'user',
+    content: [
+      { type: 'text', text: 'Describe this chart' },
+      { 
+        type: 'image_url', 
+        image_url: { url: 'data:image/png;base64,iVBORw0...' } 
+      }
+    ]
+  }]
+});
+
+// The image is automatically:
+// - Extracted from the request
+// - Uploaded to Lucidic storage
+// - Linked to the event
+```
+
+### Manual Image Upload
+
+```typescript
+// Upload images directly
+const imageBuffer = fs.readFileSync('chart.png');
+const imageUrl = await lai.uploadImage(imageBuffer);
+
+// Or upload base64
+const base64Image = 'iVBORw0KGgoAAAANSUhEUgA...';
+const imageUrl2 = await lai.uploadImage(base64Image);
+```
+
+### Storage Context Wrapper
+
+For custom implementations that need image tracking:
+
+```typescript
+import { withStorageContext } from 'lucidicai';
+
+const myCustomFunction = withStorageContext(async () => {
+  // Any images processed here will be tracked
+  const result = await processImagesWithCustomAPI();
+  return result;
+});
+```
+
+---
+
+## 🔒 Data Masking
+
+Protect sensitive information before it's sent to Lucidic.
+
+### Built-in Masking
+
+```typescript
+lai.setMaskingFunction((text: string) => {
+  return text
+    // Mask SSNs
+    .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '***-**-****')
+    // Mask emails
+    .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '***@***.***')
+    // Mask credit cards
+    .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '**** **** **** ****')
+    // Mask API keys
+    .replace(/\b(sk-|api-|key-)[a-zA-Z0-9]{20,}\b/g, '$1***');
+});
+```
+
+### Custom Masking Rules
+
+```typescript
+interface SensitiveData {
+  userId: string;
+  accountNumber: string;
+  apiKey: string;
+}
+
+lai.setMaskingFunction((text: string) => {
+  // Parse and mask JSON
+  try {
+    const data = JSON.parse(text);
+    if (data.accountNumber) {
+      data.accountNumber = '***MASKED***';
+    }
+    if (data.apiKey) {
+      data.apiKey = data.apiKey.substring(0, 8) + '***';
+    }
+    return JSON.stringify(data);
+  } catch {
+    // Not JSON, apply text masks
+    return text.replace(/Account: \d+/g, 'Account: ***');
+  }
+});
+```
+
+---
+
+## 🔄 Mass Simulations
+
+Run large-scale tests to understand agent behavior at scale.
+
+### Basic Mass Simulation
+
+```typescript
+await lai.runMassSimulation({
+  sessionBaseName: 'Load Test',
+  numSessions: 100,
+  sessionFunction: async (sessionNum: number) => {
+    // Each session runs independently
+    await lai.createStep({
+      state: `Test ${sessionNum}`,
+      goal: 'Complete test scenario'
+    });
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{
+        role: 'user',
+        content: `Test query ${sessionNum}`
+      }]
+    });
+
+    await lai.endStep(
+      Math.random() > 0.1 ? 90 : 50,
+      'Test completed'
+    );
+  }
+});
+```
+
+### Advanced Simulation with Variations
+
+```typescript
+const testScenarios = [
+  'Reset password',
+  'Update billing info',
+  'Cancel subscription',
+  'Technical support'
+];
+
+await lai.runMassSimulation({
+  sessionBaseName: 'Customer Support Test',
+  numSessions: 200,
+  sessionFunction: async (sessionNum: number) => {
+    const scenario = testScenarios[sessionNum % testScenarios.length];
+    
+    await lai.updateSession(
+      `Testing: ${scenario}`,
+      { scenario, testRun: sessionNum }
+    );
+
+    // Simulate different paths
+    if (scenario === 'Reset password') {
+      await handlePasswordReset();
+    } else if (scenario === 'Technical support') {
+      await handleTechnicalSupport();
+    }
+    // ... more scenarios
+  }
+});
+```
+
+---
+
+## 📝 Prompt Management
+
+Fetch and cache prompts from the Lucidic platform.
+
+### Basic Prompt Fetching
+
+```typescript
+// Fetch a prompt (cached by default)
+const prompt = await lai.getPrompt('customer-support-prompt');
+
+// Use in your LLM call
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [
+    { role: 'system', content: prompt },
+    { role: 'user', content: userMessage }
+  ]
+});
+```
+
+### Cache Control
+
+```typescript
+// Always fetch fresh
+const freshPrompt = await lai.getPrompt('dynamic-prompt', false);
+
+// Cache for 5 minutes (default)
+const cachedPrompt = await lai.getPrompt('stable-prompt', true);
+```
+
+### Prompt Versioning
+
+In the Lucidic dashboard, you can:
+- Create multiple versions of prompts
+- A/B test different versions
+- Roll back to previous versions
+- Track which version was used in each session
+
+---
+
+## 🏷️ Session Tags and Metadata
+
+Add custom metadata to sessions for better organization.
+
+```typescript
+// During initialization
+await lai.init({
+  sessionName: 'Customer Chat',
+  userId: 'user123',
+  groupId: 'support-team',
+  testId: 'ab-test-v2'
+});
+
+// Update during session
+await lai.updateSession(
+  'Updated task description',
+  {
+    priority: 'high',
+    department: 'technical',
+    issueType: 'bug',
+    customField: 'any-value'
+  }
+);
+```
+
+---
+
+## 🎯 Automatic Features Summary
+
+The TypeScript SDK includes these automatic behaviors:
+
+### 1. Auto Session Management
+```typescript
+// No need to explicitly end sessions
+await lai.init({ providers: ['openai'] });
+// ... do work ...
+// Session auto-ends on process exit
+```
+
+### 2. Auto Step Creation
+```typescript
+// No active step? No problem!
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+// Step is created automatically
+```
+
+### 3. Auto Event Creation
+```typescript
+// Every LLM call becomes an event automatically
+// No manual event creation needed for supported providers
+```
+
+### 4. Auto Cost Calculation
+```typescript
+// Costs are calculated based on:
+// - Model used
+// - Token counts
+// - Built-in pricing data
+```
+
+---
+
+## 🛡️ Error Handling
+
+The SDK provides specific error types for better error handling:
+
+```typescript
+import { 
+  APIError, 
+  ConfigurationError, 
+  SessionError,
+  StepError,
+  EventError 
+} from 'lucidicai';
+
+try {
+  await lai.init({ apiKey: 'invalid' });
+} catch (error) {
+  if (error instanceof ConfigurationError) {
+    console.error('Config issue:', error.message);
+    // Handle missing API key, invalid agent ID, etc.
+  } else if (error instanceof APIError) {
+    console.error('API error:', error.message);
+    // Handle network issues, server errors, etc.
+  }
+}
+
+// Session-specific errors
+try {
+  await lai.createStep({ state: 'Processing' });
+} catch (error) {
+  if (error instanceof SessionError) {
+    console.error('No active session');
+  } else if (error instanceof StepError) {
+    console.error('Step creation failed:', error.message);
+  }
+}
+```
+
+---
+
+## 📊 Performance Considerations
+
+### Batching and Async Operations
+
+```typescript
+// Good: Parallel operations
+const [analysis, summary, translation] = await Promise.all([
+  analyzeText(content),
+  summarizeText(content),
+  translateText(content)
+]);
+
+// Each LLM call is tracked independently
+```
+
+### Memory Management
+
+```typescript
+// For long-running processes
+setInterval(async () => {
+  // Periodically end and start new sessions
+  await lai.endSession(true, 'Checkpoint reached');
+  await lai.initSession({
+    sessionName: 'Continued processing',
+    task: 'Resume from checkpoint'
+  });
+}, 3600000); // Every hour
+```
+
+---
+
+## 🔗 Next Steps
+
+- [API Reference](/typescript-sdk/api-reference) - Complete function documentation
+- [Examples](/typescript-sdk/examples) - Real-world implementations
+- [Migration Guide](/typescript-sdk/migration) - Moving from Python to TypeScript
+
+---

@@ -1,0 +1,407 @@
+---
+title: API Reference
+description: Complete TypeScript SDK function documentation
+---
+
+# 📚 API Reference
+
+Complete reference for all TypeScript SDK functions and types.
+
+---
+
+## 🚀 Initialization
+
+### `init(config?: LucidicConfig): Promise<string>`
+
+Initialize the Lucidic AI SDK.
+
+```typescript
+const sessionId = await lai.init({
+  apiKey: 'your-api-key',
+  agentId: 'your-agent-id',
+  sessionName: 'My Session',
+  providers: ['openai', 'anthropic']
+});
+```
+
+**Parameters:**
+- `config` (optional): Configuration object
+
+**Returns:** Session ID if auto-created, empty string otherwise
+
+**Config Options:**
+```typescript
+interface LucidicConfig {
+  apiKey?: string;         // API key (or LUCIDIC_API_KEY env)
+  agentId?: string;        // Agent ID (or LUCIDIC_AGENT_ID env)
+  sessionName?: string;    // Auto-create session
+  sessionId?: string;      // Continue existing session
+  task?: string;           // Session task description
+  userId?: string;         // User identifier
+  groupId?: string;        // Group identifier  
+  testId?: string;         // Test run identifier
+  providers?: string[];    // Providers to instrument
+  maskingFunction?: (text: string) => string;
+}
+```
+
+---
+
+## 🗂️ Session Management
+
+### `initSession(config: SessionConfig): Promise<Session>`
+
+Create a new session.
+
+```typescript
+const session = await lai.initSession({
+  sessionName: 'Customer Support',
+  task: 'Help user with billing',
+  userId: 'user123'
+});
+```
+
+### `continueSession(sessionId: string): Promise<Session>`
+
+Continue an existing session.
+
+```typescript
+const session = await lai.continueSession('existing-session-id');
+```
+
+### `updateSession(...): Promise<void>`
+
+Update the current session.
+
+```typescript
+await lai.updateSession(
+  'Updated task description',     // task
+  { priority: 'high' },          // tags
+  false,                         // isFinished
+  true,                          // isSuccessful
+  'Resolved customer issue'      // isSuccessfulReason
+);
+```
+
+### `endSession(isSuccessful?: boolean, reason?: string): Promise<void>`
+
+End the current session.
+
+```typescript
+await lai.endSession(true, 'Task completed successfully');
+```
+
+### `getSession(): Session | null`
+
+Get the current active session.
+
+```typescript
+const session = lai.getSession();
+if (session) {
+  console.log(`Session ID: ${session.sessionId}`);
+}
+```
+
+---
+
+## 📋 Step Management
+
+### `createStep(config: StepConfig): Promise<Step>`
+
+Create a new step.
+
+```typescript
+const step = await lai.createStep({
+  state: 'Analyzing user input',
+  action: 'Parse intent and entities',
+  goal: 'Understand user needs',
+  evalScore: 85,
+  evalDescription: 'Partially extracted entities'
+});
+```
+
+**Config Options:**
+```typescript
+interface StepConfig {
+  state?: string;          // Current state/context
+  action?: string;         // What the agent is doing
+  goal?: string;           // Intended outcome
+  evalScore?: number;      // Performance score (0-100)
+  evalDescription?: string; // Score explanation
+}
+```
+
+### `updateStep(...): Promise<void>`
+
+Update a specific step.
+
+```typescript
+await lai.updateStep(
+  stepId,      // Step ID
+  false,       // isFinished
+  90,          // evalScore
+  'Improved extraction accuracy'
+);
+```
+
+### `endStep(evalScore?: number, evalDescription?: string): Promise<void>`
+
+End the current active step.
+
+```typescript
+await lai.endStep(95, 'Successfully completed analysis');
+```
+
+### `getActiveStep(): Step | null`
+
+Get the current active step.
+
+```typescript
+const step = lai.getActiveStep();
+if (step) {
+  console.log(`Active step: ${step.stepId}`);
+}
+```
+
+---
+
+## 🎪 Event Management
+
+### `createEvent(config: EventConfig): Promise<Event>`
+
+Manually create an event.
+
+```typescript
+const event = await lai.createEvent({
+  description: 'Custom LLM call',
+  result: 'Model response here',
+  model: 'gpt-4',
+  costAdded: 0.05
+});
+```
+
+**Config Options:**
+```typescript
+interface EventConfig {
+  description?: string;    // Event description/input
+  result?: string;         // Output/response
+  model?: string;          // Model name
+  costAdded?: number;      // Cost in USD
+}
+```
+
+### `updateEvent(...): Promise<void>`
+
+Update an existing event.
+
+```typescript
+await lai.updateEvent(
+  eventId,              // Event ID
+  'Updated response',   // result
+  true,                 // isFinished
+  0.02,                 // costAdded
+  'gpt-4-turbo'        // model
+);
+```
+
+---
+
+## 🔧 Utility Functions
+
+### `getPrompt(promptName: string, withCache?: boolean): Promise<string>`
+
+Fetch a prompt from the platform.
+
+```typescript
+const prompt = await lai.getPrompt('support-prompt', true);
+```
+
+**Parameters:**
+- `promptName`: Name of the prompt
+- `withCache`: Use cache (default: true)
+
+### `uploadImage(imageData: Buffer | string): Promise<string>`
+
+Upload an image to Lucidic storage.
+
+```typescript
+// Upload buffer
+const buffer = fs.readFileSync('image.png');
+const url1 = await lai.uploadImage(buffer);
+
+// Upload base64
+const base64 = 'iVBORw0KGgoAAAA...';
+const url2 = await lai.uploadImage(base64);
+```
+
+### `setMaskingFunction(fn: (text: string) => string): void`
+
+Set a custom data masking function.
+
+```typescript
+lai.setMaskingFunction((text: string) => {
+  return text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, '***-**-****');
+});
+```
+
+### `withStorageContext<T>(fn: T): T`
+
+Wrap a function to enable multimodal content tracking.
+
+```typescript
+const trackedFunction = lai.withStorageContext(async () => {
+  // Images processed here will be tracked
+  return await processImages();
+});
+```
+
+---
+
+## 🔄 Mass Simulation
+
+### `runMassSimulation(config: MassSimulationConfig): Promise<void>`
+
+Run multiple sessions for testing.
+
+```typescript
+await lai.runMassSimulation({
+  sessionBaseName: 'Load Test',
+  numSessions: 100,
+  sessionFunction: async (sessionNum: number) => {
+    // Test logic for each session
+    await performTest(sessionNum);
+  }
+});
+```
+
+**Config Options:**
+```typescript
+interface MassSimulationConfig {
+  sessionBaseName: string;
+  numSessions: number;
+  sessionFunction: (sessionNum: number) => Promise<void>;
+}
+```
+
+---
+
+## 🏷️ Types
+
+### Core Types
+
+```typescript
+// Session type
+interface Session {
+  sessionId: string;
+  sessionName?: string;
+  task?: string;
+  agentId: string;
+  // ... other properties
+}
+
+// Step type
+interface Step {
+  stepId: string;
+  sessionId: string;
+  state?: string;
+  action?: string;
+  goal?: string;
+  evalScore?: number;
+  evalDescription?: string;
+  // ... other properties
+}
+
+// Event type
+interface Event {
+  eventId: string;
+  stepId: string;
+  description?: string;
+  result?: string;
+  model?: string;
+  costAdded?: number;
+  // ... other properties
+}
+```
+
+### Error Types
+
+```typescript
+import {
+  LucidicError,      // Base error class
+  APIError,          // API communication errors
+  ConfigurationError, // Config/setup errors
+  SessionError,      // Session-related errors
+  StepError,         // Step-related errors
+  EventError         // Event-related errors
+} from 'lucidicai';
+```
+
+---
+
+## 🎯 Common Patterns
+
+### Full Workflow Example
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Initialize
+await lai.init({
+  sessionName: 'AI Assistant',
+  providers: ['openai']
+});
+
+// Import provider
+const OpenAI = (await import('openai')).default;
+const openai = new OpenAI();
+
+// Create step
+await lai.createStep({
+  state: 'Ready',
+  goal: 'Process user request'
+});
+
+// Make LLM call (auto-tracked)
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+// End step
+await lai.endStep(100, 'Success');
+
+// End session
+await lai.endSession(true);
+```
+
+### Error Handling Pattern
+
+```typescript
+try {
+  await lai.init({ providers: ['openai'] });
+  await processWorkflow();
+} catch (error) {
+  if (error instanceof ConfigurationError) {
+    console.error('Setup error:', error);
+  } else if (error instanceof APIError) {
+    console.error('API error:', error);
+  } else {
+    console.error('Unexpected error:', error);
+  }
+} finally {
+  // Always try to end session
+  try {
+    await lai.endSession();
+  } catch {}
+}
+```
+
+---
+
+## 🔗 See Also
+
+- [Quick Start Guide](/typescript-sdk/quick-start) - Get started quickly
+- [Core Concepts](/typescript-sdk/core-concepts) - Understand the basics
+- [Examples](/typescript-sdk/examples) - Real-world implementations
+
+---

@@ -57,6 +57,34 @@
         ]
       },
       {
+        "tab": "TypeScript SDK",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "typescript-sdk/overview",
+              "typescript-sdk/installation",
+              "typescript-sdk/quick-start",
+              "typescript-sdk/core-concepts"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "typescript-sdk/integrations/openai",
+              "typescript-sdk/integrations/anthropic"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "typescript-sdk/advanced-features",
+              "typescript-sdk/api-reference"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API Reference",
         "groups": [
           {
@@ -122,7 +150,7 @@
   "footer": {
     "socials": {
       "x": "https://x.com/LucidicAI",
-      "github": "https://github.com/Lucidic-AI/Lucidic-Python.git",
+      "github": "https://github.com/Lucidic-AI",
       "linkedin": "https://linkedin.com/company/lucidic-ai"
     }
   }
