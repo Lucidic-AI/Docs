@@ -13,52 +13,38 @@ This is where observability meets usability: you can **replay the session**, **i
 
 ---
 
-## What It Shows
+## Trace view
 
-At the top of the Workflow Sandbox, you’ll see:
+The Trace View shows a comprehensive timeline of your agent run. It includes all steps and events in sequential order.
 
-### 1. Task Overview
-- The task string supplied to the agent at the start of the session
+It shows:
+ - Basic Information: **Status, Model, Start Time, Duration, Cost**
+ - **Prettified vs Raw Request/Response** (click the wand/text icon in the top right of Input/Output to toggle)
+ - **Screenshots** and multimodal data
 
-### 2. Session Stats
-- **Session Evaluation** - Your overall session evaluation
-- **Is Successful** - Whether the session was successful or not
-- **Cost** - The cost of the session
-- **Time** - The time taken to complete the session
-- **Total Steps** - The total number of steps taken in the session
-- **Repeated Steps** - The number of repeated steps in the session
-- **Average Steps per node** - The average number of steps per node in the session (this is a proxy for how many times the agent retried a step)
-> _![api key2](/images/ws1.png)_
+> **Pro tip:** **SPEED UP** iteration and debugging time by avoiding rerunning the same failed run with [Time Travels](/features/time-travel). They enable you to freeze time and rerun the event in isolation to see if your error/success is reliable.
 
----
-> **Pro tip:** Hover over the session evaluation or the success/failure flag to see a the description!! 
+> _![traceview](/images/workflowsandbox1.png)_
 
+## Session Evaluations
 
-## Rubric Evaluations
-
-Below the overview, you’ll find any evaluation rubrics attached to this session. Read more about rubrics [here](/features/rubrics).
+On this tab, you’ll find any evaluations ran on this session. Read more about evaluation rubrics [here](/features/rubrics).
 
 - Each criterion is scored and explained
-- The **Lucidic default rubric** runs on every session automatically
 - Custom rubrics can be attached per Agent when running a session
-
-> **Pro tip:** The description of why you got a certain score for a given criterion is below the score, so you can actually see why each of your criteria got a certain score! 
+- You can pass in your own evals at runtime to be shown here too
 
 > _![rubric](/images/ws2.png)_
 
 ---
 
-## Quick Access: Prompt DB + Session Replay GIF
+## Prompt DB
 
-Under the rubric evaluations, you can open the [Prompt DB](/features/prompt-db) directly from the session by clicking the prompt name or the **Prompt Editor** button:
+You can open the [Prompt DB](/features/prompt-db) directly by clicking on the tab:
 
 - Quickly view which prompt was used
 - Test changes or view version history
 - Add tags to quickly iterate on prompts
-
-On the right of the [Prompt DB](/features/prompt-db) you can also see a replay GIF of the session:
-
-> _![promptdb](/images/ws7.png)_
 
 ---
 ## Session Replay: Step Trajectory Graph
@@ -78,39 +64,6 @@ Next, you’ll see a **Session-specific graph** — a mini version of the [Workf
 > _![trajectory](/images/ws3.png)_
 
 > **Pro tip:** Clicking a **Step/Event** opens a full breakdown of that **Step/Event** below the graph!
----
-
-
-### Timeline Navigation
-
-Two synced timelines appear below:
-
-#### Step Timeline
-- Shows the ordered sequence of [Steps](/core-concepts/steps)
-- Clicking a [Step](/core-concepts/steps):
-  - Advances the graph to that state
-  - Opens the step detail panel
-- **Step detail panel** shows:
-  - Basic Information: **Start Time, Duration, Cost**
-  - Evaluation: **Status, Step Evaluation Score, Evaluation Description**
-  - State Overview: **Goal, Action, State**
-  - **State Screenshot**
-
-> _![step detail](/images/ws4.png)_
-
-> **Pro tip:** Use arrow keys to quickly go from one step to the next.
-
-### Event Timeline (within Step)
-- Shows all [Events](/core-concepts/events) that occurred in that step (e.g. LLM calls, tool invocations)
-- Clicking an [Event](/core-concepts/events) shows:
-  - Basic Information: **Status, Model, Start Time, Duration, Cost**
-  - **Prettified vs Raw Request/Response** (click the wand/text icon in the top right of Input/Output to toggle)
-  - **Images used (if any)** in the request
-
-> **Pro tip:** **SPEED UP** iteration and debugging time by avoiding rerunning the same failed run with [Time Travels](/features/time-travel). [Time Travels](/features/time-travel), in the **Time Travel tab** to (to the right of "Event Details" which is directly under the two timelines), are extremely useful for debugging failed runs. Time Travels enable you to freeze time and rerun the event in isolation to see if your error/success is reliable. Learn more how to use them [here](/features/time-travel).
-> _![event timeline](/images/ws5.png)_
-
-> **Pro tip:** If your LLM calls are super cluttered, use our pretty text which is built in! It's the wand and will show you your text in a more human-readable format. 
 
 ---
 

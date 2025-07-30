@@ -10,9 +10,8 @@ Learn more about Mass Sims in the [Mass Simulations](/core-concepts/mass-simulat
 
 ## How to Create a Mass Simulation
 
-### 1. Create in UI
+### Option 1. Create in UI
 - Go to the **"Mass Sims"** tab inside your Agent
-> _![api key2](/images/masssimcreation.png)_
 
 - Click **"Create New Mass Simulation"**
 - Copy the **Mass Sim ID** into your SDK:
@@ -26,21 +25,11 @@ lai.init(
 ```
 - **You're done!** Now the sessions that you run under this mass simulation ID will be grouped together into one mass simulation. If you want to create another one, just repeat the process and make sure to use the right mass sim ID!
 
-### 2. Create in Python SDK
+### Option 2. Create in Python SDK
 
 This approach to creating a mass simulation doesn't need any UI interaction at all! It is often more convenient to create a mass simulation using the Python SDK if you want to do things such as create a script that creates multiple mass simulations.
 
 You can programmatically create a mass simulation using the `create_mass_sim()` function:
-
-| Name | Type | Description |
-| --- | --- | --- |
-| **`mass_sim_name`** | str | A descriptive name for your mass simulation. |
-| **`total_num_sessions`** | int | The number of sessions to run in this simulation. |
-| **`lucidic_api_key`** | str (optional IF set as environment variable) | Your Lucidic API key. |
-| **`agent_id`** | str (optional IF set as environment variable) | Your Lucidic Agent ID. |
-| **`task`** | str (optional) | The task description for all sessions in this simulation. |
-| **`tags`** | list (optional) | A list of tags to categorize this mass simulation. |
-
 
 ```python
 import lucidicai as lai
