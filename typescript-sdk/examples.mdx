@@ -1,0 +1,411 @@
+---
+title: 'Examples'
+description: 'Complete examples showing TypeScript SDK usage patterns'
+---
+
+## Overview
+
+This page contains detailed examples showing how to use Lucidic's TypeScript SDK in real-world scenarios. All examples assume you've already set up your credentials.
+
+## Basic Session Management
+
+```typescript
+import * as lai from 'lucidicai';
+
+async function basicExample() {
+  // Initialize SDK and create session
+  await lai.init({
+    sessionName: "Document Processor",
+    providers: ["openai"],
+    task: "Process and summarize documents"
+  });
+
+  // Import OpenAI AFTER init
+  const OpenAI = (await import('openai')).default;
+  const openai = new OpenAI();
+
+  // Create a step
+  await lai.createStep({
+    state: "Loading document",
+    action: "Read file contents",
+    goal: "Extract text for processing"
+  });
+
+  // Your logic here
+  const document = await readDocument();
+
+  // LLM calls are auto-tracked
+  const response = await openai.chat.completions.create({
+    model: "gpt-4",
+    messages: [
+      { role: "system", content: "Summarize the document" },
+      { role: "user", content: document }
+    ]
+  });
+
+  // End step with evaluation
+  await lai.endStep({
+    evalScore: 95,
+    evalDescription: "Successfully summarized"
+  });
+
+  // End session
+  await lai.endSession(true, "Document processed successfully");
+}
+```
+
+## Error Handling Patterns
+
+```typescript
+import * as lai from 'lucidicai';
+import { LucidicError, APIError, SessionError } from 'lucidicai';
+
+async function robustWorkflow() {
+  try {
+    await lai.init({
+      sessionName: "Fault-tolerant workflow",
+      providers: ["anthropic"]
+    });
+
+    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    const anthropic = new Anthropic();
+
+    try {
+      await lai.createStep({
+        state: "Processing",
+        action: "Analyze data"
+      });
+
+      // Risky operation
+      const result = await riskyOperation();
+
+      await lai.endStep({
+        evalScore: 100,
+        evalDescription: "Success"
+      });
+
+    } catch (error) {
+      // Step failed - mark it
+      await lai.endStep({
+        evalScore: 0,
+        evalDescription: `Failed: ${error.message}`
+      });
+      throw error;
+    }
+
+  } catch (error) {
+    if (error instanceof APIError) {
+      console.error("API error:", error.message);
+    } else if (error instanceof SessionError) {
+      console.error("Session error:", error.message);
+    }
+    
+    // Ensure session ends even on error
+    try {
+      await lai.endSession(false, `Error: ${error.message}`);
+    } catch (endError) {
+      console.error("Failed to end session:", endError);
+    }
+  }
+}
+```
+
+## Working with Events
+
+```typescript
+async function eventTrackingExample() {
+  await lai.init({ sessionName: "Event tracking demo" });
+
+  await lai.createStep({
+    state: "Multi-event process",
+    action: "Perform various operations"
+  });
+
+  // Create manual event for non-LLM operation
+  const dbEvent = await lai.createEvent({
+    description: "Database query",
+    model: "postgresql"
+  });
+
+  // Perform database operation
+  const users = await db.query("SELECT * FROM users");
+
+  // Update event with results
+  await lai.updateEvent({
+    eventId: dbEvent.eventId,
+    result: `Found ${users.length} users`,
+    costAdded: 0.001
+  });
+
+  // Create event for external API
+  const apiEvent = await lai.createEvent({
+    description: "Weather API call"
+  });
+
+  const weather = await fetchWeatherData();
+
+  await lai.updateEvent({
+    eventId: apiEvent.eventId,
+    result: JSON.stringify(weather),
+    costAdded: 0.0001
+  });
+
+  await lai.endStep();
+  await lai.endSession();
+}
+```
+
+## Long-Running Workflows
+
+```typescript
+async function longRunningPipeline(documentBatch: string[]) {
+  // Phase 1: Initialize and preprocess
+  const sessionId = await lai.init({
+    sessionName: "Document batch processing",
+    task: `Process ${documentBatch.length} documents`
+  });
+
+  await lai.createStep({
+    state: "Preprocessing",
+    action: "Validate and prepare documents"
+  });
+
+  const validDocs = await preprocessDocuments(documentBatch);
+  
+  await lai.endStep({
+    evalScore: 100,
+    evalDescription: `${validDocs.length} documents ready`
+  });
+
+  // Save progress
+  await saveCheckpoint({ sessionId, validDocs });
+  await lai.endSession();
+
+  // Phase 2: Process each document (could be separate job)
+  await lai.init();
+  await lai.continueSession(sessionId);
+
+  for (const [index, doc] of validDocs.entries()) {
+    await lai.createStep({
+      state: `Processing document ${index + 1}/${validDocs.length}`,
+      action: "Extract and analyze content"
+    });
+
+    try {
+      await processDocument(doc);
+      await lai.endStep({ evalScore: 100 });
+    } catch (error) {
+      await lai.endStep({
+        evalScore: 0,
+        evalDescription: error.message
+      });
+    }
+  }
+
+  await lai.endSession(true, "Batch processing completed");
+}
+```
+
+## Multimodal Tracking
+
+```typescript
+import * as lai from 'lucidicai';
+
+async function multimodalExample() {
+  await lai.init({
+    sessionName: "Image analysis workflow",
+    providers: ["openai"]
+  });
+
+  const OpenAI = (await import('openai')).default;
+  const openai = new OpenAI();
+
+  // Use storage context for multimodal capture
+  await lai.withStorageContext(async () => {
+    await lai.createStep({
+      state: "Analyzing image",
+      action: "Extract text and describe content"
+    });
+
+    // Upload image
+    const imageBuffer = await readFile('chart.png');
+    const imageUrl = await lai.uploadImage(imageBuffer);
+
+    // Create event with screenshot
+    await lai.createEvent({
+      description: "Visual analysis",
+      screenshots: [imageUrl]
+    });
+
+    // Use vision model
+    const response = await openai.chat.completions.create({
+      model: "gpt-4-vision-preview",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Describe this chart" },
+            { type: "image_url", image_url: { url: imageUrl } }
+          ]
+        }
+      ]
+    });
+
+    await lai.endStep({
+      evalScore: 100,
+      evalDescription: "Successfully analyzed image"
+    });
+  });
+
+  await lai.endSession();
+}
+```
+
+## Mass Simulation
+
+```typescript
+async function runMassSimulation() {
+  await lai.init();
+
+  // Define variations to test
+  const prompts = [
+    "Be concise",
+    "Be detailed", 
+    "Be technical"
+  ];
+
+  const models = ["gpt-3.5-turbo", "gpt-4"];
+
+  // Run simulation
+  await lai.runMassSimulation({
+    sessionBaseName: "Prompt comparison",
+    numSessions: prompts.length * models.length,
+    sessionFunction: async () => {
+      for (const prompt of prompts) {
+        for (const model of models) {
+          await runSingleTest(prompt, model);
+        }
+      }
+    }
+  });
+}
+
+async function runSingleTest(systemPrompt: string, model: string) {
+  await lai.initSession({
+    sessionName: `${model} - ${systemPrompt}`,
+    tags: ["simulation", model, systemPrompt]
+  });
+
+  await lai.createStep({
+    state: "Testing configuration",
+    action: `Run with ${model}`
+  });
+
+  const OpenAI = (await import('openai')).default;
+  const openai = new OpenAI();
+
+  const response = await openai.chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: "Explain quantum computing" }
+    ]
+  });
+
+  // Evaluate based on criteria
+  const score = evaluateResponse(response.choices[0].message.content);
+
+  await lai.endStep({
+    evalScore: score,
+    evalDescription: `${systemPrompt} scoring`
+  });
+
+  await lai.endSession(true);
+}
+```
+
+## Authentication Patterns
+
+### Using Environment Variables
+
+```typescript
+// Set these in your environment:
+// LUCIDIC_API_KEY=your-api-key
+// LUCIDIC_AGENT_ID=your-agent-id
+
+import * as lai from 'lucidicai';
+
+await lai.init({
+  sessionName: "My Session",
+  providers: ["openai"]
+});
+```
+
+### Using dotenv
+
+```typescript
+import * as lai from 'lucidicai';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+await lai.init({
+  sessionName: "My Session",
+  providers: ["anthropic"]
+});
+```
+
+### Direct Configuration
+
+```typescript
+await lai.init({
+  apiKey: "your-api-key",
+  agentId: "your-agent-id",
+  sessionName: "My Session",
+  providers: ["openai"]
+});
+```
+
+## Production Best Practices
+
+```typescript
+async function productionWorkflow() {
+  // Custom masking function
+  const maskSSN = (text: string) => {
+    return text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, 'XXX-XX-XXXX');
+  };
+
+  await lai.init({
+    sessionName: "Production agent",
+    providers: ["openai", "anthropic"],
+    maskingFunction: maskSSN,
+    autoEnd: true,  // Ensure cleanup on crashes
+    debug: false    // Disable debug logs
+  });
+
+  // Set production tags
+  await lai.updateSession(
+    undefined,  // Don't change task
+    {
+      environment: "production",
+      version: "1.2.3",
+      region: "us-west-2"
+    }
+  );
+
+  // Your production logic with proper error handling
+  try {
+    await processUserRequest();
+  } finally {
+    // Ensure session ends even if error occurs
+    await lai.endSession();
+  }
+}
+```
+
+## Next Steps
+
+- Learn about [Core Concepts](/typescript-sdk/core-concepts)
+- Explore [Provider Integrations](/typescript-sdk/integrations/openai)
+- Read the [API Reference](/typescript-sdk/index)
+- Understand [Advanced Features](/typescript-sdk/advanced-features)

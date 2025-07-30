@@ -1,0 +1,256 @@
+---
+title: 'createEvent'
+description: 'Create a new event within a step'
+---
+
+## Overview
+
+The `createEvent` function creates a new event within the active step. Events track granular operations like LLM calls, API requests, or custom actions.
+
+## Syntax
+
+```typescript
+await lai.createEvent(params?: CreateEventParams): Promise<Event>
+```
+
+## Parameters
+
+<ParamField path="params" type="CreateEventParams" optional>
+  Optional object with event configuration:
+  
+  <Expandable title="properties">
+    <ParamField path="stepId" type="string" optional>
+      ID of the step to create the event in. Defaults to current active step.
+    </ParamField>
+    
+    <ParamField path="description" type="string" optional>
+      Description of what the event is doing.
+    </ParamField>
+    
+    <ParamField path="result" type="string" optional>
+      Result or output of the event.
+    </ParamField>
+    
+    <ParamField path="model" type="string" optional>
+      Model name if this is an LLM event.
+    </ParamField>
+    
+    <ParamField path="costAdded" type="number" optional>
+      Cost incurred by this event.
+    </ParamField>
+    
+    <ParamField path="screenshots" type="string[]" optional>
+      Array of screenshot URLs for visual context.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to an `Event` object containing:
+- `eventId` - Unique identifier for the event
+- Other event properties
+
+## Examples
+
+### Basic Event Creation
+
+```typescript
+// Create simple event
+const event = await lai.createEvent({
+  description: "Database query"
+});
+
+// Create event with result
+await lai.createEvent({
+  description: "User lookup",
+  result: "Found 5 matching users"
+});
+
+// Create event with all parameters
+await lai.createEvent({
+  description: "Generate summary",
+  model: "gpt-4",
+  result: "Summary generated successfully",
+  costAdded: 0.02
+});
+```
+
+### Manual LLM Event Tracking
+
+While LLM calls are auto-tracked with providers, you can create manual events:
+
+```typescript
+const event = await lai.createEvent({
+  description: "Custom LLM call",
+  model: "gpt-4"
+});
+
+// Make your LLM call
+const response = await customLLMCall();
+
+// Update the event with results
+await lai.updateEvent({
+  eventId: event.eventId,
+  result: response.text,
+  costAdded: calculateCost(response.tokens)
+});
+```
+
+### Non-LLM Events
+
+```typescript
+// Database operation
+await lai.createEvent({
+  description: "Query user database",
+  result: "Retrieved 50 records",
+  costAdded: 0.001 // Track DB costs
+});
+
+// External API call
+const apiEvent = await lai.createEvent({
+  description: "Weather API request"
+});
+
+try {
+  const weather = await fetchWeatherAPI();
+  await lai.updateEvent({
+    eventId: apiEvent.eventId,
+    result: JSON.stringify(weather)
+  });
+} catch (error) {
+  await lai.updateEvent({
+    eventId: apiEvent.eventId,
+    result: `Error: ${error.message}`
+  });
+}
+
+// File operation
+await lai.createEvent({
+  description: "Save report to disk",
+  result: "Saved to /reports/2024-01-report.pdf"
+});
+```
+
+### With Screenshots
+
+```typescript
+// Upload screenshot first
+const screenshotUrl = await lai.uploadImage(screenshotBuffer);
+
+// Create event with visual context
+await lai.createEvent({
+  description: "UI validation check",
+  screenshots: [screenshotUrl],
+  result: "All elements rendered correctly"
+});
+```
+
+### Batch Operations
+
+```typescript
+// Track multiple operations
+const operations = ['validate', 'transform', 'save'];
+
+for (const op of operations) {
+  const event = await lai.createEvent({
+    description: `${op} operation`
+  });
+  
+  try {
+    const result = await performOperation(op);
+    await lai.updateEvent({
+      eventId: event.eventId,
+      result: `${op} completed: ${result}`
+    });
+  } catch (error) {
+    await lai.updateEvent({
+      eventId: event.eventId,
+      result: `${op} failed: ${error.message}`
+    });
+  }
+}
+```
+
+## Auto-Tracking vs Manual Events
+
+### Auto-Tracked (with providers)
+
+```typescript
+// These create events automatically
+const response = await openai.chat.completions.create({
+  model: "gpt-4",
+  messages: [{ role: "user", content: "Hello" }]
+});
+
+// Anthropic calls also auto-tracked
+const anthropicResponse = await anthropic.messages.create({
+  model: "claude-3-opus-20240229",
+  messages: [{ role: "user", content: "Hello" }]
+});
+```
+
+### Manual Events
+
+Use manual events for:
+- Non-LLM operations
+- Custom LLM providers
+- External API calls
+- Database operations
+- File I/O
+- Custom tracking needs
+
+## Best Practices
+
+### 1. Descriptive Events
+
+```typescript
+// ✅ Good - clear and specific
+await lai.createEvent({
+  description: "Query PostgreSQL for user orders",
+  result: "Found 25 orders in last 30 days"
+});
+
+// ❌ Less helpful
+await lai.createEvent({
+  description: "Database",
+  result: "Success"
+});
+```
+
+### 2. Track Costs
+
+```typescript
+// Track all costs for accurate billing
+await lai.createEvent({
+  description: "SMS notification",
+  result: "Sent to +1234567890",
+  costAdded: 0.05 // Track SMS costs
+});
+```
+
+### 3. Group Related Events
+
+```typescript
+await lai.createStep({ state: "Multi-stage process" });
+
+// Related events within the step
+await lai.createEvent({ description: "Stage 1: Validation" });
+await lai.createEvent({ description: "Stage 2: Processing" });
+await lai.createEvent({ description: "Stage 3: Output" });
+
+await lai.endStep();
+```
+
+## Notes
+
+- Events must be created within an active step
+- Auto-tracked LLM calls don't need manual event creation
+- Event IDs are returned for later updates
+- All parameters are optional
+
+## See Also
+
+- [updateEvent](/typescript-sdk/update-event) - Update event properties
+- [createStep](/typescript-sdk/create-step) - Create steps to contain events
+- [Provider Integrations](/typescript-sdk/integrations/openai) - Auto-tracking setup

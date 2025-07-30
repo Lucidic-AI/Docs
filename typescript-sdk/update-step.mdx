@@ -1,0 +1,272 @@
+---
+title: 'updateStep'
+description: 'Update an existing step'
+---
+
+## Overview
+
+The `updateStep` function updates properties of a specific step by its ID. This is typically used to mark steps as finished or update their evaluation scores.
+
+## Syntax
+
+```typescript
+await lai.updateStep(
+  stepId: string,
+  isFinished?: boolean,
+  evalScore?: number,
+  evalDescription?: string
+): Promise<void>
+```
+
+## Parameters
+
+<ParamField path="stepId" type="string" required>
+  ID of the step to update.
+</ParamField>
+
+<ParamField path="isFinished" type="boolean" optional>
+  Whether the step is finished.
+</ParamField>
+
+<ParamField path="evalScore" type="number" optional>
+  Evaluation score (0-100).
+</ParamField>
+
+<ParamField path="evalDescription" type="string" optional>
+  Description of the evaluation.
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves to void.
+
+## Examples
+
+### Basic Update
+
+```typescript
+// Keep reference to step
+const step = await lai.createStep({
+  state: "Processing",
+  action: "Analyze data"
+});
+
+// Update later
+await lai.updateStep(
+  step.stepId,
+  false,  // Not finished yet
+  75,     // Current score
+  "Partially complete"
+);
+
+// Finish the step
+await lai.updateStep(
+  step.stepId,
+  true,   // Finished
+  100,    // Final score
+  "Analysis completed successfully"
+);
+```
+
+### Progress Tracking
+
+```typescript
+const step = await lai.createStep({
+  state: "Large file processing",
+  action: "Process in chunks"
+});
+
+const totalChunks = 100;
+
+for (let i = 0; i < totalChunks; i++) {
+  await processChunk(i);
+  
+  // Update progress
+  const progress = Math.round(((i + 1) / totalChunks) * 100);
+  await lai.updateStep(
+    step.stepId,
+    false,
+    progress,
+    `Processed ${i + 1}/${totalChunks} chunks`
+  );
+}
+
+// Mark as complete
+await lai.updateStep(
+  step.stepId,
+  true,
+  100,
+  "All chunks processed"
+);
+```
+
+### Multiple Steps Management
+
+```typescript
+// Create multiple steps
+const steps = await Promise.all([
+  lai.createStep({ state: "Step 1" }),
+  lai.createStep({ state: "Step 2" }),
+  lai.createStep({ state: "Step 3" })
+]);
+
+// Process in parallel
+await Promise.all(steps.map(async (step, index) => {
+  try {
+    await processStepTask(index);
+    
+    // Update on success
+    await lai.updateStep(
+      step.stepId,
+      true,
+      100,
+      `Step ${index + 1} completed`
+    );
+  } catch (error) {
+    // Update on failure
+    await lai.updateStep(
+      step.stepId,
+      true,
+      0,
+      `Step ${index + 1} failed: ${error.message}`
+    );
+  }
+}));
+```
+
+## Difference from endStep
+
+| Feature | `updateStep` | `endStep` |
+|---------|--------------|-----------|
+| Requires step ID | ✅ Yes | ❌ Optional |
+| Can update non-active steps | ✅ Yes | ❌ No |
+| Can update finished steps | ✅ Yes | ❌ No |
+| Updates current active step reference | ❌ No | ✅ Yes |
+| Can update state/action/goal | ❌ No | ✅ Yes |
+
+### When to Use Each
+
+Use `updateStep` when:
+- You need to update a specific step by ID
+- Managing multiple steps simultaneously
+- Updating progress incrementally
+- Working with non-active steps
+
+Use `endStep` when:
+- Ending the current active step
+- Following sequential step flow
+- Need to update state/action/goal
+
+## Common Patterns
+
+### 1. Retry with Score Tracking
+
+```typescript
+async function retryableOperation() {
+  const step = await lai.createStep({
+    state: "Retryable operation",
+    action: "Process with retries"
+  });
+  
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await riskyOperation();
+      
+      await lai.updateStep(
+        step.stepId,
+        true,
+        100,
+        `Succeeded on attempt ${attempt}`
+      );
+      return;
+      
+    } catch (error) {
+      const score = Math.max(0, 100 - (attempt * 30));
+      await lai.updateStep(
+        step.stepId,
+        attempt === 3,
+        score,
+        `Attempt ${attempt} failed: ${error.message}`
+      );
+      
+      if (attempt < 3) await delay(1000 * attempt);
+    }
+  }
+}
+```
+
+### 2. Background Processing
+
+```typescript
+// Start long-running task
+const step = await lai.createStep({
+  state: "Background job",
+  action: "Process async"
+});
+
+// Return step ID for status updates
+const jobId = startBackgroundJob(async (progress) => {
+  await lai.updateStep(
+    step.stepId,
+    false,
+    progress,
+    `Processing: ${progress}% complete`
+  );
+});
+
+// Later, mark as complete
+await lai.updateStep(
+  step.stepId,
+  true,
+  100,
+  "Background job finished"
+);
+```
+
+## Best Practices
+
+### 1. Keep Step References
+
+```typescript
+// Store step IDs for later updates
+const stepMap = new Map();
+
+stepMap.set('validation', await lai.createStep({ state: "Validating" }));
+stepMap.set('processing', await lai.createStep({ state: "Processing" }));
+
+// Update specific steps
+await lai.updateStep(stepMap.get('validation').stepId, true, 100);
+```
+
+### 2. Consistent Scoring
+
+```typescript
+// Define scoring criteria
+const scoreStep = (success: boolean, warnings: number) => {
+  if (!success) return 0;
+  if (warnings === 0) return 100;
+  if (warnings <= 2) return 90;
+  if (warnings <= 5) return 75;
+  return 50;
+};
+
+await lai.updateStep(
+  stepId,
+  true,
+  scoreStep(result.success, result.warnings),
+  `Completed with ${result.warnings} warnings`
+);
+```
+
+## Notes
+
+- Step must exist and belong to the active session
+- Can update finished steps (unlike `endStep`)
+- All parameters except `stepId` are optional
+- Updates don't affect the active step pointer
+
+## See Also
+
+- [createStep](/typescript-sdk/create-step) - Create new steps
+- [endStep](/typescript-sdk/end-step) - End the current active step
+- [Examples](/typescript-sdk/examples) - More usage patterns

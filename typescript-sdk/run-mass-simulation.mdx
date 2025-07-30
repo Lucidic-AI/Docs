@@ -1,0 +1,395 @@
+---
+title: 'runMassSimulation'
+description: 'Run multiple sessions as part of a mass simulation'
+---
+
+## Overview
+
+The `runMassSimulation` function enables you to run multiple sessions in a batch for testing variations, performance analysis, or A/B testing scenarios.
+
+## Syntax
+
+```typescript
+await lai.runMassSimulation(config: MassSimulationConfig): Promise<void>
+```
+
+## Parameters
+
+<ParamField path="config" type="MassSimulationConfig" required>
+  Configuration object with the following properties:
+  
+  <Expandable title="properties">
+    <ParamField path="sessionBaseName" type="string" required>
+      Base name for generated sessions. Sessions will be named as `${sessionBaseName} - ${index}`.
+    </ParamField>
+    
+    <ParamField path="numSessions" type="number" required>
+      Total number of sessions to run in the simulation.
+    </ParamField>
+    
+    <ParamField path="sessionFunction" type="() => Promise<void>" required>
+      Async function that defines what happens in each session. This function is called once and should handle running all sessions.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+Returns a Promise that resolves when all simulation sessions are complete.
+
+## Examples
+
+### Basic Mass Simulation
+
+```typescript
+await lai.runMassSimulation({
+  sessionBaseName: "Performance Test",
+  numSessions: 10,
+  sessionFunction: async () => {
+    // This function runs once and should create all sessions
+    for (let i = 0; i < 10; i++) {
+      await lai.initSession({
+        sessionName: `Performance Test - ${i}`,
+        tags: ["simulation", "performance"]
+      });
+      
+      // Run your test scenario
+      await runTestScenario(i);
+      
+      await lai.endSession(true);
+    }
+  }
+});
+```
+
+### A/B Testing Example
+
+```typescript
+async function runABTest() {
+  const variants = ['A', 'B'];
+  const testCases = 20; // 10 per variant
+
+  await lai.runMassSimulation({
+    sessionBaseName: "Prompt A/B Test",
+    numSessions: testCases,
+    sessionFunction: async () => {
+      for (let i = 0; i < testCases; i++) {
+        const variant = variants[i % 2];
+        
+        await lai.initSession({
+          sessionName: `Prompt A/B Test - ${i}`,
+          tags: ["ab-test", `variant-${variant}`]
+        });
+        
+        await lai.createStep({
+          state: "Testing prompt variant",
+          action: `Using variant ${variant}`
+        });
+        
+        // Test different prompts
+        const prompt = variant === 'A' 
+          ? "Be concise and direct"
+          : "Be detailed and explanatory";
+          
+        const result = await testPromptPerformance(prompt);
+        
+        await lai.endStep({
+          evalScore: result.score,
+          evalDescription: `Variant ${variant}: ${result.metric}`
+        });
+        
+        await lai.endSession(true, `Completed variant ${variant} test`);
+      }
+    }
+  });
+}
+```
+
+### Model Comparison
+
+```typescript
+async function compareModels() {
+  const models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo"];
+  const testQueries = [
+    "Explain quantum computing",
+    "Write a haiku about AI",
+    "Solve this math problem: 15% of 240"
+  ];
+
+  await lai.runMassSimulation({
+    sessionBaseName: "Model Comparison",
+    numSessions: models.length * testQueries.length,
+    sessionFunction: async () => {
+      const OpenAI = (await import('openai')).default;
+      const openai = new OpenAI();
+      
+      for (const model of models) {
+        for (const query of testQueries) {
+          await lai.initSession({
+            sessionName: `Model Comparison - ${model}`,
+            tags: ["model-test", model, "comparison"]
+          });
+          
+          await lai.createStep({
+            state: `Testing ${model}`,
+            action: `Query: ${query}`
+          });
+          
+          const startTime = Date.now();
+          
+          const response = await openai.chat.completions.create({
+            model,
+            messages: [{ role: "user", content: query }]
+          });
+          
+          const duration = Date.now() - startTime;
+          
+          await lai.endStep({
+            evalScore: calculateQualityScore(response),
+            evalDescription: `Response time: ${duration}ms`
+          });
+          
+          await lai.endSession(true);
+        }
+      }
+    }
+  });
+}
+```
+
+### Parallel Execution Pattern
+
+```typescript
+async function runParallelSimulation() {
+  const concurrency = 5; // Run 5 sessions at a time
+  const totalSessions = 50;
+
+  await lai.runMassSimulation({
+    sessionBaseName: "Parallel Load Test",
+    numSessions: totalSessions,
+    sessionFunction: async () => {
+      // Create batches for parallel execution
+      const batches = [];
+      for (let i = 0; i < totalSessions; i += concurrency) {
+        batches.push(
+          Array.from({ length: Math.min(concurrency, totalSessions - i) }, 
+            (_, j) => i + j
+          )
+        );
+      }
+      
+      // Process batches
+      for (const batch of batches) {
+        await Promise.all(
+          batch.map(async (sessionIndex) => {
+            await lai.initSession({
+              sessionName: `Parallel Load Test - ${sessionIndex}`
+            });
+            
+            await simulateUserJourney(sessionIndex);
+            
+            await lai.endSession(true);
+          })
+        );
+      }
+    }
+  });
+}
+```
+
+### Error Handling in Simulations
+
+```typescript
+async function robustSimulation() {
+  const scenarios = 20;
+  const results = { success: 0, failed: 0 };
+
+  await lai.runMassSimulation({
+    sessionBaseName: "Reliability Test",
+    numSessions: scenarios,
+    sessionFunction: async () => {
+      for (let i = 0; i < scenarios; i++) {
+        try {
+          await lai.initSession({
+            sessionName: `Reliability Test - ${i}`
+          });
+          
+          await lai.createStep({
+            state: "Running scenario",
+            action: `Scenario ${i}`
+          });
+          
+          // Simulate random failures
+          if (Math.random() > 0.8) {
+            throw new Error("Simulated failure");
+          }
+          
+          await performScenario(i);
+          
+          await lai.endStep({ evalScore: 100 });
+          await lai.endSession(true);
+          results.success++;
+          
+        } catch (error) {
+          await lai.endStep({
+            evalScore: 0,
+            evalDescription: error.message
+          });
+          await lai.endSession(false, error.message);
+          results.failed++;
+        }
+      }
+      
+      console.log(`Simulation complete: ${results.success} success, ${results.failed} failed`);
+    }
+  });
+}
+```
+
+## Common Patterns
+
+### 1. Configuration Testing
+
+```typescript
+async function testConfigurations() {
+  const configs = [
+    { temperature: 0.1, model: "gpt-3.5-turbo" },
+    { temperature: 0.5, model: "gpt-3.5-turbo" },
+    { temperature: 0.9, model: "gpt-3.5-turbo" },
+    { temperature: 0.1, model: "gpt-4" },
+    { temperature: 0.5, model: "gpt-4" },
+    { temperature: 0.9, model: "gpt-4" }
+  ];
+
+  await lai.runMassSimulation({
+    sessionBaseName: "Config Test",
+    numSessions: configs.length,
+    sessionFunction: async () => {
+      for (const [index, config] of configs.entries()) {
+        await lai.initSession({
+          sessionName: `Config Test - ${index}`,
+          tags: ["config-test", `temp-${config.temperature}`, config.model]
+        });
+        
+        await testWithConfig(config);
+        
+        await lai.endSession(true);
+      }
+    }
+  });
+}
+```
+
+### 2. Time-based Testing
+
+```typescript
+async function testAtDifferentTimes() {
+  const timeSlots = 24; // Test every hour
+
+  await lai.runMassSimulation({
+    sessionBaseName: "24-Hour Test",
+    numSessions: timeSlots,
+    sessionFunction: async () => {
+      for (let hour = 0; hour < timeSlots; hour++) {
+        // Schedule for specific hour
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hour, 0, 0, 0);
+        
+        // Wait until scheduled time
+        const now = new Date();
+        const delay = scheduledTime.getTime() - now.getTime();
+        if (delay > 0) {
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        await lai.initSession({
+          sessionName: `24-Hour Test - ${hour}:00`,
+          tags: ["time-test", `hour-${hour}`]
+        });
+        
+        await runHourlyTest();
+        
+        await lai.endSession(true);
+      }
+    }
+  });
+}
+```
+
+## Best Practices
+
+### 1. Resource Management
+
+```typescript
+// Don't overwhelm the system
+const MAX_CONCURRENT = 10;
+const semaphore = new Semaphore(MAX_CONCURRENT);
+
+await lai.runMassSimulation({
+  sessionBaseName: "Controlled Load",
+  numSessions: 100,
+  sessionFunction: async () => {
+    const tasks = Array.from({ length: 100 }, async (_, i) => {
+      await semaphore.acquire();
+      try {
+        await runSession(i);
+      } finally {
+        semaphore.release();
+      }
+    });
+    
+    await Promise.all(tasks);
+  }
+});
+```
+
+### 2. Meaningful Names and Tags
+
+```typescript
+// Use descriptive naming for easy filtering
+await lai.initSession({
+  sessionName: `${baseName} - ${testType} - ${variant} - ${index}`,
+  tags: [
+    "simulation",
+    `type:${testType}`,
+    `variant:${variant}`,
+    `batch:${batchId}`,
+    `timestamp:${Date.now()}`
+  ]
+});
+```
+
+### 3. Progress Tracking
+
+```typescript
+let completed = 0;
+const total = 100;
+
+await lai.runMassSimulation({
+  sessionBaseName: "Progress Test",
+  numSessions: total,
+  sessionFunction: async () => {
+    for (let i = 0; i < total; i++) {
+      await runSingleSession(i);
+      completed++;
+      
+      if (completed % 10 === 0) {
+        console.log(`Progress: ${completed}/${total} (${(completed/total*100).toFixed(1)}%)`);
+      }
+    }
+  }
+});
+```
+
+## Notes
+
+- The `sessionFunction` is called once and should handle all session creation
+- Each session within the simulation should be properly initialized and ended
+- Use tags to make filtering and analysis easier in the dashboard
+- Consider rate limits and resource constraints when running large simulations
+
+## See Also
+
+- [Mass Simulations Feature](/features/mass-simulation-overview) - Conceptual overview
+- [Examples](/typescript-sdk/examples#mass-simulation) - More simulation patterns
+- [Python SDK create_mass_sim](/python-sdk/create_mass_sim) - Python equivalent

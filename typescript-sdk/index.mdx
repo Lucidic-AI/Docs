@@ -1,0 +1,178 @@
+---
+title: 'TypeScript SDK Functions'
+description: 'Complete reference for all Lucidic TypeScript SDK functions'
+---
+
+## Overview
+
+The Lucidic TypeScript SDK provides a comprehensive set of functions to track, monitor, and analyze AI agent workflows. These functions handle session management, step tracking, event logging, and integration with various LLM providers.
+
+## Installation
+
+```bash
+npm install lucidicai
+```
+
+## Quick Start
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Initialize a session
+await lai.init({
+  sessionName: "My AI Agent",
+  providers: ["openai"]
+});
+
+// Import providers AFTER init
+const OpenAI = (await import('openai')).default;
+const openai = new OpenAI();
+
+// Create a step  
+await lai.createStep({
+  state: "Processing",
+  action: "Generate response"
+});
+
+// Your AI operations are automatically tracked
+// ...
+
+// End the step and session
+await lai.endStep();
+await lai.endSession();
+```
+
+## Session Management
+
+<CardGroup cols={2}>
+  <Card title="init" icon="play" href="/typescript-sdk/init">
+    Initialize the SDK and optionally create a session
+  </Card>
+  <Card title="initSession" icon="plus" href="/typescript-sdk/init-session">
+    Initialize a new session explicitly
+  </Card>
+  <Card title="continueSession" icon="forward" href="/typescript-sdk/continue-session">
+    Continue an existing session
+  </Card>
+  <Card title="updateSession" icon="pen" href="/typescript-sdk/update-session">
+    Update session metadata
+  </Card>
+  <Card title="endSession" icon="stop" href="/typescript-sdk/end-session">
+    End the current session
+  </Card>
+</CardGroup>
+
+## Step Management
+
+<CardGroup cols={2}>
+  <Card title="createStep" icon="plus" href="/typescript-sdk/create-step">
+    Create a new step in the workflow
+  </Card>
+  <Card title="updateStep" icon="pen" href="/typescript-sdk/update-step">
+    Update an existing step
+  </Card>
+  <Card title="endStep" icon="check" href="/typescript-sdk/end-step">
+    End the current step
+  </Card>
+</CardGroup>
+
+## Event Management
+
+<CardGroup cols={2}>
+  <Card title="createEvent" icon="bolt" href="/typescript-sdk/create-event">
+    Create a new event within a step
+  </Card>
+  <Card title="updateEvent" icon="pen" href="/typescript-sdk/update-event">
+    Update an existing event
+  </Card>
+</CardGroup>
+
+## Advanced Features
+
+<CardGroup cols={2}>
+  <Card title="getPrompt" icon="message" href="/typescript-sdk/get-prompt">
+    Retrieve prompts from the platform
+  </Card>
+  <Card title="runMassSimulation" icon="layer-group" href="/typescript-sdk/run-mass-simulation">
+    Run mass simulations
+  </Card>
+</CardGroup>
+
+## Function Categories
+
+### Session Lifecycle
+
+1. **Initialization**: Use `init()` to initialize SDK and optionally start a session
+2. **Session Creation**: Use `initSession()` for explicit session creation
+3. **Continuation**: Use `continueSession()` to resume existing sessions
+4. **Updates**: Modify session data with `updateSession()`
+5. **Completion**: End with `endSession()` including success status
+
+### Step Management
+
+1. **Creation**: Use `createStep()` to begin tracking a unit of work
+2. **Updates**: Update step data with `updateStep()`
+3. **Completion**: Finish with `endStep()` including evaluation
+
+### Event Tracking
+
+1. **Automatic**: LLM calls through instrumented providers create events automatically
+2. **Manual**: Use `createEvent()` for custom events
+3. **Updates**: Modify events with `updateEvent()`
+
+### Utilities
+
+1. **Prompts**: Centralized prompt management with `getPrompt()`
+2. **Images**: Upload images with `uploadImage()`
+3. **Mass Simulations**: Batch operations with `runMassSimulation()`
+4. **Context Storage**: Use `withStorageContext()` for multimodal capture
+
+## Provider Support
+
+The SDK automatically instruments these providers when specified in `init()`:
+
+- **OpenAI** - `providers: ["openai"]`
+- **Anthropic** - `providers: ["anthropic"]`
+
+## Key Differences from Python SDK
+
+1. **Async by Default**: All functions return Promises and must be awaited
+2. **Import Order**: Providers must be imported AFTER `init()` for instrumentation
+3. **Named Parameters**: Functions use object parameters for better TypeScript support
+4. **No Decorators**: Function-based API only (decorators exist but not recommended)
+
+## Best Practices
+
+1. **Always Initialize First**: Call `await lai.init()` before any other operations
+2. **Import Order Matters**: Import LLM providers AFTER initialization
+3. **Use Named Parameters**: TypeScript's object syntax provides better IDE support
+4. **Handle Promises**: Always await async operations or handle Promise chains
+5. **Type Safety**: Leverage TypeScript's type system for better development experience
+
+## Error Handling
+
+```typescript
+import { LucidicError, APIError, SessionError } from 'lucidicai';
+
+try {
+  await lai.init({ sessionName: "My Session" });
+} catch (error) {
+  if (error instanceof APIError) {
+    console.error("API key verification failed:", error.message);
+  } else if (error instanceof SessionError) {
+    console.error("Session error:", error.message);
+  }
+}
+```
+
+## Environment Variables
+
+- `LUCIDIC_API_KEY` - Your API key for authentication
+- `LUCIDIC_AGENT_ID` - Your agent identifier
+
+## See Also
+
+- [Getting Started Guide](/typescript-sdk/quick-start)
+- [Core Concepts](/typescript-sdk/core-concepts)
+- [Integration Examples](/typescript-sdk/integrations/openai)
+- [Advanced Features](/typescript-sdk/advanced-features)

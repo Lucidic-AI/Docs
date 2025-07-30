@@ -29,11 +29,6 @@ npm install lucidicai
 yarn add lucidicai
 ```
 
-### Using pnpm
-```bash
-pnpm add lucidicai
-```
-
 ---
 
 ## Configuration
@@ -45,7 +40,6 @@ Create a `.env` file in your project root:
 ```bash
 LUCIDIC_API_KEY=your-api-key
 LUCIDIC_AGENT_ID=your-agent-id
-LUCIDIC_DEBUG=false  # Set to 'True' for debug logging
 ```
 
 ### TypeScript Configuration
@@ -177,23 +171,6 @@ const Anthropic = (await import('@anthropic-ai/sdk')).default;
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
-```
-
----
-
-## Debugging
-
-Enable debug logging to troubleshoot issues:
-
-```bash
-# In your .env file
-LUCIDIC_DEBUG=True
-```
-
-Or programmatically:
-```typescript
-process.env.LUCIDIC_DEBUG = 'True';
-await lai.init({ providers: ['openai'] });
 ```
 
 ---
