@@ -3,13 +3,13 @@ title: Anthropic Integration
 description: Automatic tracking for Anthropic Claude API calls in TypeScript
 ---
 
-# 🤖 Anthropic Integration
+# Anthropic Integration
 
 The TypeScript SDK provides automatic instrumentation for Anthropic's Claude API using OpenTelemetry.
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 
 When you initialize with `providers: ['anthropic']`:
 
@@ -20,7 +20,7 @@ When you initialize with `providers: ['anthropic']`:
 
 ---
 
-## 🚀 Setup
+## Setup
 
 ```typescript
 import * as lai from 'lucidicai';
@@ -42,7 +42,7 @@ const anthropic = new Anthropic({
 
 ---
 
-## ✅ What Gets Captured
+## What Gets Captured
 
 For every Anthropic API call:
 
@@ -56,7 +56,7 @@ For every Anthropic API call:
 
 ---
 
-## ⚠️ Known Limitation: Streaming
+## Known Limitation: Streaming
 
 Due to a limitation in the `@traceloop/instrumentation-anthropic` library, streaming responses show as "Response received" instead of the actual content.
 
@@ -88,7 +88,7 @@ await lai.createEvent({
 
 ---
 
-## 📝 Examples
+## Examples
 
 ### Basic Message
 
@@ -173,7 +173,7 @@ const response = await anthropic.messages.create({
 
 ---
 
-## 🎯 Minimal Example
+## Minimal Example
 
 ```typescript
 import * as lai from 'lucidicai';
@@ -194,7 +194,7 @@ const response = await anthropic.messages.create({
 
 ---
 
-## 💰 Cost Tracking
+## Cost Tracking
 
 The SDK includes built-in pricing for all Claude models:
 
@@ -209,7 +209,7 @@ Costs are automatically calculated and attached to each event.
 
 ---
 
-## 🔧 Advanced Usage
+## Advanced Usage
 
 ### Temperature and Other Parameters
 
@@ -270,7 +270,7 @@ await lai.endStep(95, 'Successfully extracted key points');
 
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Events Not Appearing
 
@@ -297,7 +297,7 @@ const response = await anthropic.messages.create({
 
 ---
 
-## 🔗 See Also
+## See Also
 
 - [OpenAI Integration](/typescript-sdk/integrations/openai) - GPT tracking
 - [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking

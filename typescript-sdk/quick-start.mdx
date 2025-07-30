@@ -3,13 +3,13 @@ title: Quick Start Guide
 description: Build your first tracked AI application with the TypeScript SDK in 5 minutes
 ---
 
-# 🚀 Quick Start Guide
+# Quick Start Guide
 
 Let's build a simple AI assistant that's fully tracked by Lucidic. This guide will have you up and running in 5 minutes.
 
 ---
 
-## 📋 What We'll Build
+## What We'll Build
 
 A customer support assistant that:
 1. Understands user questions
@@ -19,7 +19,7 @@ A customer support assistant that:
 
 ---
 
-## 🛠️ Step 1: Setup
+## Step 1: Setup
 
 First, install the SDK and create a new project:
 
@@ -53,7 +53,7 @@ OPENAI_API_KEY=your-openai-api-key
 
 ---
 
-## 🎯 Step 2: Minimal Example
+## Step 2: Minimal Example
 
 Create `minimal.ts`:
 
@@ -90,7 +90,7 @@ That's it! Your LLM call is now tracked in the Lucidic dashboard.
 
 ---
 
-## 🏗️ Step 3: Full Example
+## Step 3: Full Example
 
 Now let's build a more complete assistant with steps and evaluation.
 
@@ -249,13 +249,13 @@ async function main() {
       context: 'User has been locked out of their account'
     });
 
-    console.log('\n📝 Response:', response);
+    console.log('\nResponse:', response);
 
     await assistant.close(true);
-    console.log('\n✅ Session completed and tracked!');
+    console.log('\nSession completed and tracked!');
 
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('Error:', error);
     await assistant.close(false);
   }
 }
@@ -270,7 +270,7 @@ npx ts-node assistant.ts
 
 ---
 
-## 📊 Step 4: View in Dashboard
+## Step 4: View in Dashboard
 
 After running the examples:
 
@@ -280,14 +280,14 @@ After running the examples:
 4. See every step, event, and LLM call
 
 You'll see:
-- 🗂️ **Session overview** with success status
-- 📋 **Steps** showing the workflow progression
-- 🎪 **Events** with all LLM calls, costs, and timings
-- 📈 **Metrics** including total cost and token usage
+- **Session overview** with success status
+- **Steps** showing the workflow progression
+- **Events** with all LLM calls, costs, and timings
+- **Metrics** including total cost and token usage
 
 ---
 
-## 🎨 Step 5: Add Advanced Features
+## Step 5: Add Advanced Features
 
 ### Multimodal Support
 
@@ -337,7 +337,7 @@ try {
 
 ---
 
-## 🚢 Next Steps
+## Next Steps
 
 You now have a fully tracked AI assistant! Here's what to explore next:
 
@@ -348,7 +348,7 @@ You now have a fully tracked AI assistant! Here's what to explore next:
 
 ---
 
-## 💡 Tips
+## Tips
 
 1. **Always init before importing** - This ensures proper instrumentation
 2. **Use meaningful step names** - Makes debugging much easier

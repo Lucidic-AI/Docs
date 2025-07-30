@@ -3,13 +3,13 @@ title: PydanticAI Integration
 description: Automatically capture PydanticAI agent completions in your sessions with one line of setup.
 ---
 
-# 🤝 PydanticAI Integration
+# PydanticAI Integration
 
 Lucidic makes it easy to **automatically track PydanticAI agent completions** as part of your agent's behavior — no code changes required.
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 
 When you set:
 
@@ -32,7 +32,7 @@ This means:
 
 ---
 
-## ✅ What Gets Captured
+## What Gets Captured
 
 Each PydanticAI call is tracked with:
 
@@ -44,7 +44,7 @@ Each PydanticAI call is tracked with:
 
 ---
 
-## 🧠 Why This Matters
+## Why This Matters
 
 PydanticAI agent calls are a core part of most AI workflows — but without visibility, it's impossible to debug or optimize:
 
@@ -57,52 +57,7 @@ This integration gives you full transparency, with **zero boilerplate**.
 
 ---
 
-## 🧪 Example
-
-```python
-import lucidicai as lai
-from pydantic_ai import Agent
-from pydantic_ai.models.anthropic import AnthropicModel
-import asyncio
-
-lai.init(
-    session_name="pydantic_ai_run",
-    providers=["pydantic_ai"]  # API key and agent ID from env vars
-)
-
-model = AnthropicModel("claude-3-5-sonnet-20241022")
-agent = Agent(model=model, system_prompt="You are a helpful assistant.")
-
-lai.create_step(state="Research", goal="Generate research ideas")
-
-# This call is automatically tracked!
-async def run_agent():
-    response = await agent.run(
-        "What are 5 research ideas about climate change?"
-    )
-    return response
-
-response = asyncio.run(run_agent())
-
-lai.end_step(action="Generated research ideas")
-```
-
-### Using with Multiple Models
-
-```python
-from pydantic_ai.models.openai import OpenAIModel
-from pydantic_ai.models.gemini import GeminiModel
-
-# All model types are automatically tracked
-openai_model = OpenAIModel("gpt-4o")
-gemini_model = GeminiModel("gemini-1.5-pro")
-
-# Create agents with different models
-agent1 = Agent(model=openai_model)
-agent2 = Agent(model=gemini_model)
-```
-
-### Minimal Example - Auto Everything!
+## Example
 
 ```python
 import lucidicai as lai
@@ -114,10 +69,9 @@ lai.init(providers=["pydantic_ai"])
 
 agent = Agent()  # Uses default model
 
-# Even without creating a step, this works!
-# Lucidic will auto-create a step AND auto-create an event
+# Steps and events are automatically created
 async def run():
-    response = await agent.run("What's the weather like?")
+    response = await agent.run("Hello!")
     return response
 
 asyncio.run(run())
@@ -125,9 +79,64 @@ asyncio.run(run())
 # Session auto-ends when script exits
 ```
 
+### Streaming Example
+
+```python
+import lucidicai as lai
+from pydantic_ai import Agent
+import asyncio
+
+lai.init(providers=["pydantic_ai"])
+
+agent = Agent()
+
+async def stream_example():
+    # Streaming responses are also tracked automatically
+    async with agent.run_stream("Tell me a story") as response:
+        async for text in response.stream():
+            print(text, end="")
+
+asyncio.run(stream_example())
+```
+
+### Explicit Step Management
+
+```python
+import lucidicai as lai
+from pydantic_ai import Agent
+from pydantic_ai.models.anthropic import AnthropicModel
+import asyncio
+
+lai.init(
+    session_name="pydantic_ai_research",
+    providers=["pydantic_ai"]  # API key and agent ID from env vars
+)
+
+model = AnthropicModel("claude-3-5-sonnet-20241022")
+agent = Agent(model=model, system_prompt="You are a research assistant.")
+
+lai.create_step(state="Research", goal="Generate research ideas")
+
+# All agent calls are automatically tracked as events within this step
+async def research():
+    response1 = await agent.run(
+        "What are 5 research ideas about climate change?"
+    )
+    
+    response2 = await agent.run(
+        "What methodologies could be used for each idea?"
+    )
+    
+    return response1, response2
+
+responses = asyncio.run(research())
+
+lai.end_step()
+```
+
 ---
 
-## 🛠️ Notes
+## Notes
 
 - All PydanticAI model types are instrumented (OpenAI, Anthropic, Gemini, Groq, etc.)
 - Both sync and async agent runs are supported

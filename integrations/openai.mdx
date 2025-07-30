@@ -3,13 +3,13 @@ title: OpenAI Integration
 description: Automatically capture OpenAI LLM calls in your sessions with one line of setup.
 ---
 
-# 🤝 OpenAI Integration
+# OpenAI Integration
 
 Lucidic makes it easy to **automatically track OpenAI completions** as part of your agent's behavior — no code changes required.
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 
 When you set:
 
@@ -32,7 +32,7 @@ This means:
 
 ---
 
-## ✅ What Gets Captured
+## What Gets Captured
 
 We automatically capture the following from OpenAI API calls:
 
@@ -46,7 +46,7 @@ We automatically capture the following from OpenAI API calls:
 
 ---
 
-## 🧠 Why This Matters
+## Why This Matters
 
 LLM calls are a core part of most agent workflows — but without visibility, it’s impossible to debug or optimize:
 
@@ -59,33 +59,7 @@ This integration gives you full transparency, with **zero boilerplate**.
 
 ---
 
-## 🧪 Example
-
-```python
-import lucidicai as lai
-from openai import OpenAI
-
-lai.init(
-    session_name="chatbot_run",
-    providers=["openai"]  # API key and agent ID from env vars
-)
-
-lai.create_step(state="Intro", goal="Ask user for name")
-
-# Create OpenAI client
-client = OpenAI()
-
-# This call is automatically tracked as an event!
-# No need for create_event() or end_event()
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "What's your name?"}]
-)
-
-lai.end_step(action="Generated greeting")
-```
-
-### Minimal Example - Auto Everything!
+## Example
 
 ```python
 import lucidicai as lai
@@ -96,8 +70,7 @@ lai.init(providers=["openai"])
 
 client = OpenAI()
 
-# Even without creating a step, this works!
-# Lucidic will auto-create a step AND auto-create an event
+# Steps and events are automatically created
 response = client.chat.completions.create(
     model="gpt-4",
     messages=[{"role": "user", "content": "Hello!"}]
@@ -109,6 +82,13 @@ response = client.chat.completions.create(
 ### Streaming Example
 
 ```python
+import lucidicai as lai
+from openai import OpenAI
+
+lai.init(providers=["openai"])
+
+client = OpenAI()
+
 # Streaming responses are also tracked automatically
 stream = client.chat.completions.create(
     model="gpt-4",
@@ -121,9 +101,38 @@ for chunk in stream:
         print(chunk.choices[0].delta.content, end="")
 ```
 
+### Explicit Step Management
+
+```python
+import lucidicai as lai
+from openai import OpenAI
+
+lai.init(
+    session_name="chatbot_run",
+    providers=["openai"]  # API key and agent ID from env vars
+)
+
+client = OpenAI()
+
+lai.create_step(state="Research", goal="Generate research questions")
+
+# All LLM calls are automatically tracked as events within this step
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "What are key areas in AI safety research?"}]
+)
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[{"role": "user", "content": "What are the main challenges in each area?"}]
+)
+
+lai.end_step()
+```
+
 ---
 
-## 🛠️ Notes
+## Notes
 
 - All OpenAI client methods are instrumented (chat completions, embeddings, etc.)
 - Both sync and async methods are supported

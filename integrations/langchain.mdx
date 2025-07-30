@@ -3,13 +3,13 @@ title: LangChain Integration
 description: Automatically track LangChain LLM calls by attaching Lucidic to your agent — even if it's deeply nested.
 ---
 
-# 🔗 LangChain Integration
+# LangChain Integration
 
 Lucidic integrates seamlessly with **LangChain** agents and chains — no need to rewrite your code or restructure your logic.
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 
 When you use `providers=["langchain"]` with Lucidic:
 
@@ -23,45 +23,70 @@ This means you get **full observability into your agent's reasoning — with min
 
 ---
 
-## 🧪 Setup Instructions
-
-### Basic Setup
+## Example
 
 ```python
 import lucidicai as lai
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
+
+# Just initialize - that's it!
+lai.init(providers=["langchain"])
+
+llm = ChatOpenAI(model="gpt-4")
+
+# Steps and events are automatically created
+response = llm.invoke("Hello!")
+
+# Session auto-ends when script exits
+```
+
+### Streaming Example
+
+```python
+import lucidicai as lai
+from langchain_openai import ChatOpenAI
+
+lai.init(providers=["langchain"])
+
+llm = ChatOpenAI(model="gpt-4")
+
+# Streaming responses are also tracked automatically
+for chunk in llm.stream("Tell me a story"):
+    print(chunk.content, end="")
+```
+
+### Explicit Step Management
+
+```python
+import lucidicai as lai
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
 
 lai.init(
-    session_name="langchain_agent_run",
+    session_name="langchain_research",
     providers=["langchain"]  # API key and agent ID from env vars
 )
 
-# LangChain calls are automatically tracked!
 llm = ChatOpenAI(model="gpt-4")
-response = llm.invoke([HumanMessage(content="Hello!")])
+
+lai.create_step(state="Research", goal="Generate research ideas")
+
+# All LLM calls are automatically tracked as events within this step
+response = llm.invoke([
+    SystemMessage(content="You are a research assistant."),
+    HumanMessage(content="What are 5 important areas in climate science?")
+])
+
+response = llm.invoke([
+    HumanMessage(content="What methodologies are used to study each area?")
+])
+
+lai.end_step()
 ```
-
-### For Complex Agents (Optional)
-
-For some complex agent setups, you may need to manually attach a handler:
-
-```python
-from lucidicai.telemetry.otel_handlers import OTelLangChainHandler
-
-# Get the handler from the SDK
-handler = lai.Client().get_provider("langchain")
-
-# Manually attach to your agent if needed
-if hasattr(agent, 'callbacks'):
-    agent.callbacks.append(handler)
-```
-
-✅ In most cases, automatic instrumentation will work without manual attachment.
 
 ---
 
-## ✅ What Gets Captured
+## What Gets Captured
 
 For every LangChain LLM call, we automatically capture:
 
@@ -76,7 +101,7 @@ For every LangChain LLM call, we automatically capture:
 
 ---
 
-## 🧪 Full Example
+## Agent Example
 
 ```python
 import lucidicai as lai
@@ -86,7 +111,7 @@ from langchain.tools import Tool
 from langchain_core.prompts import PromptTemplate
 
 lai.init(
-    session_name="langchain_test",
+    session_name="langchain_agent",
     providers=["langchain"]
 )
 
@@ -105,7 +130,6 @@ prompt = PromptTemplate.from_template("You are a helpful assistant. {input}")
 agent = create_react_agent(llm, tools, prompt)
 executor = AgentExecutor(agent=agent, tools=tools)
 
-# Create a step
 lai.create_step(state="Ready", goal="Solve math problem")
 
 # All LLM calls within the agent are automatically tracked!
@@ -114,27 +138,26 @@ result = executor.invoke({"input": "What is 25 * 4 + 10?"})
 lai.end_step()
 ```
 
-### Minimal Example - Auto Everything!
+### Complex Agent Handler (Optional)
+
+For some complex agent setups, you may need to manually attach a handler:
 
 ```python
-import lucidicai as lai
-from langchain_openai import ChatOpenAI
+from lucidicai.telemetry.otel_handlers import OTelLangChainHandler
 
-# Just initialize - that's it!
-lai.init(providers=["langchain"])
+# Get the handler from the SDK
+handler = lai.Client().get_provider("langchain")
 
-llm = ChatOpenAI(model="gpt-4")
-
-# Even without creating a step, this works!
-# Lucidic will auto-create a step AND auto-create events for each LLM call
-response = llm.invoke("Tell me a joke")
-
-# Session auto-ends when script exits
+# Manually attach to your agent if needed
+if hasattr(agent, 'callbacks'):
+    agent.callbacks.append(handler)
 ```
+
+In most cases, automatic instrumentation will work without manual attachment.
 
 ---
 
-## 🛠️ Notes
+## Notes
 
 - Requires LangChain packages installed (`langchain`, `langchain-openai`, etc.)
 - Works with all LangChain LLMs, chains, and agents

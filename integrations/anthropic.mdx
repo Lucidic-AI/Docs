@@ -3,13 +3,13 @@ title: Anthropic Integration
 description: Automatically track Claude completions in your agent sessions with a single line of setup.
 ---
 
-# 🤝 Anthropic Integration
+# Anthropic Integration
 
 Lucidic supports automatic tracking of **Anthropic Claude** completions in your agent sessions — with no extra instrumentation needed.
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 
 When you initialize the SDK with:
 
@@ -26,7 +26,7 @@ Lucidic will:
 
 ---
 
-## ✅ What Gets Captured
+## What Gets Captured
 
 We automatically capture the following from Anthropic API calls:
 
@@ -41,7 +41,7 @@ We automatically capture the following from Anthropic API calls:
 
 ---
 
-## 🧠 Why This Matters
+## Why This Matters
 
 LLM calls are a core part of most agent workflows — but without visibility, it’s impossible to debug or optimize:
 
@@ -54,7 +54,50 @@ This integration gives you full transparency, with **zero boilerplate**.
 
 ---
 
-## 🧪 Example
+## Example
+
+```python
+import lucidicai as lai
+from anthropic import Anthropic
+
+# Just initialize - that's it!
+lai.init(providers=["anthropic"])
+
+client = Anthropic()
+
+# steps and events are automatically created
+response = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    messages=[{"role": "user", "content": "Hello Claude!"}]
+)
+
+# Session auto-ends when script exits
+```
+
+### Streaming Example
+
+```python
+import lucidicai as lai
+from anthropic import Anthropic
+
+lai.init(providers=["anthropic"])
+
+client = Anthropic)()
+
+# Streaming responses are also tracked automatically
+stream = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1000,
+    messages=[{"role": "user", "content": "Explain quantum computing"}],
+    stream=True
+)
+
+for event in stream:
+    if event.type == "content_block_delta":
+        print(event.delta.text, end="")
+```
+
+### Explicit Step Management
 
 ```python
 import lucidicai as lai
@@ -69,57 +112,25 @@ client = Anthropic()
 
 lai.create_step(state="Planning", goal="Generate research questions")
 
-# This call is automatically tracked as an event!
-# No need for create_event() or end_event()
+# All llm calls are automatically tracked as events within this step
 response = client.messages.create(
     model="claude-3-5-sonnet-20241022",
     max_tokens=500,
     messages=[{"role": "user", "content": "What are 5 research ideas about climate change?"}]
 )
 
-lai.end_step(action="Generated ideas")
-```
-
-### Streaming Example
-
-```python
-# Streaming responses are also tracked automatically
-stream = client.messages.create(
-    model="claude-3-5-sonnet-20241022",
-    max_tokens=1000,
-    messages=[{"role": "user", "content": "Explain quantum computing"}],
-    stream=True
-)
-
-for event in stream:
-    if event.type == "content_block_delta":
-        print(event.delta.text, end="")
-```
-
-### Minimal Example - Auto Everything!
-
-```python
-import lucidicai as lai
-from anthropic import Anthropic
-
-# Just initialize - that's it!
-lai.init(providers=["anthropic"])
-
-client = Anthropic()
-
-# Even without creating a step, this works!
-# Lucidic will auto-create a step AND auto-create an event
 response = client.messages.create(
     model="claude-3-5-sonnet-20241022",
-    messages=[{"role": "user", "content": "Hello Claude!"}]
+    max_tokens=500,
+    messages=[{"role": "user", "content": "What is the capital of France?"}]
 )
 
-# Session auto-ends when script exits
+lai.end_step()
 ```
 
 ---
 
-## 🛠️ Notes
+## Notes
 
 - Requires `anthropic` Python SDK installed (`pip install anthropic`)
 - All Anthropic client methods are instrumented

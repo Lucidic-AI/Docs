@@ -3,7 +3,7 @@ title: Steps
 description: Learn how Steps represent agent states and transitions within a Session.
 ---
 
-# 🪜 Steps
+# Steps
 
 A **Step** is a unit of execution within a [Session](/core-concepts/sessions). It captures both a snapshot of the agent’s **current state** and the **action taken** to transition to the next state. Steps are the backbone of a session timeline and form the nodes in your workflow graph.
 
@@ -11,7 +11,7 @@ Each Step may contain multiple underlying [Events](/core-concepts/events), such 
 
 ---
 
-## 🧬 Step Anatomy
+## Step Anatomy
 
 Each Step records:
 
@@ -27,7 +27,7 @@ More details can be found on programmatically what a **Step** looks like [here](
 
 ---
 
-## 🎬 Screenshots and Visual State
+## Screenshots and Visual State
 
 **Steps** may include a **screenshot** that visually captures what the agent was seeing or interacting with at that moment. These can be critical for understanding UI-based agents or browser actions.
 
@@ -37,7 +37,7 @@ More details can be found on programmatically what a **Step** looks like [here](
 
 ---
 
-## 💥 Evaluating Steps
+## Evaluating Steps
 
 Steps can be scored individually using:
 
@@ -53,7 +53,7 @@ lai.update_step(eval_score=0.3, eval_description="Tried to switch tabs but faile
 
 ---
 
-## 🔄 Step Transitions & Workflow Graph
+## Step Transitions & Workflow Graph
 
 Steps link together to form the execution path of your agent:
 
@@ -70,7 +70,7 @@ In your dashboard’s **Workflow Graph**, Steps are:
 
 ---
 
-## 🔍 Grouping & Graph Insight
+## Grouping & Graph Insight
 
 When multiple Steps share the same state and similar actions (e.g., retries or confusion loops), they’re automatically grouped in the graph view. This helps surface:
 
@@ -80,7 +80,7 @@ When multiple Steps share the same state and similar actions (e.g., retries or c
 
 ---
 
-## 📁 Events Inside Steps
+## Events Inside Steps
 
 Each Step may contain multiple [Events](/events) — fine-grained units of work including:
 
@@ -93,7 +93,7 @@ Each Step may contain multiple [Events](/events) — fine-grained units of work 
 
 ---
 
-## 🧪 Debugging with Steps
+## Debugging with Steps
 
 Steps are the atomic unit of debugging:
 

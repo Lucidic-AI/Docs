@@ -3,13 +3,13 @@ title: Core Concepts
 description: Understanding Sessions, Steps, and Events in the TypeScript SDK
 ---
 
-# 🎯 Core Concepts
+# Core Concepts
 
 The Lucidic AI TypeScript SDK uses the same hierarchical structure as the Python SDK to track your AI workflows.
 
 ---
 
-## 📊 Hierarchy Overview
+## Hierarchy Overview
 
 ```
 Session
@@ -25,7 +25,7 @@ Session
 
 ---
 
-## 🗂️ Sessions
+## Sessions
 
 A **Session** represents a complete AI workflow or conversation. It's the top-level container for all tracking data.
 
@@ -84,7 +84,7 @@ const currentSession = lai.getSession();
 
 ---
 
-## 📋 Steps
+## Steps
 
 **Steps** represent logical units of work within a session. Each step tracks state, action, and goal.
 
@@ -143,7 +143,7 @@ const response = await openai.chat.completions.create({
 
 ---
 
-## 🎪 Events
+## Events
 
 **Events** represent individual operations within steps - typically LLM API calls.
 
@@ -202,7 +202,7 @@ interface EventConfig {
 
 ---
 
-## 🎯 Automatic Behaviors
+## Automatic Behaviors
 
 The TypeScript SDK includes several automatic features:
 
@@ -237,7 +237,7 @@ await openai.chat.completions.create({
 
 ---
 
-## 💡 Best Practices
+## Best Practices
 
 ### 1. Meaningful Names
 ```typescript
@@ -282,7 +282,7 @@ try {
 
 ---
 
-## 🔗 Next Steps
+## Next Steps
 
 - [Provider Integrations](/typescript-sdk/integrations) - OpenAI and Anthropic setup
 - [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking, and more

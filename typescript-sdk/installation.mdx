@@ -3,13 +3,13 @@ title: Installation & Setup
 description: Get started with the Lucidic AI TypeScript SDK in your Node.js or TypeScript project
 ---
 
-# 📦 Installation & Setup
+# Installation & Setup
 
 This guide will walk you through installing and configuring the Lucidic AI TypeScript SDK.
 
 ---
 
-## 🔧 Prerequisites
+## Prerequisites
 
 - **Node.js** version 14.0 or higher
 - **TypeScript** version 4.0 or higher (for TypeScript projects)
@@ -17,7 +17,7 @@ This guide will walk you through installing and configuring the Lucidic AI TypeS
 
 ---
 
-## 📥 Install the SDK
+## Install the SDK
 
 ### Using npm
 ```bash
@@ -36,7 +36,7 @@ pnpm add lucidicai
 
 ---
 
-## 🔑 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -67,7 +67,7 @@ If using TypeScript, ensure your `tsconfig.json` includes:
 
 ---
 
-## 🚀 Basic Setup
+## Basic Setup
 
 ### TypeScript/ES Modules
 
@@ -116,7 +116,7 @@ main().catch(console.error);
 
 ---
 
-## ⚙️ Initialization Options
+## Initialization Options
 
 ```typescript
 interface LucidicConfig {
@@ -142,7 +142,7 @@ interface LucidicConfig {
 
 ---
 
-## 🎯 Minimal Setup
+## Minimal Setup
 
 The absolute minimum setup requires just 2 lines:
 
@@ -155,7 +155,7 @@ await lai.init({ providers: ['openai'] });
 
 ---
 
-## 🔌 Provider Setup
+## Provider Setup
 
 ### OpenAI
 ```typescript
@@ -181,7 +181,7 @@ const anthropic = new Anthropic({
 
 ---
 
-## 🐛 Debugging
+## Debugging
 
 Enable debug logging to troubleshoot issues:
 
@@ -198,7 +198,7 @@ await lai.init({ providers: ['openai'] });
 
 ---
 
-## ✅ Verify Installation
+## Verify Installation
 
 Run this test script to verify everything is working:
 
@@ -213,8 +213,8 @@ async function verifyInstallation() {
       providers: ['openai']
     });
     
-    console.log('✅ SDK initialized successfully');
-    console.log(`📋 Session ID: ${sessionId}`);
+    console.log('SDK initialized successfully');
+    console.log(`Session ID: ${sessionId}`);
     
     // Import OpenAI
     const OpenAI = (await import('openai')).default;
@@ -232,15 +232,15 @@ async function verifyInstallation() {
       messages: [{ role: 'user', content: 'Say "Installation successful!"' }]
     });
     
-    console.log('✅ OpenAI call tracked successfully');
-    console.log(`📝 Response: ${response.choices[0].message.content}`);
+    console.log('OpenAI call tracked successfully');
+    console.log(`Response: ${response.choices[0].message.content}`);
     
     // End session
     await lai.endSession(true, 'Installation verified');
-    console.log('✅ Installation verification complete!');
+    console.log('Installation verification complete!');
     
   } catch (error) {
-    console.error('❌ Installation verification failed:', error);
+    console.error('Installation verification failed:', error);
   }
 }
 
@@ -249,7 +249,7 @@ verifyInstallation();
 
 ---
 
-## 🔗 Next Steps
+## Next Steps
 
 - [Core Concepts](/typescript-sdk/core-concepts) - Learn about Sessions, Steps, and Events
 - [Quick Start Guide](/typescript-sdk/quick-start) - Build your first tracked application

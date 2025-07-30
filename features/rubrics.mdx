@@ -3,7 +3,7 @@ title: Rubrics
 description: Build flexible, structured evaluation rubrics to score and compare your agent's behavior across sessions.
 ---
 
-# 📏 Rubrics
+# Rubrics
 
 **Rubrics** let you define structured evaluation criteria for your agents — turning your domain knowledge into consistent, explainable scoring systems.
 
@@ -11,26 +11,26 @@ Instead of relying on a single pass/fail outcome or ad hoc scores, rubrics help 
 
 ---
 
-## ⚙️ How to Use Rubrics
+## How to Use Rubrics
 
 Using rubrics consists of two parts, **1) creating one in the UI** and **2) using it in your code**.
 
 ### Step 1: In the UI
 
 - Navigate to the **Rubrics** tab on any Agent
-  > 📷 _![rubric](/images/r2.png)_
-  > 📷 _![rubric](/images/r3.png)_
+  > _![rubric](/images/r2.png)_
+  > _![rubric](/images/r3.png)_
   > (Directly under the agent name — directly below "Browseruse Demo" in the above image)
 - Click the **Create New Evaluation Rubric** button
-  > 📷 _![rubric](/images/r4.png)_
-  > 📷 _![rubric](/images/r5.png)_
+  > _![rubric](/images/r4.png)_
+  > _![rubric](/images/r5.png)_
 - Give your **Rubric a name, description, and icon**
   > Fill in the **Rubric Criteria** (name your criteria and give it a weight, which determines how much it contributes to the final score) and **Score Definitions** (what each score means (e.g. 10 is the best score because ..., 1 is the worst score because ...))
   > See more details [below](/features/rubrics#🧬-rubric-anatomy)
-  > 📷 _![rubric](/images/r6.png)_
+  > _![rubric](/images/r6.png)_
 - **Click Save**
-> 📝 **Pro Tip:** Click on the **Evaluation Rubric Summary** to see a quick summary of the rubric
-> 📷 _![rubric](/images/r7.png)_
+> **Pro Tip:** Click on the **Evaluation Rubric Summary** to see a quick summary of the rubric
+> _![rubric](/images/r7.png)_
 
 ### Step 2: In Python
 
@@ -46,7 +46,7 @@ lai.init(
 
 ---
 
-## 🧠 Why Create Custom Rubrics?
+## Why Create Custom Rubrics?
 
 **Agents don’t just succeed or fail**:
 
@@ -70,7 +70,7 @@ If you are interested in the details of how we made the default rubric, you can 
 
 ---
 
-## 🧬 Rubric Anatomy
+## Rubric Anatomy
 
 A rubric contains:
 
@@ -106,7 +106,7 @@ Criteria:
 
 ---
 
-## 📊 Weights and Score Definitions
+## Weights and Score Definitions
 
 Each criterion is scored independently (typically from 1 – 5) and then combined into an **overall score** based on the weights (weighted average) of each criterion.
 

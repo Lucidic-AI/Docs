@@ -3,13 +3,13 @@ title: OpenAI Integration
 description: Automatic tracking for OpenAI API calls in TypeScript applications
 ---
 
-# 🤖 OpenAI Integration
+# OpenAI Integration
 
 The TypeScript SDK provides automatic instrumentation for all OpenAI API calls using OpenTelemetry.
 
 ---
 
-## ⚙️ How It Works
+## How It Works
 
 When you initialize with `providers: ['openai']`:
 
@@ -20,7 +20,7 @@ When you initialize with `providers: ['openai']`:
 
 ---
 
-## 🚀 Setup
+## Setup
 
 ```typescript
 import * as lai from 'lucidicai';
@@ -42,7 +42,7 @@ const openai = new OpenAI({
 
 ---
 
-## ✅ What Gets Captured
+## What Gets Captured
 
 For every OpenAI API call:
 
@@ -56,7 +56,7 @@ For every OpenAI API call:
 
 ---
 
-## 📝 Examples
+## Examples
 
 ### Basic Chat Completion
 
@@ -158,7 +158,7 @@ const embedding = await openai.embeddings.create({
 
 ---
 
-## 🎯 Minimal Example
+## Minimal Example
 
 ```typescript
 import * as lai from 'lucidicai';
@@ -178,7 +178,7 @@ const response = await openai.chat.completions.create({
 
 ---
 
-## 💰 Cost Tracking
+## Cost Tracking
 
 The SDK includes built-in pricing for all OpenAI models:
 
@@ -194,7 +194,7 @@ Costs are automatically calculated and attached to each event.
 
 ---
 
-## 🔧 Advanced Configuration
+## Advanced Configuration
 
 ### Custom OpenAI Client Options
 
@@ -229,7 +229,7 @@ try {
 
 ---
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Events Not Appearing
 
@@ -252,7 +252,7 @@ await lai.createEvent({
 
 ---
 
-## 🔗 See Also
+## See Also
 
 - [Anthropic Integration](/typescript-sdk/integrations/anthropic) - Claude tracking
 - [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking
