@@ -14,7 +14,7 @@
         "tab": "Python SDK",
         "groups": [
           {
-            "group": "GetsStarted",
+            "group": "Get Started",
             "pages": [
               "getting-started/introduction",
               "getting-started/dashboard",

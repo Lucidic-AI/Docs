@@ -1,19 +1,50 @@
 ---
 title: Introduction
 description: Get started with understanding how and why our agent observability platform works.
+mode: "wide"
 ---
 
-If you're interested in getting set up, check out the [dashboard guide](/getting-started/dashboard).
+Lucidic is the **complete agentic engineering** platform that helps you understand, test, and improve your AI agents. We provide full observability into multi-step workflows and custom evaluations, letting you pinpoint why agents succeed or fail. We make debugging and performance tuning fast, systematic, and scalable.
 
-# Welcome to Your Agent's Control Room
+<Columns cols={3}>
+    <Card title="Tracing" icon="chart-gantt" href="/features/workflow-sandbox">
+        + Visualize trace logs
+        + Session replays
+        + Iterate with Time Travels
+    </Card>
+    <Card title="Evaluations" icon="chart-line" href="/features/rubrics">
+        + Custom Rubric evaluations
+        + Track experiments and changes
+        + Monitor performance in real time
+    </Card>
+    <Card title="Prompts" icon="folder-open" href="/features/prompt-db">
+        + Version control
+        + Edit and test instantly
+        + Insert Variables at runtime
+    </Card>
+</Columns>
 
-AI agents don’t just make predictions — they perform **multi-step workflows**, invoke tools, navigate interfaces, and adapt in real-time.
+<Columns cols={2}>
+    <Card title="Get Started with Python" icon="python" href="/getting-started/dashboard">
 
-That complexity comes at a cost: it’s easy for agents to behave unexpectedly, fail silently, or succeed for the wrong reasons.
+    </Card>
+    <Card title="Get started with TypeScript" icon={<svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={24}
+    height={24}
+    fill="none"
+    viewBox="0 0 16 16"
+    {...props}
+  >
+    <path
+      fill="#7a82bf"
+      d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v2a.75.75 0 0 1-1.5 0v-2a.25.25 0 0 0-.25-.25H1.75a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h13.5a.75.75 0 0 1 0 1.5H1.75A1.75 1.75 0 0 1 0 14.25V1.75ZM4.75 6.5a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5h-1v5.25a.75.75 0 0 1-1.5 0V7.25H5.5a.75.75 0 0 1-.75-.75Zm6.526.08c.418-.498 1.075-.83 1.974-.83.835 0 1.465.286 1.89.735a.75.75 0 0 1-1.09 1.03c-.11-.116-.33-.265-.8-.265-.5 0-.72.168-.826.295A.767.767 0 0 0 12.25 8c0 .104.043.3.174.455.107.127.325.295.826.295.076 0 .149.011.218.032.663.094 1.164.39 1.506.798.394.47.526 1.024.526 1.42 0 .396-.132.95-.526 1.42-.418.498-1.075.83-1.974.83-.835 0-1.465-.286-1.89-.735a.75.75 0 0 1 1.09-1.03c.11.116.33.265.8.265.5 0 .72-.168.826-.295A.767.767 0 0 0 14 11c0-.104-.043-.3-.174-.455-.107-.127-.325-.295-.826-.295a.748.748 0 0 1-.218-.032c-.663-.095-1.164-.39-1.506-.798A2.263 2.263 0 0 1 10.75 8c0-.396.132-.95.526-1.42Z"
+    />
+  </svg>} href="/typescript-sdk/installation">
 
-We built this platform to give you **deep observability** into how your agent thinks, acts, and learns — across every run.
 
----
+    </Card>
+</Columns>
 
 ## Why Observability Matters
 
@@ -24,8 +55,6 @@ Running an agent once doesn't tell you how it behaves.
 - A single successful session can hide dozens of edge cases
 
 To build agents you can trust, you need to see what they're doing — and why.
-
----
 
 ## What This Platform Does
 
