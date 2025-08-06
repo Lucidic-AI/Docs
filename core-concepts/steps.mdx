@@ -1,124 +1,104 @@
 ---
-title: "Observability"
-description: "Trace Browser Use's agent execution steps and browser sessions"
-icon: "eye"
+title: Steps
+description: Learn how Steps represent agent states and transitions within a Session.
 ---
 
-## Overview
+# Steps
 
-Browser Use has native integrations with [Lucidic AI](https://lucidic.ai) and [Laminar](https://lmnr.ai) - powerful platforms for tracing, monitoring, and analyzing AI agent executions. These integrations provide comprehensive visibility into browser automation workflows, agent decision-making, and performance metrics.
+A **Step** is a unit of execution within a [Session](/core-concepts/sessions). It captures both a snapshot of the agent’s **current state** and the **action taken** to transition to the next state. Steps are the backbone of a session timeline and form the nodes in your workflow graph.
 
-## Lucidic AI
+Each Step may contain multiple underlying [Events](/core-concepts/events), such as tool calls, API requests, or LLM invocations.
 
-<Note>
-    Lucidic AI excels at step-level granularity with goal tracking, state management, and visual documentation.
-</Note>
+---
 
-### Setup
+## Step Anatomy
 
-To setup Lucidic AI, you need to install the `lucidicai` package and obtain your API key and agent ID from the [Lucidic AI platform](https://lucidic.ai).
+Each Step records:
 
-```bash
-pip install 'lucidicai>=1.2.15'
-export LUCIDIC_API_KEY=<your-api-key>
-export LUCIDIC_AGENT_ID=<your-agent-id>
+- The agent’s **state** (optional string + LLM-generated summary)
+- The **goal** the agent is trying to accomplish (optional string + summary)
+- The **action** taken to transition to the next step (with optional LLM-generated summary)
+- **Timestamps** for start and update time
+- **Cost** for operations within this step
+- Whether **screenshots** were captured
+- An **evaluation score** and **evaluation description** if provided or computed
+
+More details can be found on programmatically what a **Step** looks like in the [examples](/python-sdk/examples) or [create_step API reference](/python-sdk/create_step)
+
+---
+
+## Screenshots and Visual State
+
+**Steps** may include a **screenshot** that visually captures what the agent was seeing or interacting with at that moment. These can be critical for understanding UI-based agents or browser actions.
+
+- Displayed in the **Step detail view**
+- Used for **visual debugging**
+- Stored per-step and accessible via the **dashboard**
+
+---
+
+## Evaluating Steps
+
+Steps can be scored individually using:
+
+- **User-provided scores**: log your own logic-based rating of a step
+- **LLM-generated scores** (planned): use limited context to judge a step's quality
+- **Default heuristics**: highlight stuck or repeated states
+
+```python
+lai.update_step(eval_score=0.3, eval_description="Tried to switch tabs but failed.")
 ```
 
-You can leave these in your .env file, or pass them in during initialization.
+> **Warning:** Step-level evaluation in isolation is often difficult without broader task context. We recommend pairing this with session-wide scoring or rubrics when possible.
 
-### Usage
+---
 
-Initialize Lucidic AI at the start of your project and it will automatically trace all Browser Use agent steps, including goals, actions, state, and screenshots.
+## Step Transitions & Workflow Graph
 
-```python {5-6, 8-9}
-from langchain_openai import ChatOpenAI
-from browser_use import Agent
-import asyncio
+Steps link together to form the execution path of your agent:
 
-import lucidicai as lai
-
-# Initialize Lucidic AI session
-lai.init()
-
-async def main():
-    agent = Agent(
-        task="open google, search for AI observability tools",
-        llm=ChatOpenAI(model="gpt-4o-mini"),
-    )
-    result = await agent.run()
-    print(result)
-
-asyncio.run(main())
+```text
+[state₀] --(action)--> [state₁] --(action)--> [state₂] ...
 ```
 
-### Viewing Traces
+In your dashboard’s **Workflow Graph**, Steps are:
 
-The Trace View shows a comprehensive timeline of your agent run. It includes all steps and events in sequential order.
+- Represented as **nodes**
+- Clustered automatically when the state is repeated (e.g. looping or retries)
+- Connected by labeled edges that represent the agent’s actions
 
-It shows:
- - Basic Information: **Status, Model, Start Time, Duration, Cost**
- - **Prettified vs Raw Request/Response** (click the wand/text icon in the top right of Input/Output to toggle)
- - **Screenshots** and multimodal data
 
-> **Pro tip:** **SPEED UP** iteration and debugging time by avoiding rerunning the same failed run with [Time Travels](https://docs.lucidic.ai/features/time-travel). They enable you to freeze time and rerun the event in isolation to see if your error/success is reliable.
+---
 
-<img className="block" src="/images/lucidic.png" alt="Lucidic" />
+## Grouping & Graph Insight
 
-## Laminar
+When multiple Steps share the same state and similar actions (e.g., retries or confusion loops), they’re automatically grouped in the graph view. This helps surface:
 
-<Note>
-  Laminar excels at tracing browser agents by providing unified visibility into
-  both browser session recordings and agent execution steps.
-</Note>
+- Stuck behavior (e.g., trying the same thing repeatedly)
+- Revisiting states (e.g., reloading a site, flipping between tabs)
+- Structural patterns (e.g., loops, branches, dead ends)
 
-### Setup
+---
 
-To setup Laminar, you need to install the `lmnr` package and set the `LMNR_PROJECT_API_KEY` environment variable.
+## Events Inside Steps
 
-To get your project API key, you can either:
+Each Step may contain multiple [Events](/events) — fine-grained units of work including:
 
-- Register on [Laminar Cloud](https://lmnr.ai) and get the key from your project settings
-- Or spin up a local Laminar instance and get the key from the settings page
+- Tool invocations
+- LLM calls
+- API requests
+- DOM scraping
+- etc.
 
-```bash
-pip install 'lmnr[all]'
-export LMNR_PROJECT_API_KEY=<your-project-api-key>
-```
 
-### Usage
+---
 
-Then, you simply initialize the Laminar at the top of your project and both Browser Use and session recordings will be automatically traced.
+## Debugging with Steps
 
-```python {5-8}
-from browser_use.llm import ChatOpenAI
-from browser_use import Agent
-import asyncio
+Steps are the atomic unit of debugging:
 
-from lmnr import Laminar
-# this line auto-instruments Browser Use and any browser you use (local or remote)
-Laminar.initialize(project_api_key="...") # you can also pass project api key here
+- Replay exactly what the agent saw or did
+- Inspect the agent’s thought process (via goal + action summaries)
+- View logs and evaluations
 
-async def main():
-    agent = Agent(
-        task="open google, search Laminar AI",
-        llm=ChatOpenAI(model="gpt-4o-mini"),
-    )
-    result = await agent.run()
-    print(result)
-
-asyncio.run(main())
-```
-
-### Viewing Traces
-
-You can view traces in the Laminar UI by going to the traces tab in your project.
-When you select a trace, you can see both the browser session recording and the agent execution steps.
-
-Timeline of the browser session is synced with the agent execution steps, timeline highlights indicate the agent's current step synced with the browser session.
-In the trace view, you can also see the agent's current step, the tool it's using, and the tool's input and output. Tools are highlighted in the timeline with a yellow color.
-
-<img className="block" src="/images/laminar.png" alt="Laminar" />
-
-To learn more about these platforms:
-- [Lucidic AI Documentation](https://docs.lucidic.ai)
-- [Laminar Documentation](https://docs.lmnr.ai)
+---
