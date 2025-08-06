@@ -12,7 +12,7 @@ The `continue_session` function allows you to resume a previously created sessio
 ```python
 lai.continue_session(
     session_id: str,
-    lucidic_api_key: Optional[str] = None,
+    api_key: Optional[str] = None,
     agent_id: Optional[str] = None,
     providers: Optional[List[ProviderType]] = [],
     masking_function = None,
@@ -26,7 +26,7 @@ lai.continue_session(
   The ID of the session to continue. This must be a valid session ID from a previous `init()` call.
 </ParamField>
 
-<ParamField path="lucidic_api_key" type="string" optional>
+<ParamField path="api_key" type="string" optional>
   Your Lucidic API key for authentication. If not provided, the SDK will use the `LUCIDIC_API_KEY` environment variable.
 </ParamField>
 

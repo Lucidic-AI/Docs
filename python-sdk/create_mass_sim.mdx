@@ -13,7 +13,7 @@ The `create_mass_sim` function creates a mass simulation container that can hold
 lai.create_mass_sim(
     mass_sim_name: str,
     total_num_sessions: int,
-    lucidic_api_key: Optional[str] = None,
+    api_key: Optional[str] = None,
     agent_id: Optional[str] = None,
     task: Optional[str] = None,
     tags: Optional[list] = None
@@ -30,7 +30,7 @@ lai.create_mass_sim(
   The total intended number of sessions for this simulation. More sessions can be added later if needed.
 </ParamField>
 
-<ParamField path="lucidic_api_key" type="string" optional>
+<ParamField path="api_key" type="string" optional>
   Your Lucidic API key. If not provided, uses the `LUCIDIC_API_KEY` environment variable.
 </ParamField>
 

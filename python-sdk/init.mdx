@@ -5,7 +5,7 @@ description: 'Initialize a new Lucidic session'
 
 ## Overview
 
-The `init` function initializes a new Lucidic session for tracking and monitoring AI agent workflows. It sets up the SDK with your credentials, configures providers, and starts a new session.
+The `init` function initializes a new or existing Lucidic session for tracking and monitoring AI agent workflows. It sets up the SDK with your credentials, configures providers, and starts or continues a session.
 
 ## Syntax
 
@@ -13,7 +13,7 @@ The `init` function initializes a new Lucidic session for tracking and monitorin
 lai.init(
     session_name: Optional[str] = None,
     session_id: Optional[str] = None,
-    lucidic_api_key: Optional[str] = None,
+    api_key: Optional[str] = None,
     agent_id: Optional[str] = None,
     task: Optional[str] = None,
     providers: Optional[List[ProviderType]] = [],
@@ -33,10 +33,10 @@ lai.init(
 </ParamField>
 
 <ParamField path="session_id" type="string" optional>
-  Custom ID for the session. If not provided, a random ID will be generated.
+  ID for the session. If not provided, a random ID will be generated and returned by init().
 </ParamField>
 
-<ParamField path="lucidic_api_key" type="string" optional>
+<ParamField path="api_key" type="string" optional>
   Your Lucidic API key for authentication. If not provided, the SDK will use the `LUCIDIC_API_KEY` environment variable.
 </ParamField>
 
@@ -115,7 +115,7 @@ import lucidicai as lai
 
 lai.init(
     session_name="My Session",
-    lucidic_api_key="your-api-key",   
+    api_key="your-api-key",   
     agent_id="your-agent-id",         
     providers=["openai"]
 )
@@ -233,10 +233,10 @@ lai.init(
 
 ## Notes
 
-- Either `lucidic_api_key` or `LUCIDIC_API_KEY` environment variable must be set
+- Either `api_key` or `LUCIDIC_API_KEY` environment variable must be set
 - Either `agent_id` or `LUCIDIC_AGENT_ID` environment variable must be set
 - The SDK can only have one active session at a time
-- If a session is already active, calling `init` will raise an `InvalidOperationError`
+- If a session is already active, calling `init` will switch to the new session.
 - The `auto_end` feature ensures your session data is preserved even on unexpected exits
 - Provider instrumentation happens automatically once configured
 
@@ -250,5 +250,5 @@ try:
 except APIKeyVerificationError:
     print("Please set your LUCIDIC_API_KEY environment variable")
 except InvalidOperationError:
-    print("A session is already active. Call lai.end_session() first.")
+    print("Something went wrong. Please double check IDs passed to init()")
 ```
