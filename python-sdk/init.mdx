@@ -5,7 +5,7 @@ description: 'Initialize a new Lucidic session'
 
 ## Overview
 
-The `init` function initializes a new Lucidic session for tracking and monitoring AI agent workflows. It sets up the SDK with your credentials, configures providers, and starts a new session.
+The `init` function initializes a new or existing Lucidic session for tracking and monitoring AI agent workflows. It sets up the SDK with your credentials, configures providers, and starts or continues a session.
 
 ## Syntax
 
@@ -13,7 +13,7 @@ The `init` function initializes a new Lucidic session for tracking and monitorin
 lai.init(
     session_name: Optional[str] = None,
     session_id: Optional[str] = None,
-    lucidic_api_key: Optional[str] = None,
+    api_key: Optional[str] = None,
     agent_id: Optional[str] = None,
     task: Optional[str] = None,
     providers: Optional[List[ProviderType]] = [],
@@ -36,7 +36,7 @@ lai.init(
   Custom ID for the session. If not provided, a random ID will be generated.
 </ParamField>
 
-<ParamField path="lucidic_api_key" type="string" optional>
+<ParamField path="api_key" type="string" optional>
   Your Lucidic API key for authentication. If not provided, the SDK will use the `LUCIDIC_API_KEY` environment variable.
 </ParamField>
 
@@ -115,7 +115,7 @@ import lucidicai as lai
 
 lai.init(
     session_name="My Session",
-    lucidic_api_key="your-api-key",   
+    api_key="your-api-key",   
     agent_id="your-agent-id",         
     providers=["openai"]
 )
@@ -233,7 +233,7 @@ lai.init(
 
 ## Notes
 
-- Either `lucidic_api_key` or `LUCIDIC_API_KEY` environment variable must be set
+- Either `api_key` or `LUCIDIC_API_KEY` environment variable must be set
 - Either `agent_id` or `LUCIDIC_AGENT_ID` environment variable must be set
 - The SDK can only have one active session at a time
 - If a session is already active, calling `init` will raise an `InvalidOperationError`

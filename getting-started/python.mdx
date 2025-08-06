@@ -16,7 +16,7 @@ This guide walks you through how to initialize a session, track steps and events
 Theere are 4 things you need to provide to initialize a session:
 
 - `session_name`: A name for your session #Whatever you want to name it
-- `lucidic_api_key`: Your Lucidic API key #You should have this copied somewhere safe 
+- `api_key`: Your Lucidic API key #You should have this copied somewhere safe 
 - `agent_id`: Your Lucidic Agent ID #You can get this from the dashboard
 - `provider`: The LLM provider you're using #OpenAI, Anthropic, PydanticAI, or LangChain
 
@@ -26,7 +26,7 @@ Full version of init:
 import lucidicai as lai
 lai.init(
     session_name="search_wikipedia",
-    lucidic_api_key="your-api-key",   # Or use env var: LUCIDIC_API_KEY
+    api_key="your-api-key",   # Or use env var: LUCIDIC_API_KEY
     agent_id="your-agent-id",         # Or use env var: LUCIDIC_AGENT_ID
     task="Search Wikipedia for Steve Jobs biography",
     providers=["openai"],                # "openai", "anthropic", "pydantic_ai", if "langchain" you can leave this blank checkout [LangChain Integration](/integrations/langchain)
