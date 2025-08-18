@@ -10,7 +10,16 @@ The `updateEvent` function updates properties of an existing event, such as addi
 ## Syntax
 
 ```typescript
-await lai.updateEvent(params?: UpdateEventParams): Promise<void>
+await lai.updateEvent(params: {
+  eventId: string;
+  description?: string;
+  result?: string;
+  model?: string;
+  costAdded?: number;
+  duration?: number;
+  functionName?: string;
+  arguments?: any;        // serializable JSON
+}): Promise<void>
 ```
 
 ## Parameters
@@ -39,9 +48,7 @@ await lai.updateEvent(params?: UpdateEventParams): Promise<void>
       Additional cost to add to the event.
     </ParamField>
     
-    <ParamField path="screenshots" type="string[]" optional>
-      Screenshot URLs to add to the event.
-    </ParamField>
+    {/* Screenshots are only settable at creation time in the TS SDK */}
   </Expandable>
 </ParamField>
 
@@ -154,15 +161,11 @@ const beforeImage = await captureScreenshot();
 await performVisualChange();
 const afterImage = await captureScreenshot();
 
-// Upload images
-const beforeUrl = await lai.uploadImage(beforeImage);
-const afterUrl = await lai.uploadImage(afterImage);
-
 // Update event with visual evidence
 await lai.updateEvent({
   eventId: event.eventId,
   result: "Visual changes applied successfully",
-  screenshots: [beforeUrl, afterUrl]
+  // Note: screenshots are attached during createEvent in the TS SDK
 });
 ```
 

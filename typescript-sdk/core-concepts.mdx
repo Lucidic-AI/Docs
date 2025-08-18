@@ -32,34 +32,30 @@ A **Session** represents a complete AI workflow or conversation. It's the top-le
 ### Creating Sessions
 
 ```typescript
-// Option 1: Auto-create during init
+// Option 1: Auto-create during init (ESM)
+import OpenAI from 'openai';
 await lai.init({
   sessionName: 'Customer Support Chat',
   task: 'Help user reset password',
-  providers: ['openai']
+  instrumentModules: { OpenAI }
 });
 
-// Option 2: Explicit creation
-await lai.init({ providers: ['openai'] });
-const session = await lai.initSession({
-  sessionName: 'Data Analysis',
-  task: 'Analyze Q4 sales data',
-  userId: 'user123',
-  groupId: 'analytics-team'
-});
+// Option 2: Continue an existing session by ID (ESM)
+import OpenAI from 'openai';
+await lai.init({ sessionId: 'existing-session-id', instrumentModules: { OpenAI } });
 ```
 
 ### Session Properties
 
 ```typescript
-interface SessionConfig {
+interface InitParams {
   sessionName?: string;    // Human-readable name
   sessionId?: string;      // Continue existing session
   task?: string;           // What the session aims to achieve
-  agentId?: string;        // Override default agent
-  userId?: string;         // User identifier
-  groupId?: string;        // Group/team identifier
-  testId?: string;         // Test run identifier
+  massSimId?: string;      // Optional mass simulation id
+  experimentId?: string;   // Optional experiment id
+  rubrics?: string[];      // optional rubrics to run
+  tags?: string[];         // optional tags
 }
 ```
 
@@ -67,35 +63,29 @@ interface SessionConfig {
 
 ```typescript
 // Update session
-await lai.updateSession(
-  'Updated task description',
-  { priority: 'high', category: 'support' },  // tags
-  false,  // isFinished
-  true,   // isSuccessful
-  'Successfully resolved issue'
-);
+await lai.updateSession({
+  task: 'Updated task description',
+  tags: ['priority:high', 'category:support'],
+  isSuccessful: true,
+  isSuccessfulReason: 'Successfully resolved issue'
+});
 
 // End session
-await lai.endSession(true, 'Task completed successfully');
+await lai.endSession({ isSuccessful: true, isSuccessfulReason: 'Task completed successfully' });
 
-// Get current session
-const currentSession = lai.getSession();
+// Sessions are managed internally; use session context helpers when needed
 ```
 
 ---
 
 ## Steps
 
-**Steps** represent logical units of work within a session. Each step tracks state, action, and goal.
+**Steps** represent logical units of work within a session.
 
 ### Creating Steps
 
 ```typescript
-const step = await lai.createStep({
-  state: 'Analyzing user query',
-  action: 'Extract intent and entities',
-  goal: 'Understand user needs'
-});
+const step = await lai.createStep();
 ```
 
 ### Step Properties
@@ -114,18 +104,12 @@ interface StepConfig {
 
 ```typescript
 // Update current step
-await lai.updateStep(
-  step.stepId,
-  false,  // isFinished
-  85,     // evalScore
-  'Partially extracted entities'
-);
+await lai.updateStep({ stepId: step.stepId, evalScore: 85, evalDescription: 'Partially complete' });
 
 // End current step
-await lai.endStep(95, 'Successfully identified all intents');
+await lai.endStep({ evalScore: 95, evalDescription: 'Success' });
 
-// Get active step
-const activeStep = lai.getActiveStep();
+// Steps are identified via IDs returned from createStep
 ```
 
 ### Automatic Step Creation
@@ -216,13 +200,7 @@ await lai.init({ providers: ['openai'] });
 ```
 
 ### 2. Auto Step Ending
-Active steps are automatically ended when the session ends:
-
-```typescript
-await lai.createStep({ state: 'Processing' });
-// Forgot to end step? No problem!
-// Step auto-ends when session ends
-```
+Active steps are automatically ended when the session ends.
 
 ### 3. Auto Event Creation
 LLM calls from instrumented providers create events automatically:
@@ -239,22 +217,8 @@ await openai.chat.completions.create({
 
 ## Best Practices
 
-### 1. Meaningful Names
-```typescript
-// Good
-await lai.createStep({
-  state: 'Search results page with 10 items',
-  action: 'Filtering by price range',
-  goal: 'Find products under $50'
-});
-
-// Less helpful
-await lai.createStep({
-  state: 'Page',
-  action: 'Clicking',
-  goal: 'Continue'
-});
-```
+### 1. Prefer withLucidic for Self-Contained Workflows
+Use `withLucidic` for one-shot tasks that should end when work finishes. See [Session Context](/typescript-sdk/session-context).
 
 ### 2. Consistent Evaluation
 ```typescript
@@ -271,11 +235,11 @@ await lai.endStep(
 ### 3. Error Handling
 ```typescript
 try {
-  await lai.createStep({ state: 'Processing' });
+  await lai.createStep();
   // Do work...
-  await lai.endStep(100, 'Success');
+  await lai.endStep({ evalScore: 100, evalDescription: 'Success' });
 } catch (error) {
-  await lai.endStep(0, `Error: ${error.message}`);
+  await lai.endStep({ evalScore: 0, evalDescription: `Error: ${error.message}` });
   throw error;
 }
 ```
@@ -284,8 +248,8 @@ try {
 
 ## Next Steps
 
-- [Provider Integrations](/typescript-sdk/integrations) - OpenAI and Anthropic setup
+- [Provider Integrations](/typescript-sdk/integrations) - Setup for OpenAI, Anthropic, and others
 - [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking, and more
-- [API Reference](/typescript-sdk/api-reference) - Complete function documentation
+- [API Reference](/typescript-sdk/index) - Complete function documentation
 
 ---

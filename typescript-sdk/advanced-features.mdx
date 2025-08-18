@@ -46,16 +46,18 @@ Protect sensitive information before it's sent to Lucidic.
 ### Built-in Masking
 
 ```typescript
-lai.setMaskingFunction((text: string) => {
-  return text
-    // Mask SSNs
-    .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '***-**-****')
-    // Mask emails
-    .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '***@***.***')
-    // Mask credit cards
-    .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '**** **** **** ****')
-    // Mask API keys
-    .replace(/\b(sk-|api-|key-)[a-zA-Z0-9]{20,}\b/g, '$1***');
+await lai.init({
+  maskingFunction: (text: string) => {
+    return text
+      // Mask SSNs
+      .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '***-**-****')
+      // Mask emails
+      .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '***@***.***')
+      // Mask credit cards
+      .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '**** **** **** ****')
+      // Mask API keys
+      .replace(/\b(sk-|api-|key-)[a-zA-Z0-9]{20,}\b/g, '$1***');
+  }
 });
 ```
 
@@ -68,7 +70,7 @@ interface SensitiveData {
   apiKey: string;
 }
 
-lai.setMaskingFunction((text: string) => {
+await lai.init({ maskingFunction: (text: string) => {
   // Parse and mask JSON
   try {
     const data = JSON.parse(text);
@@ -83,7 +85,7 @@ lai.setMaskingFunction((text: string) => {
     // Not JSON, apply text masks
     return text.replace(/Account: \d+/g, 'Account: ***');
   }
-});
+}) });
 ```
 
 ---
@@ -92,36 +94,32 @@ lai.setMaskingFunction((text: string) => {
 
 Run large-scale tests to understand agent behavior at scale.
 
-### Basic Mass Simulation
+### Basic Mass Simulation (Pattern)
 
 ```typescript
-await lai.runMassSimulation({
-  sessionBaseName: 'Load Test',
-  numSessions: 100,
-  sessionFunction: async (sessionNum: number) => {
-    // Each session runs independently
-    await lai.createStep({
-      state: `Test ${sessionNum}`,
-      goal: 'Complete test scenario'
-    });
+for (let i = 0; i < 100; i++) {
+  const sessionId = await lai.init({ sessionName: `Load Test - ${i}` });
+  
+  await lai.createStep({
+    state: `Test ${i}`,
+    goal: 'Complete test scenario'
+  });
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [{
-        role: 'user',
-        content: `Test query ${sessionNum}`
-      }]
-    });
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: `Test query ${i}` }]
+  });
 
-    await lai.endStep(
-      Math.random() > 0.1 ? 90 : 50,
-      'Test completed'
-    );
-  }
-});
+  await lai.endStep({
+    evalScore: Math.random() > 0.1 ? 90 : 50,
+    evalDescription: 'Test completed'
+  });
+
+  await lai.endSession({ isSuccessful: true });
+}
 ```
 
-### Advanced Simulation with Variations
+### Advanced Simulation with Variations (Pattern)
 
 ```typescript
 const testScenarios = [
@@ -131,26 +129,28 @@ const testScenarios = [
   'Technical support'
 ];
 
-await lai.runMassSimulation({
-  sessionBaseName: 'Customer Support Test',
-  numSessions: 200,
-  sessionFunction: async (sessionNum: number) => {
-    const scenario = testScenarios[sessionNum % testScenarios.length];
-    
-    await lai.updateSession(
-      `Testing: ${scenario}`,
-      { scenario, testRun: sessionNum }
-    );
+for (let sessionNum = 0; sessionNum < 200; sessionNum++) {
+  const scenario = testScenarios[sessionNum % testScenarios.length];
+  await lai.init({ sessionName: `Customer Support Test - ${sessionNum}` });
 
-    // Simulate different paths
-    if (scenario === 'Reset password') {
-      await handlePasswordReset();
-    } else if (scenario === 'Technical support') {
-      await handleTechnicalSupport();
-    }
-    // ... more scenarios
+  await lai.updateSession({
+    task: `Testing: ${scenario}`,
+    tags: [
+      `scenario:${scenario}`,
+      `testRun:${sessionNum}`
+    ]
+  });
+
+  // Simulate different paths
+  if (scenario === 'Reset password') {
+    await handlePasswordReset();
+  } else if (scenario === 'Technical support') {
+    await handleTechnicalSupport();
   }
-});
+  // ... more scenarios
+
+  await lai.endSession({ isSuccessful: true });
+}
 ```
 
 ---
@@ -179,10 +179,10 @@ const response = await openai.chat.completions.create({
 
 ```typescript
 // Always fetch fresh
-const freshPrompt = await lai.getPrompt('dynamic-prompt', false);
+const freshPrompt = await lai.getPrompt({ promptName: 'dynamic-prompt', cacheTtl: 0 });
 
 // Cache for 5 minutes (default)
-const cachedPrompt = await lai.getPrompt('stable-prompt', true);
+const cachedPrompt = await lai.getPrompt({ promptName: 'stable-prompt', cacheTtl: 300 });
 ```
 
 ### Prompt Versioning
@@ -201,23 +201,13 @@ Add custom metadata to sessions for better organization.
 
 ```typescript
 // During initialization
-await lai.init({
-  sessionName: 'Customer Chat',
-  userId: 'user123',
-  groupId: 'support-team',
-  testId: 'ab-test-v2'
-});
+await lai.init({ sessionName: 'Customer Chat' });
 
 // Update during session
-await lai.updateSession(
-  'Updated task description',
-  {
-    priority: 'high',
-    department: 'technical',
-    issueType: 'bug',
-    customField: 'any-value'
-  }
-);
+await lai.updateSession({
+  task: 'Updated task description',
+  tags: ['priority:high', 'department:technical', 'issueType:bug', 'customField:any-value']
+});
 ```
 
 ---
@@ -229,7 +219,8 @@ The TypeScript SDK includes these automatic behaviors:
 ### 1. Auto Session Management
 ```typescript
 // No need to explicitly end sessions
-await lai.init({ providers: ['openai'] });
+import OpenAI from 'openai';
+await lai.init({ instrumentModules: { OpenAI } });
 // ... do work ...
 // Session auto-ends on process exit
 ```
@@ -265,21 +256,12 @@ const response = await openai.chat.completions.create({
 The SDK provides specific error types for better error handling:
 
 ```typescript
-import { 
-  APIError, 
-  ConfigurationError, 
-  SessionError,
-  StepError,
-  EventError 
-} from 'lucidicai';
+import { APIError } from 'lucidicai';
 
 try {
   await lai.init({ apiKey: 'invalid' });
 } catch (error) {
-  if (error instanceof ConfigurationError) {
-    console.error('Config issue:', error.message);
-    // Handle missing API key, invalid agent ID, etc.
-  } else if (error instanceof APIError) {
+  if (error instanceof APIError) {
     console.error('API error:', error.message);
     // Handle network issues, server errors, etc.
   }
@@ -289,11 +271,7 @@ try {
 try {
   await lai.createStep({ state: 'Processing' });
 } catch (error) {
-  if (error instanceof SessionError) {
-    console.error('No active session');
-  } else if (error instanceof StepError) {
-    console.error('Step creation failed:', error.message);
-  }
+  // Handle errors
 }
 ```
 
@@ -320,11 +298,8 @@ const [analysis, summary, translation] = await Promise.all([
 // For long-running processes
 setInterval(async () => {
   // Periodically end and start new sessions
-  await lai.endSession(true, 'Checkpoint reached');
-  await lai.initSession({
-    sessionName: 'Continued processing',
-    task: 'Resume from checkpoint'
-  });
+  await lai.endSession({ isSuccessful: true, isSuccessfulReason: 'Checkpoint reached' });
+  await lai.init({ sessionName: 'Continued processing', task: 'Resume from checkpoint' });
 }, 3600000); // Every hour
 ```
 
@@ -332,8 +307,6 @@ setInterval(async () => {
 
 ## Next Steps
 
-- [API Reference](/typescript-sdk/api-reference) - Complete function documentation
+- [API Reference](/typescript-sdk/index) - Complete function documentation
 - [Examples](/typescript-sdk/examples) - Real-world implementations
-- [Migration Guide](/typescript-sdk/migration) - Moving from Python to TypeScript
-
 ---
