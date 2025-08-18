@@ -10,10 +10,12 @@ The `getPrompt` function retrieves prompts stored in the Lucidic platform, enabl
 ## Syntax
 
 ```typescript
-await lai.getPrompt(
+await lai.getPrompt({
   promptName: string,
-  withCache: boolean = true
-): Promise<string>
+  variables?: Record<string, any>,
+  cacheTtl?: number,  // seconds; -1 = forever; 0 = no cache
+  label?: string,     // default 'production'
+}): Promise<string>
 ```
 
 ## Parameters
@@ -22,8 +24,16 @@ await lai.getPrompt(
   The name/identifier of the prompt to retrieve.
 </ParamField>
 
-<ParamField path="withCache" type="boolean" default="true">
-  Whether to use cached prompts for better performance.
+<ParamField path="variables" type="Record<string, any>" optional>
+  Optional variables to substitute (e.g., `{ name: 'Alice' }` replaces `{{name}}`).
+</ParamField>
+
+<ParamField path="cacheTtl" type="number" optional default="300">
+  Cache TTL in seconds. Use `-1` to cache forever, `0` to disable cache.
+</ParamField>
+
+<ParamField path="label" type="string" optional default="'production'">
+  Prompt label/version to fetch.
 </ParamField>
 
 ## Returns
@@ -36,7 +46,7 @@ Returns a Promise that resolves to the prompt content as a string.
 
 ```typescript
 // Retrieve a prompt
-const prompt = await lai.getPrompt("customer_support_greeting");
+const prompt = await lai.getPrompt({ promptName: "customer_support_greeting" });
 
 // Use with OpenAI
 const response = await openai.chat.completions.create({
@@ -52,10 +62,10 @@ const response = await openai.chat.completions.create({
 
 ```typescript
 // Force fresh fetch (bypass cache)
-const latestPrompt = await lai.getPrompt("dynamic_prompt", false);
+const latestPrompt = await lai.getPrompt({ promptName: "dynamic_prompt", cacheTtl: 0 });
 
-// Use cache for better performance (default)
-const cachedPrompt = await lai.getPrompt("static_prompt", true);
+// Cache for 5 minutes (default 300)
+const cachedPrompt = await lai.getPrompt({ promptName: "static_prompt", cacheTtl: 300 });
 ```
 
 ### Error Handling
@@ -102,25 +112,13 @@ const messages = [
 ### 1. Template Replacement
 
 ```typescript
-async function getPromptWithVariables(
-  promptName: string,
-  variables: Record<string, string>
-): Promise<string> {
-  let prompt = await lai.getPrompt(promptName);
-  
-  // Replace variables in prompt
-  for (const [key, value] of Object.entries(variables)) {
-    prompt = prompt.replace(new RegExp(`{{${key}}}`, 'g'), value);
+const prompt = await lai.getPrompt({
+  promptName: "email_template",
+  variables: {
+    customerName: "John Doe",
+    product: "Premium Plan",
+    date: new Date().toLocaleDateString()
   }
-  
-  return prompt;
-}
-
-// Usage
-const prompt = await getPromptWithVariables("email_template", {
-  customerName: "John Doe",
-  product: "Premium Plan",
-  date: new Date().toLocaleDateString()
 });
 ```
 
@@ -139,7 +137,7 @@ class PromptManager {
     }
     
     // Force fresh fetch for expired cache
-    const prompt = await lai.getPrompt(name, false);
+    const prompt = await lai.getPrompt({ promptName: name, cacheTtl: 0 });
     this.cache.set(name, { prompt, timestamp: Date.now() });
     
     return prompt;
@@ -155,11 +153,11 @@ async function getPromptWithFallback(
   fallbackName: string
 ): Promise<string> {
   try {
-    return await lai.getPrompt(primaryName);
+    return await lai.getPrompt({ promptName: primaryName });
   } catch (error) {
     console.warn(`Primary prompt ${primaryName} not found, using fallback`);
     try {
-      return await lai.getPrompt(fallbackName);
+      return await lai.getPrompt({ promptName: fallbackName });
     } catch (fallbackError) {
       // Ultimate fallback
       return "You are a helpful AI assistant.";
@@ -175,8 +173,8 @@ class AIAssistant {
   private openai: any;
 
   async initialize() {
-    await lai.init({ providers: ["openai"] });
     const OpenAI = (await import('openai')).default;
+    await lai.init({ instrumentModules: { OpenAI } });
     this.openai = new OpenAI();
   }
 
@@ -244,7 +242,7 @@ async function safeGetPrompt(name: string, defaultPrompt: string): Promise<strin
 // Pre-load critical prompts
 async function preloadPrompts(promptNames: string[]) {
   const prompts = await Promise.all(
-    promptNames.map(name => lai.getPrompt(name, true))
+    promptNames.map(name => lai.getPrompt({ promptName: name }))
   );
   
   return Object.fromEntries(

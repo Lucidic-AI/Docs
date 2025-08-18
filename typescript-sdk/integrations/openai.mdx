@@ -11,7 +11,7 @@ The TypeScript SDK provides automatic instrumentation for all OpenAI API calls u
 
 ## How It Works
 
-When you initialize with `providers: ['openai']`:
+When you initialize with `instrumentModules: { OpenAI }`:
 
 1. The SDK instruments the OpenAI client using OpenTelemetry
 2. Every API call is automatically captured as an Event
@@ -24,18 +24,15 @@ When you initialize with `providers: ['openai']`:
 
 ```typescript
 import * as lai from 'lucidicai';
+import OpenAI from 'openai';
 
-// 1. Initialize Lucidic FIRST
+// Initialize with manual instrumentation (ESM-friendly)
 await lai.init({
-  providers: ['openai'],
-  sessionName: 'OpenAI Demo'
+  sessionName: 'OpenAI Demo',
+  instrumentModules: { OpenAI }
 });
 
-// 2. Import OpenAI AFTER init
-const OpenAI = (await import('openai')).default;
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // All calls are now automatically tracked!
 ```
@@ -89,7 +86,7 @@ for await (const chunk of stream) {
   process.stdout.write(chunk.choices[0]?.delta?.content || '');
 }
 
-// Streaming is fully tracked with accumulated tokens
+// Streaming is tracked with accumulated tokens
 ```
 
 ### Vision Models
@@ -162,11 +159,10 @@ const embedding = await openai.embeddings.create({
 
 ```typescript
 import * as lai from 'lucidicai';
+import OpenAI from 'openai';
 
-// Just these 2 lines for full tracking!
-await lai.init({ providers: ['openai'] });
-const OpenAI = (await import('openai')).default;
-
+// Just these 3 lines for full tracking!
+await lai.init({ instrumentModules: { OpenAI } });
 const openai = new OpenAI();
 const response = await openai.chat.completions.create({
   model: 'gpt-4',
@@ -234,7 +230,7 @@ try {
 ### Events Not Appearing
 
 1. **Check import order** - OpenAI must be imported AFTER `lai.init()`
-2. **Verify initialization** - Ensure `providers: ['openai']` is set
+2. **Verify initialization** - Ensure `instrumentModules` included the OpenAI module
 
 ### Incorrect Costs
 
@@ -255,6 +251,6 @@ await lai.createEvent({
 
 - [Anthropic Integration](/typescript-sdk/integrations/anthropic) - Claude tracking
 - [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking
-- [API Reference](/typescript-sdk/api-reference) - Complete documentation
+- [API Reference](/typescript-sdk/index) - Complete documentation
 
 ---

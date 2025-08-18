@@ -5,12 +5,17 @@ description: 'Create a new step in the workflow'
 
 ## Overview
 
-The `createStep` function creates a new step within the active session. Steps represent logical units of work and track state, actions, and goals.
+The `createStep` function creates a new step within the active session. Steps represent logical units of work in your workflow.
 
 ## Syntax
 
 ```typescript
-await lai.createStep(params?: CreateStepParams): Promise<Step>
+await lai.createStep(params?: {
+  evalScore?: number;
+  evalDescription?: string;
+  screenshot?: string;      // base64 data URL
+  screenshotPath?: string;  // path to image file
+}): Promise<{ stepId: string } | undefined>
 ```
 
 ## Parameters
@@ -19,18 +24,6 @@ await lai.createStep(params?: CreateStepParams): Promise<Step>
   Optional object with step configuration:
   
   <Expandable title="properties">
-    <ParamField path="state" type="string" optional>
-      Current state or context description.
-    </ParamField>
-    
-    <ParamField path="action" type="string" optional>
-      Action being performed in this step.
-    </ParamField>
-    
-    <ParamField path="goal" type="string" optional>
-      Goal or objective of this step.
-    </ParamField>
-    
     <ParamField path="evalScore" type="number" optional>
       Initial evaluation score (0-100).
     </ParamField>
@@ -43,39 +36,27 @@ await lai.createStep(params?: CreateStepParams): Promise<Step>
 
 ## Returns
 
-Returns a Promise that resolves to a `Step` object containing:
+Returns a Promise that resolves to an object with:
 - `stepId` - Unique identifier for the step
-- Other step properties
+
+If no session is active, returns `undefined`.
 
 ## Examples
 
 ### Basic Step Creation
 
 ```typescript
-// Create step with all parameters
-const step = await lai.createStep({
-  state: "User query received",
-  action: "Process and understand intent",
-  goal: "Generate appropriate response"
-});
-
-// Create step with partial parameters
-await lai.createStep({
-  state: "Processing",
-  action: "Analyze data"
-});
-
-// Create step with no parameters
+// Create a step with no parameters
 await lai.createStep();
+
+// Or create with evaluation metadata
+await lai.createStep({ evalScore: 100, evalDescription: "All checks passed" });
 ```
 
 ### With Evaluation
 
 ```typescript
 await lai.createStep({
-  state: "Starting validation",
-  action: "Check input parameters",
-  goal: "Ensure data integrity",
   evalScore: 100,
   evalDescription: "All validations passed"
 });
@@ -85,11 +66,7 @@ await lai.createStep({
 
 ```typescript
 // Step 1: Load data
-await lai.createStep({
-  state: "Loading",
-  action: "Read from database",
-  goal: "Retrieve user data"
-});
+await lai.createStep();
 
 const userData = await loadUserData();
 
@@ -99,11 +76,7 @@ await lai.endStep({
 });
 
 // Step 2: Process data
-await lai.createStep({
-  state: "Processing",
-  action: "Transform and validate",
-  goal: "Prepare data for analysis"
-});
+await lai.createStep();
 
 const processed = await processData(userData);
 
@@ -113,22 +86,14 @@ await lai.endStep({
 });
 
 // Step 3: Generate output
-await lai.createStep({
-  state: "Generating",
-  action: "Create report",
-  goal: "Produce final output"
-});
+await lai.createStep();
 ```
 
 ### Error Handling
 
 ```typescript
 try {
-  await lai.createStep({
-    state: "Risky operation",
-    action: "Process external data",
-    goal: "Import third-party data"
-  });
+  await lai.createStep();
 
   // Risky operations
   await processExternalData();
@@ -151,13 +116,9 @@ try {
 ### With Provider Integration
 
 ```typescript
-await lai.createStep({
-  state: "AI Analysis",
-  action: "Generate insights",
-  goal: "Provide recommendations"
-});
+await lai.createStep();
 
-// LLM calls within step are auto-tracked
+// LLM calls within the step are auto-tracked
 const OpenAI = (await import('openai')).default;
 const openai = new OpenAI();
 
@@ -177,38 +138,21 @@ const summary = await openai.chat.completions.create({
   ]
 });
 
-await lai.endStep({
-  evalScore: 100,
-  evalDescription: "Analysis completed"
-});
+await lai.endStep({ evalScore: 100, evalDescription: "Analysis completed" });
 ```
 
 ## Best Practices
 
-### 1. Meaningful Descriptions
+### 1. Use Context Managers for Self-Contained Workflows
 
-```typescript
-// ✅ Good - provides context
-await lai.createStep({
-  state: "Cart has 3 items, total $47.99",
-  action: "Apply discount code SAVE10",
-  goal: "Reduce total by 10%"
-});
-
-// ❌ Less helpful
-await lai.createStep({
-  state: "Processing",
-  action: "Working",
-  goal: "Complete task"
-});
-```
+Prefer `withLucidic` for short, self-sufficient tasks that should end when work completes. See [Session Context](/typescript-sdk/session-context).
 
 ### 2. Always End Steps
 
 ```typescript
 // Use try-finally to ensure cleanup
 try {
-  await lai.createStep({ state: "Critical operation" });
+  await lai.createStep();
   await criticalOperation();
 } finally {
   await lai.endStep();
@@ -220,14 +164,14 @@ try {
 Only one step can be active at a time:
 
 ```typescript
-// ❌ Wrong - previous step not ended
-await lai.createStep({ state: "Step 1" });
-await lai.createStep({ state: "Step 2" }); // Error!
+// Wrong - previous step not ended
+await lai.createStep();
+await lai.createStep(); // Error!
 
-// ✅ Correct
-await lai.createStep({ state: "Step 1" });
+// Correct
+await lai.createStep();
 await lai.endStep();
-await lai.createStep({ state: "Step 2" });
+await lai.createStep();
 await lai.endStep();
 ```
 

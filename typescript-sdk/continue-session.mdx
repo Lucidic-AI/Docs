@@ -1,16 +1,16 @@
 ---
-title: 'continueSession'
-description: 'Continue an existing Lucidic session'
+title: 'Continue a Session'
+description: 'Resume an existing session using init({ sessionId })'
 ---
 
 ## Overview
 
-The `continueSession` function allows you to resume a previously created session, enabling you to add more steps and events to an existing workflow.
+Resume a previously created session by calling `init({ sessionId })`. This allows you to add more steps and events to an existing workflow.
 
 ## Syntax
 
 ```typescript
-await lai.continueSession(sessionId: string): Promise<Session>
+await lai.init({ sessionId: string }): Promise<string>
 ```
 
 ## Parameters
@@ -21,7 +21,7 @@ await lai.continueSession(sessionId: string): Promise<Session>
 
 ## Returns
 
-Returns a Promise that resolves to the continued `Session` object.
+Returns a Promise that resolves to the real session ID (string).
 
 ## Examples
 
@@ -30,11 +30,8 @@ Returns a Promise that resolves to the continued `Session` object.
 ```typescript
 import * as lai from 'lucidicai';
 
-// Initialize SDK
-await lai.init();
-
 // Continue a previous session
-const session = await lai.continueSession("session-uuid-123");
+await lai.init({ sessionId: "session-uuid-123" });
 
 // Add more steps to the existing session
 await lai.createStep({
@@ -49,9 +46,7 @@ await lai.createStep({
 
 ```typescript
 // Initial run
-const sessionId = await lai.init({
-  sessionName: "Long-running analysis"
-});
+const sessionId = await lai.init({ sessionName: "Long-running analysis" });
 
 // Do some work...
 await lai.createStep({ state: "Phase 1" });
@@ -70,8 +65,7 @@ await lai.endSession();
 const { sessionId } = loadFromDatabase();
 
 // Continue where we left off
-await lai.init();
-await lai.continueSession(sessionId);
+await lai.init({ sessionId });
 
 // Add more steps
 await lai.createStep({ state: "Phase 2" });
@@ -85,15 +79,13 @@ await lai.endSession();
 
 ```typescript
 try {
-  await lai.continueSession("invalid-session-id");
+  await lai.init({ sessionId: "invalid-session-id" });
 } catch (error) {
   console.error("Failed to continue session:", error);
   // Session not found, already finished, etc.
   
   // Create a new session instead
-  await lai.initSession({
-    sessionName: "Recovery session"
-  });
+  await lai.init({ sessionName: "Recovery session" });
 }
 ```
 
@@ -110,16 +102,14 @@ await collectData();
 await lai.endSession();
 
 // Job 2: Data processing (continues same session)
-await lai.init();
-await lai.continueSession(sessionId);
+await lai.init({ sessionId });
 await processData();
 await lai.endSession();
 
 // Job 3: Report generation (continues same session)
-await lai.init();
-await lai.continueSession(sessionId);
+await lai.init({ sessionId });
 await generateReport();
-await lai.endSession(true, "Pipeline completed");
+await lai.endSession({ isSuccessful: true, isSuccessfulReason: "Pipeline completed" });
 ```
 
 ### 2. Distributed Processing
@@ -128,18 +118,14 @@ When different services handle different parts of a workflow:
 
 ```typescript
 // Service A
-const session = await lai.initSession({
-  sessionName: "Multi-service workflow"
-});
-const sessionId = session.sessionId;
+const sessionId = await lai.init({ sessionName: "Multi-service workflow" });
 
 // Publish session ID to message queue
 await publishMessage({ sessionId, nextService: "B" });
 
 // Service B (different process/container)
 const { sessionId } = await consumeMessage();
-await lai.init();
-await lai.continueSession(sessionId);
+await lai.init({ sessionId });
 // Continue processing...
 ```
 
@@ -149,8 +135,7 @@ await lai.continueSession(sessionId);
 async function processWithRetry(sessionId: string, maxRetries = 3) {
   for (let i = 0; i < maxRetries; i++) {
     try {
-      await lai.init();
-      await lai.continueSession(sessionId);
+      await lai.init({ sessionId });
       
       await lai.createStep({
         state: `Attempt ${i + 1}`,
@@ -178,9 +163,8 @@ async function processWithRetry(sessionId: string, maxRetries = 3) {
 ## Important Notes
 
 - The session must exist and not be finished
-- SDK must be initialized before calling this function
 - Only one session can be active at a time
-- Previous active session (if any) will be replaced
+- Calling `init({ sessionId })` replaces any previous active session in this process
 
 ## Error Cases
 
@@ -192,6 +176,6 @@ async function processWithRetry(sessionId: string, maxRetries = 3) {
 
 ## See Also
 
-- [initSession](/typescript-sdk/init-session) - Create a new session
+- [init](/typescript-sdk/init) - Initialize or continue a session
 - [updateSession](/typescript-sdk/update-session) - Update session metadata
 - [endSession](/typescript-sdk/end-session) - End the current session

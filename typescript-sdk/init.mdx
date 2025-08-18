@@ -10,13 +10,13 @@ The `init` function initializes the Lucidic SDK with your credentials, configure
 ## Syntax
 
 ```typescript
-await lai.init(config?: LucidicConfig): Promise<string>
+await lai.init(params?: InitParams): Promise<string>
 ```
 
 ## Parameters
 
-<ParamField path="config" type="LucidicConfig" optional>
-  Configuration object with the following properties:
+<ParamField path="params" type="InitParams" optional>
+  Initialization object with the following properties:
   
   <Expandable title="properties">
     <ParamField path="apiKey" type="string" optional>
@@ -40,19 +40,15 @@ await lai.init(config?: LucidicConfig): Promise<string>
     </ParamField>
     
     <ParamField path="providers" type="string[]" optional>
-      List of LLM providers to instrument. Options: `"openai"`, `"anthropic"`.
+      Providers to enable (OpenTelemetry instrumentation). Optional when using `instrumentModules`.
     </ParamField>
     
-    <ParamField path="userId" type="string" optional>
-      User identifier for tracking.
+    <ParamField path="massSimId" type="string" optional>
+      Optional mass simulation ID to associate the session with.
     </ParamField>
     
-    <ParamField path="groupId" type="string" optional>
-      Group identifier for organization.
-    </ParamField>
-    
-    <ParamField path="testId" type="string" optional>
-      Test run identifier.
+    <ParamField path="experimentId" type="string" optional>
+      Optional experiment ID to associate the session with.
     </ParamField>
     
     <ParamField path="maskingFunction" type="(text: string) => string" optional>
@@ -60,18 +56,26 @@ await lai.init(config?: LucidicConfig): Promise<string>
     </ParamField>
     
     <ParamField path="autoEnd" type="boolean" optional default="true">
-      Automatically end session on process exit.
+      Automatically end session on process exit. Spans are flushed on exit even when `autoEnd` is false.
+    </ParamField>
+
+    <ParamField path="debug" type="boolean" optional default="false">
+      Enable verbose SDK logging.
     </ParamField>
     
-    <ParamField path="debug" type="boolean" optional default="false">
-      Enable debug logging.
+    <ParamField path="useSpanProcessor" type="boolean" optional>
+      Force simple span processor (defaults to batch unless LUCIDIC_EXPORT_MODE indicates simple).
+    </ParamField>
+    
+    <ParamField path="instrumentModules" type="Record<string, any>" optional>
+      Manual module references for ESM/Next.js to ensure instrumentation (e.g., `{ OpenAI, Anthropic }`).
     </ParamField>
   </Expandable>
 </ParamField>
 
 ## Returns
 
-Returns a Promise that resolves to the session ID (string) if a session was created, or an empty string if only SDK was initialized.
+Returns a Promise that resolves to the session ID (string).
 
 ## Examples
 
@@ -87,15 +91,13 @@ await lai.init();
 ### With Session Creation
 
 ```typescript
+import OpenAI from 'openai';
 await lai.init({
   sessionName: "Customer Support Bot",
-  providers: ["openai"],
+  instrumentModules: { OpenAI },
   task: "Answer customer questions"
 });
-
-// Now import OpenAI AFTER init
-const OpenAI = (await import('openai')).default;
-const openai = new OpenAI();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 ```
 
 ### With Custom Configuration
@@ -114,9 +116,10 @@ await lai.init({
 ### Continue Existing Session
 
 ```typescript
+import { Anthropic } from '@anthropic-ai/sdk';
 await lai.init({
   sessionId: "existing-session-uuid",
-  providers: ["anthropic"]
+  instrumentModules: { anthropic: Anthropic }
 });
 ```
 
@@ -124,16 +127,16 @@ await lai.init({
 
 ### Provider Import Order
 
-Providers MUST be imported AFTER `init()` for instrumentation to work:
+Preferred pattern: import providers and pass them via `instrumentModules`:
 
 ```typescript
-// ✅ CORRECT
-await lai.init({ providers: ["openai"] });
-const OpenAI = (await import('openai')).default;
-
-// ❌ WRONG - OpenAI won't be instrumented
+// ✅ Preferred (ESM)
 import OpenAI from 'openai';
-await lai.init({ providers: ["openai"] });
+await lai.init({ instrumentModules: { OpenAI } });
+
+// ❌ WRONG - do not rely on providers array for ESM imports
+await lai.init({ providers: ["openai"] }); // discouraged
+import OpenAI from 'openai'; // importing after init may miss instrumentation
 ```
 
 ### Auto-End Behavior

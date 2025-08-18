@@ -10,7 +10,16 @@ The `createEvent` function creates a new event within the active step. Events tr
 ## Syntax
 
 ```typescript
-await lai.createEvent(params?: CreateEventParams): Promise<Event>
+await lai.createEvent(params?: {
+  stepId?: string;
+  description?: string;
+  result?: string;
+  model?: string;
+  costAdded?: number;
+  screenshots?: string[]; // base64 data URLs
+  functionName?: string;
+  arguments?: any;        // serializable JSON
+}): Promise<{ eventId: string; stepId: string }>
 ```
 
 ## Parameters
@@ -47,9 +56,9 @@ await lai.createEvent(params?: CreateEventParams): Promise<Event>
 
 ## Returns
 
-Returns a Promise that resolves to an `Event` object containing:
+Returns a Promise that resolves to an object with:
 - `eventId` - Unique identifier for the event
-- Other event properties
+- `stepId` - Step the event is associated with
 
 ## Examples
 
@@ -135,13 +144,10 @@ await lai.createEvent({
 ### With Screenshots
 
 ```typescript
-// Upload screenshot first
-const screenshotUrl = await lai.uploadImage(screenshotBuffer);
-
-// Create event with visual context
+// Create event with visual context (pass data URLs)
 await lai.createEvent({
   description: "UI validation check",
-  screenshots: [screenshotUrl],
+  screenshots: ["data:image/jpeg;base64,...."],
   result: "All elements rendered correctly"
 });
 ```

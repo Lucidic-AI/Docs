@@ -13,23 +13,17 @@ This page contains detailed examples showing how to use Lucidic's TypeScript SDK
 import * as lai from 'lucidicai';
 
 async function basicExample() {
-  // Initialize SDK and create session
+  // ESM: import provider and pass module reference for instrumentation
+  import OpenAI from 'openai';
   await lai.init({
     sessionName: "Document Processor",
-    providers: ["openai"],
+    instrumentModules: { OpenAI },
     task: "Process and summarize documents"
   });
-
-  // Import OpenAI AFTER init
-  const OpenAI = (await import('openai')).default;
   const openai = new OpenAI();
 
   // Create a step
-  await lai.createStep({
-    state: "Loading document",
-    action: "Read file contents",
-    goal: "Extract text for processing"
-  });
+  await lai.createStep();
 
   // Your logic here
   const document = await readDocument();
@@ -50,7 +44,7 @@ async function basicExample() {
   });
 
   // End session
-  await lai.endSession(true, "Document processed successfully");
+  await lai.endSession({ isSuccessful: true, isSuccessfulReason: "Document processed successfully" });
 }
 ```
 
@@ -58,23 +52,16 @@ async function basicExample() {
 
 ```typescript
 import * as lai from 'lucidicai';
-import { LucidicError, APIError, SessionError } from 'lucidicai';
+import { APIError } from 'lucidicai';
 
 async function robustWorkflow() {
   try {
-    await lai.init({
-      sessionName: "Fault-tolerant workflow",
-      providers: ["anthropic"]
-    });
-
-    const Anthropic = (await import('@anthropic-ai/sdk')).default;
+    const { Anthropic } = await import('@anthropic-ai/sdk');
+    await lai.init({ sessionName: "Fault-tolerant workflow", instrumentModules: { anthropic: Anthropic } });
     const anthropic = new Anthropic();
 
     try {
-      await lai.createStep({
-        state: "Processing",
-        action: "Analyze data"
-      });
+      await lai.createStep();
 
       // Risky operation
       const result = await riskyOperation();
@@ -96,13 +83,11 @@ async function robustWorkflow() {
   } catch (error) {
     if (error instanceof APIError) {
       console.error("API error:", error.message);
-    } else if (error instanceof SessionError) {
-      console.error("Session error:", error.message);
     }
     
     // Ensure session ends even on error
     try {
-      await lai.endSession(false, `Error: ${error.message}`);
+      await lai.endSession({ isSuccessful: false, isSuccessfulReason: `Error: ${error.message}` });
     } catch (endError) {
       console.error("Failed to end session:", endError);
     }
@@ -116,10 +101,7 @@ async function robustWorkflow() {
 async function eventTrackingExample() {
   await lai.init({ sessionName: "Event tracking demo" });
 
-  await lai.createStep({
-    state: "Multi-event process",
-    action: "Perform various operations"
-  });
+  await lai.createStep();
 
   // Create manual event for non-LLM operation
   const dbEvent = await lai.createEvent({
@@ -165,10 +147,7 @@ async function longRunningPipeline(documentBatch: string[]) {
     task: `Process ${documentBatch.length} documents`
   });
 
-  await lai.createStep({
-    state: "Preprocessing",
-    action: "Validate and prepare documents"
-  });
+  await lai.createStep();
 
   const validDocs = await preprocessDocuments(documentBatch);
   
@@ -182,14 +161,10 @@ async function longRunningPipeline(documentBatch: string[]) {
   await lai.endSession();
 
   // Phase 2: Process each document (could be separate job)
-  await lai.init();
-  await lai.continueSession(sessionId);
+  await lai.init({ sessionId });
 
   for (const [index, doc] of validDocs.entries()) {
-    await lai.createStep({
-      state: `Processing document ${index + 1}/${validDocs.length}`,
-      action: "Extract and analyze content"
-    });
+    await lai.createStep();
 
     try {
       await processDocument(doc);
@@ -202,7 +177,7 @@ async function longRunningPipeline(documentBatch: string[]) {
     }
   }
 
-  await lai.endSession(true, "Batch processing completed");
+  await lai.endSession({ isSuccessful: true, isSuccessfulReason: "Batch processing completed" });
 }
 ```
 
@@ -221,15 +196,14 @@ async function multimodalExample() {
   const openai = new OpenAI();
 
   // Use storage context for multimodal capture
-  await lai.withStorageContext(async () => {
-    await lai.createStep({
-      state: "Analyzing image",
-      action: "Extract text and describe content"
-    });
+  // Image data URLs in prompts are auto-extracted and linked; no extra context manager needed
+  // (If you need to scope sessions across async roots, see Session Context docs.)
+    await lai.createStep();
 
     // Upload image
     const imageBuffer = await readFile('chart.png');
-    const imageUrl = await lai.uploadImage(imageBuffer);
+    // Convert your image to a data URL (or read base64) and pass it in the OpenAI call or event screenshots
+    const imageUrl = 'data:image/png;base64,' + (await imageBuffer.toString('base64'));
 
     // Create event with screenshot
     await lai.createEvent({
@@ -291,15 +265,12 @@ async function runMassSimulation() {
 }
 
 async function runSingleTest(systemPrompt: string, model: string) {
-  await lai.initSession({
+  await lai.init({
     sessionName: `${model} - ${systemPrompt}`,
     tags: ["simulation", model, systemPrompt]
   });
 
-  await lai.createStep({
-    state: "Testing configuration",
-    action: `Run with ${model}`
-  });
+  await lai.createStep();
 
   const OpenAI = (await import('openai')).default;
   const openai = new OpenAI();
@@ -320,7 +291,7 @@ async function runSingleTest(systemPrompt: string, model: string) {
     evalDescription: `${systemPrompt} scoring`
   });
 
-  await lai.endSession(true);
+  await lai.endSession({ isSuccessful: true });
 }
 ```
 

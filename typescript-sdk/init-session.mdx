@@ -1,16 +1,16 @@
 ---
-title: 'initSession'
-description: 'Initialize a new Lucidic session explicitly'
+title: 'Create a Session (via init)'
+description: 'Initialize a new Lucidic session explicitly using init()'
 ---
 
 ## Overview
 
-The `initSession` function creates a new session for tracking AI agent workflows. Use this when you want explicit control over session creation, separate from SDK initialization.
+Create a new session by calling `init({ sessionName, ... })`. This initializes the SDK (if needed) and returns a session ID.
 
 ## Syntax
 
 ```typescript
-await lai.initSession(config: SessionConfig): Promise<Session>
+await lai.init({ sessionName: string, ... }: InitParams): Promise<string>
 ```
 
 ## Parameters
@@ -67,7 +67,7 @@ await lai.initSession(config: SessionConfig): Promise<Session>
 
 ## Returns
 
-Returns a Promise that resolves to a `Session` object.
+Returns a Promise that resolves to the session ID (string).
 
 ## Examples
 
@@ -76,11 +76,8 @@ Returns a Promise that resolves to a `Session` object.
 ```typescript
 import * as lai from 'lucidicai';
 
-// Initialize SDK first
-await lai.init();
-
 // Create a session
-const session = await lai.initSession({
+const sessionId = await lai.init({
   sessionName: "Document Analysis",
   task: "Extract insights from PDF documents"
 });
@@ -89,11 +86,9 @@ const session = await lai.initSession({
 ### With Full Configuration
 
 ```typescript
-const session = await lai.initSession({
+const sessionId = await lai.init({
   sessionName: "Customer Support Session",
   task: "Resolve billing inquiry",
-  userId: "customer-123",
-  groupId: "support-team-west",
   tags: ["billing", "priority-high", "enterprise"],
   rubrics: ["response-quality", "resolution-time"]
 });
@@ -102,9 +97,8 @@ const session = await lai.initSession({
 ### For Testing
 
 ```typescript
-const session = await lai.initSession({
+const sessionId = await lai.init({
   sessionName: "Unit Test Run",
-  testId: "test-suite-001",
   tags: ["test", "ci-cd"],
   productionMonitoring: false
 });
@@ -118,7 +112,7 @@ const massSimId = "mass-sim-123";
 
 // Create sessions as part of the simulation
 for (let i = 0; i < 10; i++) {
-  const session = await lai.initSession({
+  const sessionId = await lai.init({
     sessionName: `Test Session ${i}`,
     massSimId: massSimId,
     task: "Evaluate model performance"
@@ -132,35 +126,31 @@ for (let i = 0; i < 10; i++) {
 
 ## Differences from init()
 
-| Feature | `init()` | `initSession()` |
-|---------|----------|-----------------|
-| SDK Initialization | ✅ Required | ❌ SDK must be initialized first |
-| Session Creation | ✅ Optional | ✅ Always creates session |
-| Provider Setup | ✅ Configures | ❌ No provider config |
-| Multiple Sessions | ❌ One at a time | ✅ Can create multiple |
+| Feature | `init()` |
+|---------|----------|
+| SDK Initialization | ✅ Initializes SDK |
+| Session Creation | ✅ Creates session when `sessionName` provided |
+| Provider Setup | ✅ Configures |
+| Multiple Sessions | ❌ One at a time |
 
 ## Error Handling
 
 ```typescript
 try {
-  const session = await lai.initSession({
-    sessionName: "My Session"
-  });
+  const sessionId = await lai.init({ sessionName: "My Session" });
 } catch (error) {
   console.error("Failed to create session:", error);
-  // SDK not initialized, API error, etc.
 }
 ```
 
 ## Notes
 
-- SDK must be initialized with `init()` before calling this function
 - Only one session can be active at a time
 - Previous session must be ended before creating a new one
-- Session ID is returned and can be used with `continueSession()`
+- The returned session ID can be stored to resume later with `init({ sessionId })`
 
 ## See Also
 
 - [init](/typescript-sdk/init) - Initialize SDK and optionally create session
-- [continueSession](/typescript-sdk/continue-session) - Resume existing session
+- [Continue a Session](/typescript-sdk/continue-session) - Resume existing session
 - [endSession](/typescript-sdk/end-session) - End current session

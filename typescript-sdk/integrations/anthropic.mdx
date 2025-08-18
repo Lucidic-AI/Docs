@@ -11,7 +11,7 @@ The TypeScript SDK provides automatic instrumentation for Anthropic's Claude API
 
 ## How It Works
 
-When you initialize with `providers: ['anthropic']`:
+When you initialize with `instrumentModules: { anthropic: Anthropic }`:
 
 1. The SDK instruments the Anthropic client using OpenTelemetry
 2. Every API call is automatically captured as an Event
@@ -24,18 +24,15 @@ When you initialize with `providers: ['anthropic']`:
 
 ```typescript
 import * as lai from 'lucidicai';
+import { Anthropic } from '@anthropic-ai/sdk';
 
-// 1. Initialize Lucidic FIRST
+// Initialize with manual instrumentation (ESM-friendly)
 await lai.init({
-  providers: ['anthropic'],
-  sessionName: 'Claude Demo'
+  sessionName: 'Claude Demo',
+  instrumentModules: { anthropic: Anthropic }
 });
 
-// 2. Import Anthropic AFTER init
-const Anthropic = (await import('@anthropic-ai/sdk')).default;
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-});
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // All calls are now automatically tracked!
 ```
@@ -177,11 +174,10 @@ const response = await anthropic.messages.create({
 
 ```typescript
 import * as lai from 'lucidicai';
+import { Anthropic } from '@anthropic-ai/sdk';
 
-// Just these 2 lines for full tracking!
-await lai.init({ providers: ['anthropic'] });
-const Anthropic = (await import('@anthropic-ai/sdk')).default;
-
+// Just these 3 lines for full tracking!
+await lai.init({ instrumentModules: { anthropic: Anthropic } });
 const anthropic = new Anthropic();
 const response = await anthropic.messages.create({
   model: 'claude-3-5-sonnet-20241022',
@@ -265,7 +261,7 @@ const response = await anthropic.messages.create({
   }]
 });
 
-await lai.endStep(95, 'Successfully extracted key points');
+await lai.endStep({ evalScore: 95, evalDescription: 'Successfully extracted key points' });
 ```
 
 ---
@@ -275,7 +271,7 @@ await lai.endStep(95, 'Successfully extracted key points');
 ### Events Not Appearing
 
 1. **Check import order** - Anthropic must be imported AFTER `lai.init()`
-2. **Verify initialization** - Ensure `providers: ['anthropic']` is set
+2. **Verify initialization** - Ensure `instrumentModules` included the Anthropic module
 
 ### Streaming Content Missing
 
@@ -300,6 +296,6 @@ const response = await anthropic.messages.create({
 
 - [OpenAI Integration](/typescript-sdk/integrations/openai) - GPT tracking
 - [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking
-- [API Reference](/typescript-sdk/api-reference) - Complete documentation
+- [API Reference](/typescript-sdk/index) - Complete documentation
 
 ---

@@ -1,0 +1,73 @@
+---
+title: Session Context (async-safe)
+description: Manage Lucidic sessions across async boundaries using context helpers. Lucidic uses Node AsyncLocalStorage (ALS) to attach each span to the correct `session_id`. This is critical for concurrent servers where multiple requests run in parallel.
+---
+
+## Options
+
+### 1) withSession (recommended for endpoint-based agents)
+Scopes the session to a single function (request handler, task), without ending the session.
+
+```typescript
+import { init, withSession } from 'lucidicai';
+import OpenAI from 'openai';
+
+// In an endpoint handler
+const sessionId = await init({
+  sessionName: `req-${requestId}`,
+  autoEnd: false,
+  instrumentModules: { OpenAI },
+});
+
+const result = await withSession(sessionId, async () => {
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  return await client.chat.completions.create({ model: 'gpt-4o-mini', messages: [...] });
+});
+
+// Session remains open; end it later when your workflow completes
+// await endSession({ isSuccessful: true });
+```
+
+### 2) withLucidic (one-shot convenience)
+Runs a full session lifecycle for short tasks (init → context → run → end → clear).
+
+```typescript
+import { withLucidic } from 'lucidicai';
+import OpenAI from 'openai';
+
+await withLucidic({ sessionName: 'short-task', instrumentModules: { OpenAI } }, async () => {
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  await client.chat.completions.create({ model: 'gpt-4o-mini', messages: [...] });
+});
+```
+
+Note: withLucidic ends the session automatically and ignores `autoEnd`.
+
+### 3) Manual (advanced)
+Explicitly set/clear the session for detached async roots (queues, timers, workers) or custom flows.
+
+```typescript
+import { init, setActiveSession, clearActiveSession, endSession } from 'lucidicai';
+
+const sid = await init({ sessionName: 'manual' });
+setActiveSession(sid);
+await doWork();
+clearActiveSession();
+await endSession({ isSuccessful: true });
+```
+
+---
+
+## Guidance
+
+- Prefer `withSession` for endpoint-based/persistent sessions.
+- Use `withLucidic` for one-shot tasks that should end when work finishes.
+- For background jobs or new async roots, call `setActiveSession(sessionId)` in that root or wrap the work with `withSession(sessionId, fn)`.
+- The exporter prefers per-span-stamped `lucidic.session_id` (from ALS) and falls back to the global session id for compatibility.
+
+---
+
+## Flushing & AutoEnd
+
+- When `autoEnd: true` (default), the SDK ends the session on process exit and shuts down the tracer provider gracefully.
+- Even if `autoEnd: false`, the SDK still force-flushes spans on `beforeExit`/signals to reduce lost spans. Use explicit `endSession` when appropriate.
