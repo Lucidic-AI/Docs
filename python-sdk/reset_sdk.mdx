@@ -5,12 +5,12 @@ description: 'Reset the Lucidic SDK to its initial state'
 
 ## Overview
 
-The `reset_sdk` function resets the Lucidic SDK to its initial state, clearing any active session and uninstrumenting all telemetry providers. This is useful for cleanup between tests, switching contexts, or recovering from error states.
+The `reset_sdk` function is deprecated and retained only for backward compatibility. It no-ops in current versions. Prefer ending sessions with `end_session()` and allowing automatic cleanup.
 
 ## Syntax
 
 ```python
-lai.reset_sdk() -> None
+lai.reset_sdk() -> None  # Deprecated, no-op
 ```
 
 ## Parameters
@@ -23,7 +23,7 @@ This function returns `None`.
 
 ## Examples
 
-### Basic Usage
+### Basic Usage (Deprecated)
 
 ```python
 import lucidicai as lai
@@ -35,13 +35,14 @@ lai.init(session_name="First Session", providers=["openai"])
 # ...
 
 # Reset everything
+# Deprecated: no-op
 lai.reset_sdk()
 
 # Now you can start fresh
 lai.init(session_name="Second Session", providers=["anthropic"])
 ```
 
-### Testing Scenarios
+### Testing Scenarios (Deprecated)
 
 ```python
 import lucidicai as lai
@@ -51,7 +52,8 @@ import pytest
 def clean_lucidic():
     """Fixture to ensure clean SDK state for each test"""
     yield
-    lai.reset_sdk()  # Clean up after each test
+    # Deprecated: no-op; ensure sessions are properly ended in tests instead
+    lai.end_session()
 
 def test_workflow_one(clean_lucidic):
     lai.init(session_name="Test 1")
@@ -64,7 +66,7 @@ def test_workflow_two(clean_lucidic):
     lai.end_session()
 ```
 
-### Error Recovery
+### Error Recovery (Deprecated)
 
 ```python
 import lucidicai as lai
@@ -75,8 +77,8 @@ try:
     risky_operation()
 except Exception as e:
     print(f"Error occurred: {e}")
-    # Reset SDK to clean state
-    lai.reset_sdk()
+    # Deprecated: end active session instead
+    lai.end_session()
     
     # Try again with different configuration
     lai.init(
@@ -85,7 +87,7 @@ except Exception as e:
     )
 ```
 
-### Switching Contexts
+### Switching Contexts (Deprecated)
 
 ```python
 import lucidicai as lai
@@ -99,8 +101,8 @@ lai.init(
 # Do development work...
 lai.end_session()
 
-# Reset before switching to production
-lai.reset_sdk()
+# End session before switching to production
+lai.end_session()
 
 # Production session with different configuration
 lai.init(
@@ -111,7 +113,7 @@ lai.init(
 )
 ```
 
-### Multiple Independent Workflows
+### Multiple Independent Workflows (Deprecated)
 
 ```python
 import lucidicai as lai
@@ -120,13 +122,11 @@ def process_customer_a():
     lai.init(session_name="Customer A Processing")
     # Process customer A data
     lai.end_session()
-    lai.reset_sdk()  # Clean slate for next customer
 
 def process_customer_b():
     lai.init(session_name="Customer B Processing")
     # Process customer B data
     lai.end_session()
-    lai.reset_sdk()
 
 # Each function starts with a clean SDK state
 process_customer_a()
@@ -135,28 +135,17 @@ process_customer_b()
 
 ## Notes
 
-- Clears the current session if one exists
-- Uninstruments all OpenTelemetry providers
-- Resets the client to uninitialized state
-- Does not throw errors if SDK is already in clean state
-- Useful for test isolation and context switching
-- Any active session data that hasn't been sent will be lost
+- Deprecated: function is a no-op in current versions
+- Use `end_session()` for proper cleanup
 
 ## Behavior Details
 
-When called, `reset_sdk`:
-1. Checks if the SDK is initialized
-2. If OpenTelemetry is active, uninstruments all providers
-3. Clears the client instance and session data
-4. Returns silently if already in clean state
+When called, `reset_sdk` performs no action.
 
 ## Best Practices
 
-1. **Test Isolation**: Use in test fixtures for clean state
-2. **Error Recovery**: Reset after critical errors before retrying
-3. **Context Switching**: Reset when changing between different workflows
-4. **Not for Normal Flow**: Regular applications should use `end_session()` instead
-5. **Data Loss Warning**: Ensure sessions are properly ended before reset
+1. Prefer explicit `end_session()` in tests and workflows
+2. Ensure sessions are ended before changing contexts
 
 ## See Also
 

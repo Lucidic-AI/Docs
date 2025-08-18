@@ -40,7 +40,8 @@
               "integrations/openai",
               "integrations/anthropic",
               "integrations/pydantic-ai",
-              "integrations/langchain"
+              "integrations/langchain",
+              "integrations/litellm"
             ]
           }, 
           {
@@ -111,6 +112,7 @@
             "group": "TypeScript SDK Functions",
             "pages": [
               "typescript-sdk/index",
+              "typescript-sdk/session-context",
               {
                 "group": "Session Management",
                 "pages": [
@@ -150,7 +152,8 @@
             "group": "Integrations",
             "pages": [
               "typescript-sdk/integrations/openai",
-              "typescript-sdk/integrations/anthropic"
+              "typescript-sdk/integrations/anthropic",
+              "typescript-sdk/integrations/vercel-ai"
             ]
           },
           {

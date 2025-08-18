@@ -1,0 +1,57 @@
+---
+title: LiteLLM Integration
+description: Track LiteLLM calls with Lucidic (supports many LLM providers through LiteLLM)
+---
+
+# LiteLLM Integration
+
+Lucidic integrates with LiteLLM via a custom callback bridge that maps LiteLLM events into Lucidic sessions/steps/events. This enables automatic tracking for any provider supported by LiteLLM.
+
+---
+
+## Setup
+
+```python
+import lucidicai as lai
+
+# Initialize with the LiteLLM provider enabled
+lai.init(session_name="LiteLLM Demo", providers=["litellm"])  
+
+# Configure LiteLLM (example: OpenAI-compatible model)
+import litellm
+litellm.set_verbose = False
+
+response = litellm.completion(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Say 'hello from litellm'"}]
+)
+
+# Event is auto-created. Close the session when done.
+lai.end_session()
+```
+
+---
+
+## How it works
+
+- Lucidic registers a LiteLLM CustomLogger (`LucidicLiteLLMCallback`) under the hood
+- Before-call: captures messages to form the event description
+- After-call: extracts response text, usage/cost (when available), duration, and model/provider
+- Images in multimodal messages are detected and attached as screenshots
+- On failure: an error event is recorded with error metadata
+
+---
+
+## Notes
+
+- Ensure your provider-specific API keys are configured per LiteLLM’s docs
+- The bridge waits briefly on shutdown for pending callbacks to finish
+- Cost is estimated using Lucidic’s pricing tables when usage is provided
+
+---
+
+## See Also
+
+- [Python init](/python-sdk/init)
+- [Events](/core-concepts/events)
+

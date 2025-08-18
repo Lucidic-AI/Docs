@@ -11,9 +11,9 @@ This guide will walk you through installing and configuring the Lucidic AI TypeS
 
 ## Prerequisites
 
-- **Node.js** version 14.0 or higher
-- **TypeScript** version 4.0 or higher (for TypeScript projects)
-- A **Lucidic account** with API key and Agent ID
+- **Node.js** version 18 or higher
+- **TypeScript** version 5.x (recommended)
+- A **Lucidic account** with API key and Agent ID — see [Dashboard setup](/getting-started/dashboard)
 
 ---
 
@@ -67,17 +67,16 @@ If using TypeScript, ensure your `tsconfig.json` includes:
 
 ```typescript
 import * as lai from 'lucidicai';
+import OpenAI from 'openai';
+import { Anthropic } from '@anthropic-ai/sdk';
 
 async function main() {
-  // Initialize with environment variables
+  // Initialize with manual instrumentation (ESM-friendly)
   await lai.init({
-    providers: ['openai', 'anthropic']
+    instrumentModules: { OpenAI, Anthropic },
   });
 
-  // Import providers AFTER init
-  const OpenAI = (await import('openai')).default;
   const openai = new OpenAI();
-
   // Your code here...
 }
 
@@ -90,18 +89,19 @@ main().catch(console.error);
 const lai = require('lucidicai');
 
 async function main() {
-  // Initialize with explicit config
+  // Dynamically import provider modules first
+  const { default: OpenAI } = await import('openai');
+  const { Anthropic } = await import('@anthropic-ai/sdk');
+
+  // Initialize and pass module references for instrumentation
   await lai.init({
     apiKey: 'your-api-key',
     agentId: 'your-agent-id',
     sessionName: 'My Session',
-    providers: ['openai']
+    instrumentModules: { OpenAI, Anthropic }
   });
 
-  // Import providers AFTER init
-  const { default: OpenAI } = await import('openai');
   const openai = new OpenAI();
-
   // Your code here...
 }
 
@@ -113,24 +113,28 @@ main().catch(console.error);
 ## Initialization Options
 
 ```typescript
-interface LucidicConfig {
+interface InitParams {
   // Authentication
-  apiKey?: string;         // Defaults to LUCIDIC_API_KEY env var
-  agentId?: string;        // Defaults to LUCIDIC_AGENT_ID env var
-  
+  apiKey?: string;           // Defaults to LUCIDIC_API_KEY env var
+  agentId?: string;          // Defaults to LUCIDIC_AGENT_ID env var
+
   // Session Configuration
-  sessionName?: string;    // Auto-create session with this name
-  sessionId?: string;      // Continue existing session
-  task?: string;           // Session task description
-  userId?: string;         // User identifier
-  groupId?: string;        // Group identifier
-  testId?: string;         // Test run identifier
-  
+  sessionName?: string;      // Auto-create session with this name
+  sessionId?: string;        // Continue existing session
+  task?: string;             // Session task description
+  massSimId?: string;        // Optional mass simulation association
+  experimentId?: string;     // Optional experiment association
+  rubrics?: string[];
+  tags?: string[];
+
   // Provider Configuration
-  providers?: string[];    // ['openai', 'anthropic']
-  
+  providers?: Array<'openai'|'anthropic'|'langchain'>;
+  instrumentModules?: Record<string, any>; // ESM manual modules: { OpenAI, Anthropic, LangChain }
+
   // Advanced Options
   maskingFunction?: (text: string) => string;  // Data masking
+  autoEnd?: boolean;                           // Default true (env overridable)
+  useSpanProcessor?: boolean;                  // Force simple span processor (unbatched)
 }
 ```
 
@@ -142,7 +146,8 @@ The absolute minimum setup requires just 2 lines:
 
 ```typescript
 import * as lai from 'lucidicai';
-await lai.init({ providers: ['openai'] });
+import OpenAI from 'openai';
+await lai.init({ instrumentModules: { OpenAI } });
 
 // That's it! All OpenAI calls are now tracked
 ```
@@ -153,10 +158,9 @@ await lai.init({ providers: ['openai'] });
 
 ### OpenAI
 ```typescript
-await lai.init({ providers: ['openai'] });
+import OpenAI from 'openai';
+await lai.init({ instrumentModules: { OpenAI } });
 
-// Must import AFTER init
-const OpenAI = (await import('openai')).default;
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
@@ -164,10 +168,9 @@ const openai = new OpenAI({
 
 ### Anthropic
 ```typescript
-await lai.init({ providers: ['anthropic'] });
+import { Anthropic } from '@anthropic-ai/sdk';
+await lai.init({ instrumentModules: { anthropic: Anthropic } });
 
-// Must import AFTER init
-const Anthropic = (await import('@anthropic-ai/sdk')).default;
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
@@ -185,16 +188,13 @@ import * as lai from 'lucidicai';
 async function verifyInstallation() {
   try {
     // Initialize SDK
-    const sessionId = await lai.init({
-      sessionName: 'Installation Test',
-      providers: ['openai']
-    });
+    const sessionId = await lai.init({ sessionName: 'Installation Test' });
     
     console.log('SDK initialized successfully');
     console.log(`Session ID: ${sessionId}`);
     
     // Import OpenAI
-    const OpenAI = (await import('openai')).default;
+    import OpenAI from 'openai';
     const openai = new OpenAI();
     
     // Create a step
@@ -213,7 +213,7 @@ async function verifyInstallation() {
     console.log(`Response: ${response.choices[0].message.content}`);
     
     // End session
-    await lai.endSession(true, 'Installation verified');
+    await lai.endSession({ isSuccessful: true, isSuccessfulReason: 'Installation verified' });
     console.log('Installation verification complete!');
     
   } catch (error) {
@@ -230,6 +230,6 @@ verifyInstallation();
 
 - [Core Concepts](/typescript-sdk/core-concepts) - Learn about Sessions, Steps, and Events
 - [Quick Start Guide](/typescript-sdk/quick-start) - Build your first tracked application
-- [API Reference](/typescript-sdk/api-reference) - Complete function documentation
+- [API Reference](/typescript-sdk/index) - Complete function documentation
 
 ---

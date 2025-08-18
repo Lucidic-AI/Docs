@@ -17,27 +17,23 @@ npm install lucidicai
 
 ```typescript
 import * as lai from 'lucidicai';
+import OpenAI from 'openai';
 
-// Initialize a session
+// Initialize a session (manual instrumentation recommended for ESM)
 await lai.init({
   sessionName: "My AI Agent",
-  providers: ["openai"]
+  instrumentModules: { OpenAI }
 });
 
-// Import providers AFTER init
-const OpenAI = (await import('openai')).default;
-const openai = new OpenAI();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Create a step  
-await lai.createStep({
-  state: "Processing",
-  action: "Generate response"
-});
+await lai.createStep();
 
 // Your AI operations are automatically tracked
 // ...
 
-// End the step and session
+// End the step and session when appropriate
 await lai.endStep();
 await lai.endSession();
 ```
@@ -48,11 +44,8 @@ await lai.endSession();
   <Card title="init" icon="play" href="/typescript-sdk/init">
     Initialize the SDK and optionally create a session
   </Card>
-  <Card title="initSession" icon="plus" href="/typescript-sdk/init-session">
-    Initialize a new session explicitly
-  </Card>
-  <Card title="continueSession" icon="forward" href="/typescript-sdk/continue-session">
-    Continue an existing session
+  <Card title="Session Context" icon="layer-group" href="/typescript-sdk/session-context">
+    Async-safe session context for concurrent backends
   </Card>
   <Card title="updateSession" icon="pen" href="/typescript-sdk/update-session">
     Update session metadata
@@ -93,9 +86,6 @@ await lai.endSession();
   <Card title="getPrompt" icon="message" href="/typescript-sdk/get-prompt">
     Retrieve prompts from the platform
   </Card>
-  <Card title="runMassSimulation" icon="layer-group" href="/typescript-sdk/run-mass-simulation">
-    Run mass simulations
-  </Card>
 </CardGroup>
 
 ## Function Categories
@@ -103,16 +93,16 @@ await lai.endSession();
 ### Session Lifecycle
 
 1. **Initialization**: Use `init()` to initialize SDK and optionally start a session
-2. **Session Creation**: Use `initSession()` for explicit session creation
-3. **Continuation**: Use `continueSession()` to resume existing sessions
-4. **Updates**: Modify session data with `updateSession()`
-5. **Completion**: End with `endSession()` including success status
+2. **Continuation**: To resume an existing session, call `init({ sessionId })`
+3. **Updates**: Modify session data with `updateSession()`
+4. **Completion**: End with `endSession()` including success status
 
 ### Step Management
 
 1. **Creation**: Use `createStep()` to begin tracking a unit of work
 2. **Updates**: Update step data with `updateStep()`
 3. **Completion**: Finish with `endStep()` including evaluation
+4. **Self-contained tasks**: Prefer `withLucidic` for workflows that should end automatically (see [Session Context](/typescript-sdk/session-context))
 
 ### Event Tracking
 
@@ -123,16 +113,15 @@ await lai.endSession();
 ### Utilities
 
 1. **Prompts**: Centralized prompt management with `getPrompt()`
-2. **Images**: Upload images with `uploadImage()`
-3. **Mass Simulations**: Batch operations with `runMassSimulation()`
-4. **Context Storage**: Use `withStorageContext()` for multimodal capture
+2. **Context**: Async-safe session scoping via `withSession`, `withLucidic`, `setActiveSession`, `clearActiveSession`
 
 ## Provider Support
 
-The SDK automatically instruments these providers when specified in `init()`:
+The SDK instruments providers via `instrumentModules` in `init()`:
 
-- **OpenAI** - `providers: ["openai"]`
-- **Anthropic** - `providers: ["anthropic"]`
+- **OpenAI** - `instrumentModules: { OpenAI }`
+- **Anthropic** - `instrumentModules: { anthropic: Anthropic }`
+- **LangChain** - `instrumentModules: { langchain: LangChain }`
 
 ## Key Differences from Python SDK
 
@@ -143,24 +132,23 @@ The SDK automatically instruments these providers when specified in `init()`:
 
 ## Best Practices
 
-1. **Always Initialize First**: Call `await lai.init()` before any other operations
-2. **Import Order Matters**: Import LLM providers AFTER initialization
-3. **Use Named Parameters**: TypeScript's object syntax provides better IDE support
-4. **Handle Promises**: Always await async operations or handle Promise chains
-5. **Type Safety**: Leverage TypeScript's type system for better development experience
+1. **Prefer withLucidic for self-sufficient workflows**: It handles init → context → end automatically
+2. **Always Initialize First**: Call `await lai.init()` before any other operations
+3. **Import Order Matters**: Import LLM providers AFTER initialization
+4. **Use Named Parameters**: TypeScript's object syntax provides better IDE support
+5. **Handle Promises**: Always await async operations or handle Promise chains
+6. **Type Safety**: Leverage TypeScript's type system for better development experience
 
 ## Error Handling
 
 ```typescript
-import { LucidicError, APIError, SessionError } from 'lucidicai';
+import { APIError } from 'lucidicai';
 
 try {
   await lai.init({ sessionName: "My Session" });
 } catch (error) {
   if (error instanceof APIError) {
     console.error("API key verification failed:", error.message);
-  } else if (error instanceof SessionError) {
-    console.error("Session error:", error.message);
   }
 }
 ```

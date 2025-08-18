@@ -1,0 +1,85 @@
+---
+title: Vercel AI SDK Integration
+description: Track Vercel AI SDK (ai) calls with Lucidic telemetry
+---
+
+# Vercel AI SDK Integration
+
+The TypeScript SDK supports Vercel AI SDK via OpenTelemetry spans created by the AI SDK when you pass a tracer.
+
+`aiTelemetry()` is a convenience helper that returns a pre-configured telemetry object compatible with the AI SDK’s `experimental_telemetry` option. It binds the current Lucidic session context so your `generateText`/`streamText` calls are captured as Lucidic events without additional setup.
+
+---
+
+## Setup
+
+```typescript
+import { init, aiTelemetry } from 'lucidicai';
+import { generateText, streamText, tool } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+// Initialize Lucidic (non-global provider)
+await init({ sessionName: 'Vercel AI SDK Demo' });
+
+// Regular chat
+const res = await generateText({
+  model: openai('gpt-4o-mini'),
+  prompt: 'Say "hello from vercel ai"',
+  experimental_telemetry: aiTelemetry(),
+});
+console.log(res.text);
+```
+
+---
+
+## Streaming
+
+```typescript
+const { textStream } = await streamText({
+  model: openai('gpt-4o-mini'),
+  prompt: 'Count to 5:',
+  experimental_telemetry: aiTelemetry(),
+});
+let full = '';
+for await (const chunk of textStream) full += chunk;
+console.log('Stream:', full);
+```
+
+---
+
+## Tools
+
+```typescript
+const tools = {
+  add: tool({
+    description: 'Add two numbers',
+    inputSchema: z.object({ a: z.number(), b: z.number() }),
+    execute: async ({ a, b }: { a: number; b: number }) => a + b,
+  }),
+} as const;
+
+const res = await generateText({
+  model: openai('gpt-4o-mini'),
+  system: 'You can use tools when needed.',
+  prompt: 'What is 2+3? Use the add tool.',
+  tools,
+  experimental_telemetry: aiTelemetry(),
+});
+console.log(res.text);
+```
+
+---
+
+## Notes
+
+- Pass `experimental_telemetry: aiTelemetry()` to every AI SDK call to route spans to Lucidic (recommended for most use cases)
+- Use `init({ sessionName })` first; session context is attached via AsyncLocalStorage
+- Images in messages are handled by the AI SDK and extracted by Lucidic
+
+---
+
+## See Also
+
+- [OpenAI Integration](/typescript-sdk/integrations/openai)
+

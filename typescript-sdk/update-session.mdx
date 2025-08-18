@@ -10,13 +10,14 @@ The `updateSession` function updates properties of the active session, such as t
 ## Syntax
 
 ```typescript
-await lai.updateSession(
+await lai.updateSession({
   task?: string,
-  tags?: Record<string, any>,
-  isFinished?: boolean,
+  sessionEval?: number,
+  sessionEvalReason?: string,
   isSuccessful?: boolean,
-  isSuccessfulReason?: string
-): Promise<void>
+  isSuccessfulReason?: string,
+  tags?: string[],
+}): Promise<void>
 ```
 
 ## Parameters
@@ -25,8 +26,16 @@ await lai.updateSession(
   Updated task description for the session.
 </ParamField>
 
-<ParamField path="tags" type="Record<string, any>" optional>
-  Key-value pairs to tag and categorize the session.
+<ParamField path="sessionEval" type="number" optional>
+  Numeric evaluation score for the session.
+</ParamField>
+
+<ParamField path="sessionEvalReason" type="string" optional>
+  Reason/justification for the evaluation score.
+</ParamField>
+
+<ParamField path="tags" type="string[]" optional>
+  Tag strings to categorize the session.
 </ParamField>
 
 <ParamField path="isFinished" type="boolean" optional>
@@ -57,25 +66,24 @@ await lai.init({
 });
 
 // After understanding the data
-await lai.updateSession(
-  "Process customer transaction data for Q4 2023"
-);
+await lai.updateSession({
+  task: "Process customer transaction data for Q4 2023"
+});
 ```
 
 ### Add Tags
 
 ```typescript
 // Add metadata tags
-await lai.updateSession(
-  undefined, // Don't change task
-  {
-    environment: "production",
-    version: "2.1.0",
-    customer: "enterprise-client-123",
-    dataSize: "10GB",
-    priority: "high"
-  }
-);
+await lai.updateSession({
+  tags: [
+    "environment:production",
+    "version:2.1.0",
+    "customer:enterprise-client-123",
+    "dataSize:10GB",
+    "priority:high"
+  ]
+});
 ```
 
 ### Progressive Updates
@@ -85,20 +93,20 @@ await lai.updateSession(
 await lai.init({ sessionName: "Analysis workflow" });
 
 // Add context as you learn more
-await lai.updateSession(
-  "Analyze user behavior patterns",
-  { phase: "discovery" }
-);
+await lai.updateSession({
+  task: "Analyze user behavior patterns",
+  tags: ["phase:discovery"]
+});
 
 // Update after initial findings
-await lai.updateSession(
-  "Analyze shopping cart abandonment patterns",
-  { 
-    phase: "analysis",
-    findingType: "cart-abandonment",
-    timeRange: "30-days"
-  }
-);
+await lai.updateSession({
+  task: "Analyze shopping cart abandonment patterns",
+  tags: [
+    "phase:analysis",
+    "findingType:cart-abandonment",
+    "timeRange:30-days"
+  ]
+});
 ```
 
 ### Error Tracking
@@ -108,14 +116,13 @@ try {
   await performCriticalOperation();
 } catch (error) {
   // Mark session state before ending
-  await lai.updateSession(
-    undefined,
-    {
-      error: error.message,
-      errorType: error.constructor.name,
-      failurePoint: "critical-operation"
-    }
-  );
+  await lai.updateSession({
+    tags: [
+      `error:${error.message}`,
+      `errorType:${error.constructor.name}`,
+      "failurePoint:critical-operation",
+    ]
+  });
   
   // Then end session
   await lai.endSession(false, error.message);
@@ -141,14 +148,14 @@ async function multiPhaseWorkflow() {
   await loadData();
 
   // Final update
-  await lai.updateSession(
-    "ETL pipeline completed",
-    { 
-      phase: "complete",
-      recordsProcessed: 50000,
-      duration: "45min"
-    }
-  );
+  await lai.updateSession({
+    task: "ETL pipeline completed",
+    tags: [
+      "phase:complete",
+      "recordsProcessed:50000",
+      "duration:45min",
+    ]
+  });
 }
 ```
 
@@ -176,28 +183,26 @@ const startTime = Date.now();
 const result = await complexOperation();
 const duration = Date.now() - startTime;
 
-await lai.updateSession(
-  undefined,
-  {
-    performanceMs: duration,
-    resultSize: result.length,
-    cacheHit: result.fromCache
-  }
-);
+await lai.updateSession({
+  tags: [
+    `performanceMs:${duration}`,
+    `resultSize:${result.length}`,
+    `cacheHit:${result.fromCache}`
+  ]
+});
 ```
 
 ### 3. User Context
 
 ```typescript
-await lai.updateSession(
-  undefined,
-  {
-    userId: user.id,
-    userTier: user.subscription,
-    userRegion: user.location,
-    sessionSource: "web-app"
-  }
-);
+await lai.updateSession({
+  tags: [
+    `userId:${user.id}`,
+    `userTier:${user.subscription}`,
+    `userRegion:${user.location}`,
+    "sessionSource:web-app",
+  ]
+});
 ```
 
 ## Best Practices
@@ -206,11 +211,13 @@ await lai.updateSession(
 
 ```typescript
 // Good - enables dashboard filtering
-await lai.updateSession(undefined, {
-  env: "prod",
-  feature: "chat",
-  model: "gpt-4",
-  customer: customerId
+await lai.updateSession({
+  tags: [
+    "env:prod",
+    "feature:chat",
+    "model:gpt-4",
+    `customer:${customerId}`
+  ]
 });
 ```
 
@@ -218,25 +225,25 @@ await lai.updateSession(undefined, {
 
 ```typescript
 // Start generic
-await lai.init({ task: "Process user request" });
+await lai.init({ sessionName: 'My session' });
 
 // Update with specifics
-await lai.updateSession(
-  `Generate ${reportType} report for ${dateRange}`
-);
+await lai.updateSession({
+  task: `Generate ${reportType} report for ${dateRange}`
+});
 ```
 
 ### 3. Don't Use for Step Data
 
 ```typescript
 // ❌ Wrong - use step functions instead
-await lai.updateSession("Working on step 2");
+await lai.updateSession({ task: "Working on step 2" });
 
 // ✅ Correct - session-level info only
-await lai.updateSession(
-  "Multi-step analysis workflow",
-  { totalSteps: 5 }
-);
+await lai.updateSession({
+  task: "Multi-step analysis workflow",
+  tags: ["totalSteps:5"]
+});
 ```
 
 ## Notes

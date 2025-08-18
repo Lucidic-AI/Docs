@@ -59,16 +59,16 @@ Create `minimal.ts`:
 
 ```typescript
 import * as lai from 'lucidicai';
+import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 async function main() {
-  // Just 2 lines for full tracking!
-  await lai.init({ providers: ['openai'] });
+  // Preferred: Manual instrumentation (ESM-friendly)
+  await lai.init({ instrumentModules: { OpenAI } });
   
-  const OpenAI = (await import('openai')).default;
-  const openai = new OpenAI();
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4',
@@ -112,59 +112,45 @@ class CustomerSupportAssistant {
 
   async initialize() {
     // Initialize Lucidic with session details
+    const OpenAI = (await import('openai')).default;
     await lai.init({
       sessionName: 'Customer Support Session',
       task: 'Answer customer questions about our product',
-      providers: ['openai']
+      instrumentModules: { OpenAI }
     });
-
-    // Import OpenAI after init
-    const OpenAI = (await import('openai')).default;
-    this.openai = new OpenAI();
+    this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   }
 
   async processQuery(query: UserQuery): Promise<string> {
     try {
       // Step 1: Analyze the question
-      await lai.createStep({
-        state: 'Received user question',
-        action: 'Analyzing intent and context',
-        goal: 'Understand what the user needs'
-      });
+      await lai.createStep();
 
       const analysis = await this.analyzeIntent(query.question);
       
-      await lai.endStep(90, 'Successfully identified intent');
+      await lai.endStep({ evalScore: 90, evalDescription: 'Successfully identified intent' });
 
       // Step 2: Search for information
-      await lai.createStep({
-        state: 'Intent identified',
-        action: 'Searching knowledge base',
-        goal: 'Find relevant information'
-      });
+      await lai.createStep();
 
       const searchResults = await this.searchKnowledge(analysis);
       
-      await lai.endStep(85, 'Found relevant articles');
+      await lai.endStep({ evalScore: 85, evalDescription: 'Found relevant articles' });
 
       // Step 3: Generate response
-      await lai.createStep({
-        state: 'Information gathered',
-        action: 'Generating helpful response',
-        goal: 'Provide clear answer to user'
-      });
+      await lai.createStep();
 
       const response = await this.generateResponse(
         query.question,
         searchResults
       );
 
-      await lai.endStep(95, 'Generated comprehensive response');
+      await lai.endStep({ evalScore: 95, evalDescription: 'Generated comprehensive response' });
 
       return response;
 
     } catch (error) {
-      await lai.endStep(0, `Error: ${error.message}`);
+      await lai.endStep({ evalScore: 0, evalDescription: `Error: ${error.message}` });
       throw error;
     }
   }
@@ -230,10 +216,7 @@ class CustomerSupportAssistant {
   }
 
   async close(success: boolean = true) {
-    await lai.endSession(
-      success,
-      success ? 'Support session completed' : 'Session ended with errors'
-    );
+    await lai.endSession({ isSuccessful: success, isSuccessfulReason: success ? 'Support session completed' : 'Session ended with errors' });
   }
 }
 
@@ -274,7 +257,7 @@ npx ts-node assistant.ts
 
 After running the examples:
 
-1. Go to your [Lucidic Dashboard](https://app.lucidic.ai)
+1. Go to your [Lucidic Dashboard](https://dashboard.lucidic.ai)
 2. Find your session in the Sessions list
 3. Click to view the detailed workflow
 4. See every step, event, and LLM call
@@ -312,24 +295,24 @@ const response = await openai.chat.completions.create({
 
 ```typescript
 // Protect sensitive information
-lai.setMaskingFunction((text: string) => {
-  return text
-    .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '***-**-****')  // SSN
-    .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '***@***.***'); // Email
+await lai.init({
+  maskingFunction: (text: string) => {
+    return text
+      .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '***-**-****')  // SSN
+      .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '***@***.***'); // Email
+  }
 });
 ```
 
 ### Error Handling
 
 ```typescript
-import { APIError, ConfigurationError } from 'lucidicai';
+import { APIError } from 'lucidicai';
 
 try {
   await lai.init({ apiKey: 'invalid' });
 } catch (error) {
-  if (error instanceof ConfigurationError) {
-    console.error('Configuration issue:', error.message);
-  } else if (error instanceof APIError) {
+  if (error instanceof APIError) {
     console.error('API error:', error.message);
   }
 }

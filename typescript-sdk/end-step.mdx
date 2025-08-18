@@ -10,7 +10,14 @@ The `endStep` function ends an active step, optionally updating its evaluation a
 ## Syntax
 
 ```typescript
-await lai.endStep(params?: EndStepParams): Promise<void>
+await lai.endStep(params?: {
+  stepId?: string;
+  state?: string;
+  action?: string;
+  goal?: string;
+  evalScore?: number;
+  evalDescription?: string;
+}): Promise<void>
 ```
 
 ## Parameters
@@ -63,14 +70,8 @@ await lai.endStep({
   evalDescription: "Successfully completed task"
 });
 
-// End with full update
-await lai.endStep({
-  state: "Processing complete",
-  action: "Generated report",
-  goal: "Deliver insights",
-  evalScore: 100,
-  evalDescription: "All objectives met"
-});
+// End with evaluation
+await lai.endStep({ evalScore: 100, evalDescription: "All objectives met" });
 ```
 
 ### End Specific Step
@@ -95,28 +96,17 @@ await lai.endStep({
 ### Error Handling Pattern
 
 ```typescript
-await lai.createStep({
-  state: "Risky operation",
-  action: "Process external data"
-});
+await lai.createStep();
 
 try {
   const result = await riskyOperation();
   
   // Success case
-  await lai.endStep({
-    evalScore: 100,
-    evalDescription: "Operation successful",
-    state: `Processed ${result.count} items`
-  });
+  await lai.endStep({ evalScore: 100, evalDescription: "Operation successful" });
   
 } catch (error) {
   // Failure case
-  await lai.endStep({
-    evalScore: 0,
-    evalDescription: `Failed: ${error.message}`,
-    state: "Operation failed"
-  });
+  await lai.endStep({ evalScore: 0, evalDescription: `Failed: ${error.message}` });
   throw error;
 }
 ```
@@ -125,10 +115,7 @@ try {
 
 ```typescript
 async function processDataWithScoring(data: any[]) {
-  await lai.createStep({
-    state: "Processing batch",
-    action: "Validate and transform"
-  });
+  await lai.createStep();
 
   const results = await processItems(data);
   
@@ -166,16 +153,10 @@ for (const step of steps) {
     await step.fn();
     const duration = Date.now() - startTime;
     
-    await lai.endStep({
-      evalScore: 100,
-      evalDescription: `${step.name} completed in ${duration}ms`
-    });
+    await lai.endStep({ evalScore: 100, evalDescription: `${step.name} completed in ${duration}ms` });
     
   } catch (error) {
-    await lai.endStep({
-      evalScore: 0,
-      evalDescription: `${step.name} failed: ${error.message}`
-    });
+    await lai.endStep({ evalScore: 0, evalDescription: `${step.name} failed: ${error.message}` });
     break;
   }
 }
@@ -208,38 +189,22 @@ try {
 ### 2. Meaningful Evaluations
 
 ```typescript
-// ✅ Good - specific and actionable
+// Good - specific and actionable
 await lai.endStep({
   evalScore: 75,
   evalDescription: "Found 3 of 4 required documents, missing user consent form"
 });
 
-// ❌ Less helpful
+// Less helpful
 await lai.endStep({
   evalScore: 75,
   evalDescription: "Partially complete"
 });
 ```
 
-### 3. Update State on Completion
+### 3. Use Context Managers for Self-Contained Workflows
 
-```typescript
-await lai.createStep({
-  state: "Search initiated",
-  action: "Query database"
-});
-
-const results = await searchDatabase();
-
-// Update state to reflect outcome
-await lai.endStep({
-  state: `Found ${results.length} matching records`,
-  evalScore: results.length > 0 ? 100 : 50,
-  evalDescription: results.length > 0 
-    ? "Search successful" 
-    : "No results found"
-});
-```
+Prefer `withLucidic` when a session should end at the end of the workflow. See [Session Context](/typescript-sdk/session-context).
 
 ## Notes
 

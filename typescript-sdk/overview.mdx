@@ -5,7 +5,7 @@ description: Official TypeScript SDK for Lucidic AI - LLM observability for your
 
 # TypeScript SDK
 
-The Lucidic AI TypeScript SDK provides full observability for your AI applications built with TypeScript/JavaScript. It offers automatic instrumentation for OpenAI and Anthropic, with the same powerful features as our Python SDK.
+The Lucidic AI TypeScript SDK provides full observability for your AI applications built with TypeScript/JavaScript. It offers automatic instrumentation for OpenAI and Anthropic, with the same powerful features as our Python SDK. It also exposes async-safe session context helpers for concurrent backends.
 
 ---
 
@@ -29,26 +29,20 @@ yarn add lucidicai
 
 ```typescript
 import * as lai from 'lucidicai';
+import OpenAI from 'openai';
 
-// Initialize the SDK
+// Initialize with manual instrumentation (ESM-friendly)
 await lai.init({
-  apiKey: 'your-api-key',    // or set LUCIDIC_API_KEY env var
-  agentId: 'your-agent-id',  // or set LUCIDIC_AGENT_ID env var
   sessionName: 'My AI Assistant',
-  providers: ['openai']      // Auto-instrument providers
+  instrumentModules: { OpenAI },
 });
-
-// IMPORTANT: Import LLM libraries AFTER lai.init()
-const OpenAI = (await import('openai')).default;
-const openai = new OpenAI();
 
 // Your LLM calls are now automatically tracked!
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const response = await client.chat.completions.create({
+  model: 'gpt-4o-mini',
   messages: [{ role: 'user', content: 'Hello!' }]
 });
-
-// Session auto-ends when process exits
 ```
 
 ---
@@ -56,10 +50,10 @@ const response = await openai.chat.completions.create({
 ## Key Features
 
 ### Automatic Instrumentation
-- **Zero-config tracking** for OpenAI and Anthropic
+- Automatic tracking for OpenAI and Anthropic
 - **Auto event creation** for every LLM call
 - **Auto step creation** when no active step exists
-- **Auto session ending** on process exit
+- **Flush spans on exit** (even when autoEnd is disabled)
 
 ### Full TypeScript Support
 - Comprehensive type definitions
@@ -81,7 +75,7 @@ const response = await openai.chat.completions.create({
 |---------|---------------|------------|
 | OpenAI Integration | ✅ Full support | ✅ Full support |
 | Anthropic Integration | ✅ With streaming limitation | ✅ Full support |
-| LangChain Integration | ❌ Not yet | ✅ Supported |
+| LangChain Integration | ✅ Available (OpenTelemetry) | ✅ Supported |
 | PydanticAI Integration | ❌ Not applicable | ✅ Supported |
 | Auto Instrumentation | ✅ OpenTelemetry | ✅ OpenTelemetry |
 | Multimodal Support | ✅ Text & Images | ✅ Text & Images |
@@ -93,23 +87,25 @@ const response = await openai.chat.completions.create({
 
 ## Important: Import Order
 
-For automatic tracking to work, you **must** initialize Lucidic **before** importing LLM libraries:
+For automatic tracking to work, use one of these patterns:
 
-### Correct
+{/*### Correct*/}
 ```typescript
-// 1. First, initialize Lucidic
-await lai.init({ providers: ['openai'] });
+// ESM/Next.js: import first, pass module references
+import OpenAI from 'openai';
+await lai.init({ instrumentModules: { OpenAI } });
 
-// 2. Then, import LLM libraries
-const OpenAI = (await import('openai')).default;
+// CommonJS (dynamic import):
+const { default: OpenAI } = await import('openai');
+await lai.init({ instrumentModules: { OpenAI } });
 ```
 
-### Incorrect
+{/*### Incorrect
 ```typescript
 // DON'T DO THIS - events won't be tracked!
 import OpenAI from 'openai';
 await lai.init({ providers: ['openai'] });
-```
+```*/}
 
 ---
 
@@ -117,7 +113,7 @@ await lai.init({ providers: ['openai'] });
 
 - [Installation & Setup](/typescript-sdk/installation) - Detailed setup guide
 - [Core Concepts](/typescript-sdk/core-concepts) - Sessions, Steps, and Events
-- [Provider Integrations](/typescript-sdk/integrations) - OpenAI and Anthropic
-- [API Reference](/typescript-sdk/api-reference) - Complete function documentation
+- Provider Integrations: [OpenAI](/typescript-sdk/integrations/openai), [Anthropic](/typescript-sdk/integrations/anthropic), [Vercel AI](/typescript-sdk/integrations/vercel-ai)
+- [API Reference](/typescript-sdk/index) - Complete function documentation
 
 ---

@@ -10,12 +10,14 @@ The `updateStep` function updates properties of a specific step by its ID. This 
 ## Syntax
 
 ```typescript
-await lai.updateStep(
-  stepId: string,
-  isFinished?: boolean,
-  evalScore?: number,
-  evalDescription?: string
-): Promise<void>
+await lai.updateStep({
+  stepId: string;
+  state?: string;
+  action?: string;
+  goal?: string;
+  evalScore?: number;
+  evalDescription?: string;
+}): Promise<void>
 ```
 
 ## Parameters
@@ -24,9 +26,7 @@ await lai.updateStep(
   ID of the step to update.
 </ParamField>
 
-<ParamField path="isFinished" type="boolean" optional>
-  Whether the step is finished.
-</ParamField>
+{/* Steps are ended via endStep(); updateStep does not have an isFinished flag in the TS SDK */}
 
 <ParamField path="evalScore" type="number" optional>
   Evaluation score (0-100).
@@ -52,29 +52,24 @@ const step = await lai.createStep({
 });
 
 // Update later
-await lai.updateStep(
-  step.stepId,
-  false,  // Not finished yet
-  75,     // Current score
-  "Partially complete"
-);
+await lai.updateStep({
+  stepId: step.stepId,
+  evalScore: 75,
+  evalDescription: "Partially complete"
+});
 
-// Finish the step
-await lai.updateStep(
-  step.stepId,
-  true,   // Finished
-  100,    // Final score
-  "Analysis completed successfully"
-);
+// Finish the step (use endStep)
+await lai.endStep({
+  stepId: step.stepId,
+  evalScore: 100,
+  evalDescription: "Analysis completed successfully"
+});
 ```
 
 ### Progress Tracking
 
 ```typescript
-const step = await lai.createStep({
-  state: "Large file processing",
-  action: "Process in chunks"
-});
+const step = await lai.createStep();
 
 const totalChunks = 100;
 
@@ -83,21 +78,19 @@ for (let i = 0; i < totalChunks; i++) {
   
   // Update progress
   const progress = Math.round(((i + 1) / totalChunks) * 100);
-  await lai.updateStep(
-    step.stepId,
-    false,
-    progress,
-    `Processed ${i + 1}/${totalChunks} chunks`
-  );
+  await lai.updateStep({
+    stepId: step.stepId,
+    evalScore: progress,
+    evalDescription: `Processed ${i + 1}/${totalChunks} chunks`
+  });
 }
 
 // Mark as complete
-await lai.updateStep(
-  step.stepId,
-  true,
-  100,
-  "All chunks processed"
-);
+await lai.endStep({
+  stepId: step.stepId,
+  evalScore: 100,
+  evalDescription: "All chunks processed"
+});
 ```
 
 ### Multiple Steps Management
@@ -105,9 +98,9 @@ await lai.updateStep(
 ```typescript
 // Create multiple steps
 const steps = await Promise.all([
-  lai.createStep({ state: "Step 1" }),
-  lai.createStep({ state: "Step 2" }),
-  lai.createStep({ state: "Step 3" })
+  lai.createStep(),
+  lai.createStep(),
+  lai.createStep()
 ]);
 
 // Process in parallel
@@ -116,20 +109,18 @@ await Promise.all(steps.map(async (step, index) => {
     await processStepTask(index);
     
     // Update on success
-    await lai.updateStep(
-      step.stepId,
-      true,
-      100,
-      `Step ${index + 1} completed`
-    );
+    await lai.endStep({
+      stepId: step.stepId,
+      evalScore: 100,
+      evalDescription: `Step ${index + 1} completed`
+    });
   } catch (error) {
     // Update on failure
-    await lai.updateStep(
-      step.stepId,
-      true,
-      0,
-      `Step ${index + 1} failed: ${error.message}`
-    );
+    await lai.endStep({
+      stepId: step.stepId,
+      evalScore: 0,
+      evalDescription: `Step ${index + 1} failed: ${error.message}`
+    });
   }
 }));
 ```
@@ -140,7 +131,7 @@ await Promise.all(steps.map(async (step, index) => {
 |---------|--------------|-----------|
 | Requires step ID | ✅ Yes | ❌ Optional |
 | Can update non-active steps | ✅ Yes | ❌ No |
-| Can update finished steps | ✅ Yes | ❌ No |
+| Can update finished steps | ❌ No | ✅ No |
 | Updates current active step reference | ❌ No | ✅ Yes |
 | Can update state/action/goal | ❌ No | ✅ Yes |
 
@@ -172,22 +163,23 @@ async function retryableOperation() {
     try {
       await riskyOperation();
       
-      await lai.updateStep(
-        step.stepId,
-        true,
-        100,
-        `Succeeded on attempt ${attempt}`
-      );
+      await lai.endStep({
+        stepId: step.stepId,
+        evalScore: 100,
+        evalDescription: `Succeeded on attempt ${attempt}`
+      });
       return;
       
     } catch (error) {
       const score = Math.max(0, 100 - (attempt * 30));
-      await lai.updateStep(
-        step.stepId,
-        attempt === 3,
-        score,
-        `Attempt ${attempt} failed: ${error.message}`
-      );
+      await lai.updateStep({
+        stepId: step.stepId,
+        evalScore: score,
+        evalDescription: `Attempt ${attempt} failed: ${error.message}`
+      });
+      if (attempt === 3) {
+        await lai.endStep({ stepId: step.stepId });
+      }
       
       if (attempt < 3) await delay(1000 * attempt);
     }
@@ -206,21 +198,19 @@ const step = await lai.createStep({
 
 // Return step ID for status updates
 const jobId = startBackgroundJob(async (progress) => {
-  await lai.updateStep(
-    step.stepId,
-    false,
-    progress,
-    `Processing: ${progress}% complete`
-  );
+  await lai.updateStep({
+    stepId: step.stepId,
+    evalScore: progress,
+    evalDescription: `Processing: ${progress}% complete`
+  });
 });
 
 // Later, mark as complete
-await lai.updateStep(
-  step.stepId,
-  true,
-  100,
-  "Background job finished"
-);
+await lai.endStep({
+  stepId: step.stepId,
+  evalScore: 100,
+  evalDescription: "Background job finished"
+});
 ```
 
 ## Best Practices
@@ -250,12 +240,11 @@ const scoreStep = (success: boolean, warnings: number) => {
   return 50;
 };
 
-await lai.updateStep(
+await lai.endStep({
   stepId,
-  true,
-  scoreStep(result.success, result.warnings),
-  `Completed with ${result.warnings} warnings`
-);
+  evalScore: scoreStep(result.success, result.warnings),
+  evalDescription: `Completed with ${result.warnings} warnings`
+});
 ```
 
 ## Notes
