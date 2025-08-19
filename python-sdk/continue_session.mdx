@@ -1,16 +1,16 @@
 ---
-title: 'continue_session'
-description: 'Continue an existing Lucidic session'
+title: 'continue_session (DEPRECATED)'
+description: 'Deprecated — use init(session_id=...) to resume a session'
 ---
 
 ## Overview
 
-The `continue_session` function allows you to resume a previously created session. This is useful for long-running workflows, distributed systems, or when you need to add more data to an existing session.
+This function is deprecated. Use `init(session_id=...)` to resume a previously created session. Calling `init` with a `session_id` binds that session to the current async/thread context and safely resumes tracking.
 
 ## Syntax
 
 ```python
-lai.continue_session(
+lai.init(
     session_id: str,
     api_key: Optional[str] = None,
     agent_id: Optional[str] = None,
@@ -48,24 +48,21 @@ lai.continue_session(
 
 ## Returns
 
-Returns the session ID as a string (same as the input session_id).
+Returns the session ID as a string.
 
 ## Examples
 
-### Basic Usage
+### Basic Usage (resuming a session)
 
 ```python
 import lucidicai as lai
 
-# Continue a previous session
+# Resume a previous session
 session_id = "existing-session-123"
-lai.continue_session(session_id=session_id)
+lai.init(session_id=session_id)
 
 # Add more steps and events to the session
-lai.create_step(
-    state="Continuing workflow",
-    action="Process additional data"
-)
+lai.create_step()
 ```
 
 ### Distributed System Example
@@ -79,22 +76,19 @@ print(f"Started session: {session_id}")
 # ... do some work ...
 lai.end_session()
 
-# Process 2: Continue the session
+# Process 2: Resume the session
 import lucidicai as lai
 
 # Get session_id from shared storage, message queue, etc.
 session_id = get_session_from_queue()
 
-lai.continue_session(
+lai.init(
     session_id=session_id,
     providers=["openai"]
 )
 
 # Continue the workflow
-lai.create_step(
-    state="Processing in worker node",
-    action="Analyze data batch"
-)
+lai.create_step()
 ```
 
 ### Error Recovery Example
@@ -120,18 +114,20 @@ try:
 except Exception as e:
     # On failure, recover from checkpoint
     checkpoint = load_checkpoint()
-    lai.continue_session(session_id=checkpoint['session_id'])
+    lai.init(session_id=checkpoint['session_id'])
     # Continue from where we left off
     process_part_2(checkpoint['data'])
 ```
 
 ## Notes
 
-- The session must exist and not be finished to continue it
-- You cannot continue a session if another session is already active
-- The same authentication credentials must be used as when the session was created
-- All configuration (providers, masking, etc.) needs to be re-specified when continuing
-- The `auto_end` feature works the same as in `init()`
+- Deprecated in favor of `init(session_id=...)`
+- The session must exist and not be finished to resume it
+- You cannot resume a session if another session is already active
+- Re-specify configuration (providers, masking, etc.) when resuming
+- `init(session_id=...)` binds the session to the current async/thread context automatically
+- `continue_session(...)` binds the session to the current async/thread context automatically
+- Prefer `with lai.bind_session(session_id)` for scoping work to an existing session; see [Session Context](/python-sdk/session-context)
 
 ## Error Handling
 
@@ -139,7 +135,7 @@ except Exception as e:
 from lucidicai.errors import InvalidOperationError, APIKeyVerificationError
 
 try:
-    lai.continue_session(session_id="invalid-session")
+    lai.init(session_id="invalid-session")
 except APIKeyVerificationError:
     print("Please check your API credentials")
 except InvalidOperationError:
@@ -148,6 +144,6 @@ except InvalidOperationError:
 
 ## See Also
 
-- [`init`](/python-sdk/init) - Create a new session
+- [`init`](/python-sdk/init) - Create a new or resume an existing session
 - [`end_session`](/python-sdk/end_session) - End the current session
 - [`update_session`](/python-sdk/update_session) - Update session metadata

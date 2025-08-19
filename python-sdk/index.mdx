@@ -30,6 +30,13 @@ lai.create_step(state="Processing", action="Generate response")
 # End the step and session
 lai.end_step()
 lai.end_session()
+
+# Recommended: self-contained session using a context manager
+with lai.session(session_name="My AI Agent 2", providers=["openai"]):
+    # Your AI operations are automatically tracked
+    lai.create_step()
+    # ... your logic ...
+    lai.end_step()
 ```
 
 ## Session Management
@@ -38,17 +45,14 @@ lai.end_session()
   <Card title="init" icon="play" href="/python-sdk/init">
     Initialize a new Lucidic session
   </Card>
-  <Card title="continue_session" icon="forward" href="/python-sdk/continue_session">
-    Continue an existing session
-  </Card>
   <Card title="end_session" icon="stop" href="/python-sdk/end_session">
     End the current session
   </Card>
   <Card title="update_session" icon="pen" href="/python-sdk/update_session">
     Update session metadata
   </Card>
-  <Card title="reset_sdk" icon="rotate" href="/python-sdk/reset_sdk">
-    Reset SDK to initial state
+  <Card title="Session Context" icon="link" href="/python-sdk/session-context">
+    Async-safe context managers and helpers
   </Card>
 </CardGroup>
 
@@ -102,11 +106,40 @@ lai.end_session()
   </Card>
 </CardGroup>
 
+## Context Managers
+
+<CardGroup cols={2}>
+  <Card title="session" icon="link" href="/python-sdk/context/session">
+    Full-lifecycle session within a context
+  </Card>
+  <Card title="session_async" icon="link" href="/python-sdk/context/session_async">
+    Async full-lifecycle session within a context
+  </Card>
+  <Card title="bind_session" icon="link" href="/python-sdk/context/bind_session">
+    Bind existing session for a block (no end)
+  </Card>
+  <Card title="bind_session_async" icon="link" href="/python-sdk/context/bind_session_async">
+    Async bind-only session context
+  </Card>
+  <Card title="run_session" icon="link" href="/python-sdk/context/run_session">
+    Run a function in a new session context
+  </Card>
+  <Card title="run_in_session" icon="link" href="/python-sdk/context/run_in_session">
+    Run a function in an existing session context
+  </Card>
+  <Card title="set_active_session" icon="link" href="/python-sdk/context/set_active_session">
+    Manually set the active session id
+  </Card>
+  <Card title="clear_active_session" icon="link" href="/python-sdk/context/clear_active_session">
+    Clear the active session id
+  </Card>
+</CardGroup>
+
 ## Function Categories
 
 ### Session Lifecycle
 
-1. **Initialization**: Use `init()` to start a new session or `continue_session()` to resume
+1. **Initialization**: Use `init()` to start a new session or resume with `init(session_id=...)`
 2. **Updates**: Modify session data with `update_session()`
 3. **Completion**: End with `end_session()` including final evaluation
 
@@ -128,6 +161,20 @@ lai.end_session()
 
 1. **Prompts**: Centralized prompt management with `get_prompt()`
 2. **Mass Simulations**: Batch operations with `create_mass_sim()`
+
+### Context Managers
+
+Use these for async/thread-safe session handling, similar to the TypeScript SDK:
+
+- `session(...)` — full lifecycle within a context
+- `session_async(...)` — async variant
+- `bind_session(session_id)` — bind only (no end)
+- `bind_session_async(session_id)` — async variant
+- `run_session(fn, init_params, ...)` — run a function within a new session
+- `run_in_session(session_id, fn, ...)` — run a function in an existing session
+- `set_active_session(session_id)` / `clear_active_session()` — manual control
+
+See the dedicated pages under Context Managers in the sidebar.
 
 ### Decorators
 
@@ -151,11 +198,11 @@ The SDK automatically instruments these providers when specified in `init()`:
 
 ## Best Practices
 
-1. **Always Initialize**: Start with `lai.init()` before any other operations
-2. **Proper Cleanup**: End sessions and steps properly for accurate tracking
-3. **Error Handling**: Use try-finally blocks to ensure cleanup on errors
-4. **Meaningful Metadata**: Provide descriptive states, actions, and goals
-5. **Evaluation Tracking**: Include eval_score and descriptions for manual analysis if neeeded
+1. **Prefer Context Managers**: Use `with lai.session(...)` for self-sufficient workflows that start and end within one block
+2. **Bind Existing Sessions**: Use `with lai.bind_session(session_id)` to attribute work to an existing session without ending it
+3. **Concurrent Safety**: Rely on context-bound sessions instead of globals in multi-threaded/async code
+4. **Ensure Cleanup**: Context managers handle cleanup; otherwise call `lai.end_session()` explicitly when not using contexts
+5. **Evaluation Tracking**: Use `eval_score` and `eval_description` on steps where helpful; avoid manual overrides at scale
 
 ## Error Handling
 
