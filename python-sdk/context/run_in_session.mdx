@@ -1,0 +1,48 @@
+---
+title: run_in_session
+description: Run a function inside an existing session context
+---
+
+## Overview
+
+`run_in_session` binds the given session id, executes your function, and preserves the session (does not end it).
+
+## Syntax
+
+```python
+result = lai.run_in_session(
+  session_id: str,
+  fn: Callable[..., T],
+  *args,
+  **kwargs
+) -> T
+```
+
+## Parameters
+
+- `session_id` (string, required): Existing session id to bind.
+- `fn` (callable, required): Function to execute within the session context.
+- `*args`, `**kwargs`: Arguments forwarded to `fn`.
+
+## Returns
+
+Returns whatever `fn` returns.
+
+## Example
+
+```python
+import lucidicai as lai
+
+sid = lai.init(session_name="external", providers=["openai"], auto_end=False)
+
+def do_work(x: int) -> int:
+    return x + 10
+
+result = lai.run_in_session(sid, do_work, x=7)
+```
+
+## See Also
+
+- [`run_session`](/python-sdk/context/run_session)
+- [`bind_session`](/python-sdk/context/bind_session)
+

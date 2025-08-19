@@ -237,6 +237,8 @@ lai.init(
 - Either `agent_id` or `LUCIDIC_AGENT_ID` environment variable must be set
 - The SDK can only have one active session at a time
 - If a session is already active, calling `init` will switch to the new session.
+- `init(...)` binds the created session to the current async/thread context for correct attribution in concurrent environments
+- Prefer `with lai.session(...)` for self-contained workflows; see [Session Context](/python-sdk/session-context)
 - The `auto_end` feature ensures your session data is preserved even on unexpected exits
 - Provider instrumentation happens automatically once configured
 

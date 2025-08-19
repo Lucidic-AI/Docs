@@ -221,7 +221,7 @@ lai.end_session(
 import lucidicai as lai
 
 # Continue a previous session
-lai.continue_session(
+lai.init(
     session_id="existing-session-uuid",
     providers=["openai"]
 )

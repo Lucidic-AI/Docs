@@ -1,0 +1,42 @@
+---
+title: bind_session
+description: Bind an existing session id for a block of work (no end on exit)
+---
+
+## Overview
+
+`bind_session` attaches an existing session to the current context for the duration of the `with` block. The session is not ended on exit — end it explicitly later.
+
+## Syntax
+
+```python
+with lai.bind_session(session_id: str):
+  ...
+```
+
+## Parameters
+
+- `session_id` (string, required): An existing session id to bind.
+
+## Returns
+
+None. Sets the active session for the context.
+
+## Example
+
+```python
+import lucidicai as lai
+
+sid = lai.init(session_name="request-123", providers=["openai"], auto_end=False)
+
+with lai.bind_session(sid):
+    do_work()
+
+lai.end_session()
+```
+
+## See Also
+
+- [`bind_session_async`](/python-sdk/context/bind_session_async)
+- [`run_in_session`](/python-sdk/context/run_in_session)
+

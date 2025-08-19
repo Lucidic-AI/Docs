@@ -1,0 +1,31 @@
+---
+title: clear_active_session
+description: Clear the active session id for the current context
+---
+
+## Overview
+
+Clears any active session id from the current context. Use after manual `set_active_session(...)` or when leaving a custom context boundary.
+
+## Syntax
+
+```python
+lai.clear_active_session() -> None
+```
+
+## Example
+
+```python
+import lucidicai as lai
+
+sid = lai.init(session_name="manual", providers=["openai"], auto_end=True)
+lai.set_active_session(sid)
+# ... work ...
+lai.clear_active_session()
+lai.end_session()
+```
+
+## See Also
+
+- [`set_active_session`](/python-sdk/context/set_active_session)
+

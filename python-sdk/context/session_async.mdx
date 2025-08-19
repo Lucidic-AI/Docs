@@ -1,0 +1,49 @@
+---
+title: session_async
+description: Async full-lifecycle session context manager
+---
+
+## Overview
+
+`session_async` is the async counterpart to `session`. It creates/binds a session and ends it when the async context exits.
+
+## Syntax
+
+```python
+async with lai.session_async(
+  session_name: Optional[str] = None,
+  session_id: Optional[str] = None,
+  api_key: Optional[str] = None,
+  agent_id: Optional[str] = None,
+  task: Optional[str] = None,
+  providers: Optional[List[ProviderType]] = [],
+  production_monitoring: Optional[bool] = False,
+  mass_sim_id: Optional[str] = None,
+  experiment_id: Optional[str] = None,
+  rubrics: Optional[list] = None,
+  tags: Optional[list] = None,
+  masking_function = None,
+  auto_end: Optional[bool] = True,
+):
+  ...
+```
+
+## Returns
+
+None. Binds the active session for the duration of the async context.
+
+## Example
+
+```python
+import lucidicai as lai
+
+async def handle_request():
+    async with lai.session_async(session_name="async task", providers=["openai"]):
+        await do_async_work()
+```
+
+## See Also
+
+- [`session`](/python-sdk/context/session)
+- [`bind_session_async`](/python-sdk/context/bind_session_async)
+

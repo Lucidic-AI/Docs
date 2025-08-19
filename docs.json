@@ -61,10 +61,8 @@
                 "group": "Session Management",
                 "pages": [
                   "python-sdk/init",
-                  "python-sdk/continue_session",
                   "python-sdk/update_session",
-                  "python-sdk/end_session",
-                  "python-sdk/reset_sdk"
+                  "python-sdk/end_session"
                 ]
               },
               {
@@ -81,6 +79,20 @@
                   "python-sdk/create_event",
                   "python-sdk/update_event",
                   "python-sdk/end_event"
+                ]
+              },
+              {
+                "group": "Context Managers",
+                "pages": [
+                  "python-sdk/session-context",
+                  "python-sdk/context/session",
+                  "python-sdk/context/session_async",
+                  "python-sdk/context/bind_session",
+                  "python-sdk/context/bind_session_async",
+                  "python-sdk/context/run_session",
+                  "python-sdk/context/run_in_session",
+                  "python-sdk/context/set_active_session",
+                  "python-sdk/context/clear_active_session"
                 ]
               },
               {

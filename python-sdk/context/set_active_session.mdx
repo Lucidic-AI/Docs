@@ -1,0 +1,36 @@
+---
+title: set_active_session
+description: Manually set the active session id for the current context
+---
+
+## Overview
+
+Manually sets the active session id for the current thread/async context. Prefer the higher-level context managers for most cases.
+
+## Syntax
+
+```python
+lai.set_active_session(session_id: Optional[str]) -> None
+```
+
+## Parameters
+
+- `session_id` (string | None): Session to set as active. Pass `None` to clear.
+
+## Example
+
+```python
+import lucidicai as lai
+
+sid = lai.init(session_name="manual", providers=["openai"], auto_end=True)
+lai.set_active_session(sid)
+# ... work ...
+lai.clear_active_session()
+lai.end_session()
+```
+
+## See Also
+
+- [`clear_active_session`](/python-sdk/context/clear_active_session)
+- [`session`](/python-sdk/context/session)
+
