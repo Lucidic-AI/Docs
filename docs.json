@@ -19,7 +19,8 @@
               "getting-started/introduction",
               "getting-started/dashboard",
               "getting-started/quickstart",
-              "getting-started/masssim"
+              "getting-started/masssim",
+              "getting-started/experiments"
             ]
           },
 
@@ -31,7 +32,8 @@
               "features/prompt-db",
               "features/time-travel",
               "features/mass-simulation-overview",
-              "features/workflow-trajectory"
+              "features/workflow-trajectory",
+              "features/experiments-overview"
             ]
           },
           {
@@ -50,7 +52,8 @@
               "core-concepts/sessions",
               "core-concepts/steps",
               "core-concepts/events",
-              "core-concepts/mass-simulations"
+              "core-concepts/mass-simulations",
+              "core-concepts/experiments"
             ]
           },
           {
@@ -99,7 +102,8 @@
                 "group": "Advanced Features",
                 "pages": [
                   "python-sdk/get_prompt",
-                  "python-sdk/create_mass_sim"
+                  "python-sdk/create_mass_sim",
+                  "python-sdk/working-with-experiments"
                 ]
               },
               "python-sdk/decorators",
@@ -154,7 +158,8 @@
                 "group": "Advanced Features",
                 "pages": [
                   "typescript-sdk/get-prompt",
-                  "typescript-sdk/run-mass-simulation"
+                  "typescript-sdk/run-mass-simulation",
+                  "typescript-sdk/working-with-experiments"
                 ]
               },
               "typescript-sdk/examples"

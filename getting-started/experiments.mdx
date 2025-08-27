@@ -1,0 +1,401 @@
+---
+title: Getting Started with Experiments
+description: Learn how to create and use experiments to analyze multiple sessions
+---
+
+# Getting Started with Experiments
+
+This guide will walk you through creating your first experiment and using it to analyze agent performance across multiple sessions.
+
+---
+
+## What You'll Learn
+
+In this tutorial, you'll:
+1. Create an experiment in the dashboard
+2. Add existing sessions to your experiment
+3. Add new sessions programmatically via SDK
+4. Run failure analysis to identify patterns
+5. View analytics and insights
+
+---
+
+## Prerequisites
+
+Before starting, ensure you have:
+- Access to the [Lucidic Dashboard](https://dashboard.lucidic.ai)
+- An agent with some existing sessions
+- Your API key and Agent ID configured
+- Python or TypeScript SDK installed
+
+---
+
+## Step 1: Navigate to Session History
+
+First, log into the Lucidic Dashboard and navigate to your agent's session history:
+
+1. Open the [Lucidic Dashboard](https://dashboard.lucidic.ai)
+2. Select your project
+3. Click on your agent
+4. Navigate to the **Session History** tab
+
+You'll see a list of all sessions that have been run for this agent.
+
+<Note type="tip">
+If you don't have any sessions yet, run a few test sessions first using the SDK before creating an experiment.
+</Note>
+
+---
+
+## Step 2: Create Your First Experiment
+
+### Select Sessions to Include
+
+1. In the Session History view, use the checkboxes to **select sessions** you want to analyze together
+2. Choose sessions that are related - for example:
+   - All sessions testing a specific feature
+   - Sessions from the same time period
+   - Sessions with similar configurations
+
+### Create the Experiment
+
+1. Click the **"Create Experiment"** button
+2. In the dialog that appears, configure your experiment:
+   - **Name**: Give it a descriptive name like "Login Flow Performance Test"
+   - **Description**: Add details about what you're testing
+   - **Tags**: Add tags like `["performance", "login", "v1.0"]`
+   - **Rubrics**: Select any evaluation rubrics to apply
+
+> _![Create Experiment Dialog](/images/exp-create.png)_
+
+3. Click **"Create"**
+
+<Note type="success">
+Your experiment is now created! You'll be redirected to the experiment dashboard.
+</Note>
+
+---
+
+## Step 3: Note Your Experiment ID
+
+After creation, you'll see your experiment dashboard. The URL will contain your experiment ID:
+
+```
+https://dashboard.lucidic.ai/experiments/exp-123abc-456def-789ghi
+                                          ^^^^^^^^^^^^^^^^^^^^^
+                                          This is your experiment ID
+```
+
+Copy this ID - you'll need it to add sessions programmatically.
+
+---
+
+## Step 4: Add Sessions Programmatically
+
+Now you can add new sessions to your experiment using the SDK:
+
+### Python Example
+
+```python
+import lucidicai as lai
+
+# Your experiment ID from the dashboard
+EXPERIMENT_ID = "exp-123abc-456def-789ghi"
+
+# Initialize a session that belongs to the experiment
+session_id = lai.init(
+    session_name="Login Test Run 1",
+    experiment_id=EXPERIMENT_ID,  # Add to experiment
+    task="Test user login flow"
+)
+
+# Run your agent workflow
+user = simulate_login("testuser@example.com", "password123")
+verify_dashboard_access(user)
+
+# End the session with evaluation
+lai.end_session(
+    is_successful=True,
+    session_eval=8.5,
+    session_eval_reason="Login successful, minor UI delay"
+)
+```
+
+### TypeScript Example
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Your experiment ID from the dashboard
+const EXPERIMENT_ID = "exp-123abc-456def-789ghi";
+
+// Initialize a session that belongs to the experiment
+const sessionId = await lai.init({
+    sessionName: "Login Test Run 1",
+    experimentId: EXPERIMENT_ID,  // Add to experiment
+    task: "Test user login flow"
+});
+
+// Run your agent workflow
+const user = await simulateLogin("testuser@example.com", "password123");
+await verifyDashboardAccess(user);
+
+// End the session
+await lai.endSession({
+    isSuccessful: true,
+    sessionEval: 8.5,
+    sessionEvalReason: "Login successful, minor UI delay"
+});
+```
+
+---
+
+## Step 5: Run Multiple Test Sessions
+
+To get meaningful insights, run multiple sessions with variations:
+
+```python
+import lucidicai as lai
+
+EXPERIMENT_ID = "exp-123abc-456def-789ghi"
+
+# Test different scenarios
+test_cases = [
+    {"email": "valid@example.com", "password": "correct", "expected": "success"},
+    {"email": "invalid@example.com", "password": "wrong", "expected": "failure"},
+    {"email": "new@example.com", "password": "signup", "expected": "redirect"},
+    # ... more test cases
+]
+
+for i, test_case in enumerate(test_cases):
+    # Each session is added to the experiment
+    lai.init(
+        session_name=f"Login Test {i+1}: {test_case['expected']}",
+        experiment_id=EXPERIMENT_ID,
+        tags=["automated", test_case['expected']]
+    )
+    
+    try:
+        result = test_login(test_case['email'], test_case['password'])
+        success = (result == test_case['expected'])
+        
+        lai.end_session(
+            is_successful=success,
+            session_eval=10 if success else 0
+        )
+    except Exception as e:
+        lai.end_session(
+            is_successful=False,
+            session_eval_reason=str(e)
+        )
+```
+
+---
+
+## Step 6: View Experiment Analytics
+
+Return to the dashboard to see your experiment's analytics:
+
+1. Navigate to your experiment (or refresh if already open)
+2. You'll see overview metrics:
+   - **Total Sessions** - Number of sessions in the experiment
+   - **Success Rate** - Percentage of successful sessions
+   - **Average Cost** - Mean cost per session
+   - **Average Duration** - Mean execution time
+
+3. Click the **Analytics** tab to see visualizations:
+   - Success/failure distribution pie chart
+   - Cost analysis graphs
+   - Duration trends
+   - Evaluation score distributions
+
+---
+
+## Step 7: Run Failure Analysis
+
+Once you have enough sessions (recommended: 20+), run failure analysis:
+
+1. In your experiment dashboard, click **"Run Failure Analysis"**
+2. Confirm the credit cost (1 credit per 10 sessions)
+3. Wait for processing (usually 1-2 minutes)
+
+The system will:
+- Identify all failed steps across sessions
+- Group similar failures using AI
+- Generate named categories with descriptions
+- Show you which sessions exhibited each failure pattern
+
+<Note type="info">
+Failure analysis helps identify systematic issues that might not be obvious from individual session logs.
+</Note>
+
+---
+
+## Step 8: Interpret Results
+
+### Understanding Failure Groups
+
+Each failure group represents a pattern of similar issues:
+- **Group Name**: e.g., "Authentication Timeout Errors"
+- **Description**: Detailed explanation of the failure
+- **Affected Sessions**: Count and list of sessions with this issue
+- **Representative Examples**: Specific instances you can investigate
+
+### Taking Action
+
+Based on the analysis:
+1. **Prioritize** issues affecting the most sessions
+2. **Investigate** representative examples for root causes
+3. **Fix** the underlying problems in your agent
+4. **Re-test** with a new experiment to verify fixes
+
+---
+
+## Example: A/B Testing Workflow
+
+Here's a complete example of using experiments for A/B testing:
+
+```python
+import lucidicai as lai
+import random
+
+# Step 1: Create two experiments in the dashboard
+# - "Prompt Version A - Concise"
+# - "Prompt Version B - Detailed"
+
+EXPERIMENT_A = "exp-prompt-a-abc123"  # From dashboard
+EXPERIMENT_B = "exp-prompt-b-def456"  # From dashboard
+
+# Step 2: Run tests with each version
+test_queries = [
+    "How do I reset my password?",
+    "What are your business hours?",
+    "I need to cancel my subscription",
+    # ... more test queries
+]
+
+for query in test_queries:
+    # Test Version A
+    lai.init(
+        session_name=f"Query: {query[:30]}",
+        experiment_id=EXPERIMENT_A
+    )
+    response_a = chatbot_with_prompt_a(query)
+    score_a = evaluate_response(response_a, query)
+    lai.end_session(session_eval=score_a)
+    
+    # Test Version B
+    lai.init(
+        session_name=f"Query: {query[:30]}",
+        experiment_id=EXPERIMENT_B
+    )
+    response_b = chatbot_with_prompt_b(query)
+    score_b = evaluate_response(response_b, query)
+    lai.end_session(session_eval=score_b)
+
+# Step 3: Compare in dashboard
+# Navigate to each experiment to see:
+# - Average evaluation scores
+# - Success rates
+# - Response time differences
+# - Failure patterns unique to each version
+```
+
+---
+
+## Best Practices
+
+### When Creating Experiments
+
+- **Group related sessions** - Don't mix different types of tests
+- **Use descriptive names** - Make it easy to find later
+- **Apply relevant rubrics** - Set up evaluation criteria upfront
+- **Document the purpose** - Use the description field
+
+### When Adding Sessions
+
+- **Be consistent** - Use similar session names within an experiment
+- **Add metadata** - Use tags to categorize sessions
+- **Include context** - Set the task parameter to describe what's being tested
+- **Evaluate properly** - Provide meaningful success criteria
+
+### When Analyzing Results
+
+- **Wait for sufficient data** - At least 20-30 sessions for patterns
+- **Look for trends** - Not just individual failures
+- **Compare experiments** - Use multiple experiments for A/B tests
+- **Act on insights** - Use findings to improve your agent
+
+---
+
+## Common Patterns
+
+### Performance Benchmarking
+
+```python
+# Weekly performance tracking
+WEEK_1_EXP = "exp-week1-benchmark"
+WEEK_2_EXP = "exp-week2-benchmark"
+
+# Run same tests each week, compare results
+```
+
+### Feature Testing
+
+```python
+# Test new feature across scenarios
+NEW_FEATURE_EXP = "exp-feature-x-testing"
+
+# Add all feature test sessions
+```
+
+### Load Testing
+
+```python
+# Stress test with many concurrent sessions
+LOAD_TEST_EXP = "exp-load-test-1000-users"
+
+# Run sessions in parallel
+```
+
+---
+
+## Troubleshooting
+
+### Sessions Not Appearing in Experiment
+
+- Verify the experiment_id is correct
+- Check that sessions are finishing properly
+- Ensure API key has proper permissions
+
+### Failure Analysis Not Working
+
+- Need at least some failed sessions
+- Ensure you have evaluation credits
+- Wait for all sessions to complete first
+
+### Missing Analytics
+
+- Refresh the dashboard page
+- Check that sessions have ended
+- Verify rubrics are properly configured
+
+---
+
+## Next Steps
+
+Now that you've created your first experiment:
+
+- Explore the [detailed feature documentation](/features/experiments-overview)
+- Learn about [working with experiments in Python](/python-sdk/working-with-experiments)
+- Learn about [working with experiments in TypeScript](/typescript-sdk/working-with-experiments)
+- Understand [evaluation rubrics](/core-concepts/evaluations-rubrics) for better analysis
+
+---
+
+## Get Help
+
+Having issues with experiments? 
+- Check the [feature documentation](/features/experiments-overview) for detailed information
+- Contact support at support@lucidic.ai
+- Join our community Discord for tips and best practices

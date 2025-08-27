@@ -1,0 +1,703 @@
+---
+title: Working with Experiments
+description: Add sessions to experiments for grouped analysis and insights
+---
+
+## Overview
+
+Experiments group related sessions for bulk analysis, pattern detection, and performance evaluation. While experiments are created and managed through the Lucidic Dashboard, the TypeScript SDK allows you to programmatically add sessions to existing experiments.
+
+<Note type="important">
+Experiments must be created in the dashboard first. The SDK cannot create new experiments, only add sessions to existing ones.
+</Note>
+
+---
+
+## Prerequisites
+
+Before adding sessions to an experiment:
+
+1. **Create an experiment in the dashboard**
+   - Navigate to Session History
+   - Click "Create Experiment"
+   - Configure name, tags, and rubrics
+
+2. **Get the experiment ID**
+   - Found in the experiment URL: `https://dashboard.lucidic.ai/experiments/exp-123abc`
+   - Copy this ID for use in your code
+
+---
+
+## Basic Usage
+
+### Adding a Session to an Experiment
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Experiment ID from the dashboard
+const EXPERIMENT_ID = "exp-123abc-456def-789ghi";
+
+// Initialize a session within the experiment
+const sessionId = await lai.init({
+  sessionName: "Checkout Flow Test",
+  experimentId: EXPERIMENT_ID,  // Links session to experiment
+  task: "Test the checkout process with items in cart"
+});
+
+// Run your agent workflow
+await addItemsToCart(["item-1", "item-2"]);
+await proceedToCheckout();
+await completePayment();
+
+// End the session with evaluation
+await lai.endSession({
+  isSuccessful: true,
+  sessionEval: 9.0,
+  sessionEvalReason: "Checkout completed, minor UI delay"
+});
+```
+
+### Key Points
+
+- Sessions can only belong to one experiment
+- The experimentId parameter is optional
+- Sessions without experimentId won't appear in any experiment
+- Experiment assignment cannot be changed after session creation
+
+---
+
+## Common Patterns
+
+### A/B Testing
+
+Compare different configurations or prompts:
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Create two experiments in the dashboard first
+const VARIANT_A_EXPERIMENT = "exp-prompt-concise-abc123";
+const VARIANT_B_EXPERIMENT = "exp-prompt-detailed-def456";
+
+async function runABTest(testQuery: string) {
+  // Test Variant A (Concise prompts)
+  await lai.init({
+    sessionName: `Query: ${testQuery.substring(0, 50)}`,
+    experimentId: VARIANT_A_EXPERIMENT,
+    tags: ["ab-test", "variant-a", "concise"]
+  });
+  
+  const responseA = await chatbotWithConcisePrompt(testQuery);
+  const scoreA = evaluateResponseQuality(responseA);
+  
+  await lai.endSession({
+    isSuccessful: scoreA > 7,
+    sessionEval: scoreA,
+    sessionEvalReason: `Concise variant score: ${scoreA}`
+  });
+  
+  // Test Variant B (Detailed prompts)
+  await lai.init({
+    sessionName: `Query: ${testQuery.substring(0, 50)}`,
+    experimentId: VARIANT_B_EXPERIMENT,
+    tags: ["ab-test", "variant-b", "detailed"]
+  });
+  
+  const responseB = await chatbotWithDetailedPrompt(testQuery);
+  const scoreB = evaluateResponseQuality(responseB);
+  
+  await lai.endSession({
+    isSuccessful: scoreB > 7,
+    sessionEval: scoreB,
+    sessionEvalReason: `Detailed variant score: ${scoreB}`
+  });
+}
+
+// Run tests
+const testQueries = [
+  "How do I reset my password?",
+  "What's your refund policy?",
+  "I need technical support",
+  // ... more queries
+];
+
+for (const query of testQueries) {
+  await runABTest(query);
+}
+```
+
+### Regression Testing
+
+Ensure changes don't degrade performance:
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Experiments created in dashboard for each version
+const BASELINE_EXPERIMENT = "exp-baseline-v1.0";
+const CANDIDATE_EXPERIMENT = "exp-candidate-v1.1";
+
+interface TestCase {
+  name: string;
+  category: string;
+  input: any;
+  expected: any;
+}
+
+class RegressionTester {
+  constructor(
+    private experimentId: string,
+    private version: string
+  ) {}
+  
+  async runTestSuite(testCases: TestCase[]) {
+    const results = [];
+    
+    for (const test of testCases) {
+      await lai.init({
+        sessionName: `${test.name} - ${this.version}`,
+        experimentId: this.experimentId,
+        tags: ["regression", this.version, test.category]
+      });
+      
+      try {
+        const result = await this.executeTest(test);
+        const success = result === test.expected;
+        
+        await lai.endSession({
+          isSuccessful: success,
+          sessionEval: success ? 10 : 0,
+          sessionEvalReason: `Expected: ${test.expected}, Got: ${result}`
+        });
+        
+        results.push({
+          test: test.name,
+          success,
+          result
+        });
+        
+      } catch (error) {
+        await lai.endSession({
+          isSuccessful: false,
+          sessionEval: 0,
+          sessionEvalReason: `Test failed with error: ${error}`
+        });
+        
+        results.push({
+          test: test.name,
+          success: false,
+          error: error.toString()
+        });
+      }
+    }
+    
+    return results;
+  }
+  
+  private async executeTest(test: TestCase) {
+    // Your test implementation
+    return await runAgentWithInput(test.input);
+  }
+}
+
+// Run regression tests
+const baselineTester = new RegressionTester(BASELINE_EXPERIMENT, "v1.0");
+const candidateTester = new RegressionTester(CANDIDATE_EXPERIMENT, "v1.1");
+
+const testCases = await loadRegressionTestSuite();
+
+const baselineResults = await baselineTester.runTestSuite(testCases);
+const candidateResults = await candidateTester.runTestSuite(testCases);
+
+console.log("View comparison at: https://dashboard.lucidic.ai/experiments/compare");
+```
+
+### Load Testing
+
+Test performance under concurrent load:
+
+```typescript
+import * as lai from 'lucidicai';
+
+// Create load test experiment in dashboard
+const LOAD_TEST_EXPERIMENT = "exp-load-test-1000-users";
+
+interface Scenario {
+  name: string;
+  actions: Action[];
+}
+
+interface Action {
+  type: string;
+  params: any;
+  delay?: number;
+}
+
+async function simulateUserSession(
+  userId: number,
+  scenario: Scenario
+): Promise<UserResult> {
+  const startTime = Date.now();
+  
+  // Initialize session for this user
+  await lai.init({
+    sessionName: `User ${userId} - ${scenario.name}`,
+    experimentId: LOAD_TEST_EXPERIMENT,
+    tags: ["load-test", `scenario:${scenario.name}`, `batch:${Math.floor(userId/100)}`]
+  });
+  
+  try {
+    // Simulate user actions
+    const results = [];
+    for (const action of scenario.actions) {
+      const result = await performAction(action);
+      results.push(result);
+      
+      if (action.delay) {
+        await new Promise(resolve => setTimeout(resolve, action.delay));
+      }
+    }
+    
+    // Calculate metrics
+    const duration = (Date.now() - startTime) / 1000;
+    const success = results.every(r => r.success);
+    
+    await lai.endSession({
+      isSuccessful: success,
+      sessionEval: calculatePerformanceScore(duration, results),
+      sessionEvalReason: `Duration: ${duration.toFixed(2)}s, Actions: ${results.length}`
+    });
+    
+    return {
+      userId,
+      success,
+      duration,
+      results
+    };
+    
+  } catch (error) {
+    await lai.endSession({
+      isSuccessful: false,
+      sessionEval: 0,
+      sessionEvalReason: `Error: ${error}`
+    });
+    
+    return {
+      userId,
+      success: false,
+      error: error.toString()
+    };
+  }
+}
+
+async function runLoadTest(numUsers: number, concurrency: number = 10) {
+  const scenarios: Scenario[] = [
+    { name: 'browse', actions: [...] },
+    { name: 'purchase', actions: [...] },
+    { name: 'support', actions: [...] }
+  ];
+  
+  const results: UserResult[] = [];
+  
+  // Process users in batches
+  for (let i = 0; i < numUsers; i += concurrency) {
+    const batch = [];
+    
+    for (let j = 0; j < concurrency && i + j < numUsers; j++) {
+      const userId = i + j;
+      const scenario = scenarios[userId % scenarios.length];
+      batch.push(simulateUserSession(userId, scenario));
+    }
+    
+    const batchResults = await Promise.all(batch);
+    results.push(...batchResults);
+  }
+  
+  // Summary statistics
+  const successful = results.filter(r => r.success).length;
+  const avgDuration = results.reduce((sum, r) => sum + (r.duration || 0), 0) / results.length;
+  
+  console.log("Load Test Complete:");
+  console.log(`  Total Users: ${numUsers}`);
+  console.log(`  Successful: ${successful} (${(100 * successful / numUsers).toFixed(1)}%)`);
+  console.log(`  Avg Duration: ${avgDuration.toFixed(2)}s`);
+  console.log(`  View full results at: https://dashboard.lucidic.ai/experiments/${LOAD_TEST_EXPERIMENT}`);
+}
+
+// Run the load test
+await runLoadTest(1000, 20);
+```
+
+### Performance Benchmarking
+
+Track performance over time:
+
+```typescript
+import * as lai from 'lucidicai';
+
+interface Benchmark {
+  name: string;
+  type: 'latency' | 'accuracy' | 'completion';
+  input?: any;
+  expectedTime?: number;
+  scoringRubric?: any;
+  steps?: string[];
+  timeout?: number;
+}
+
+class PerformanceBenchmark {
+  private benchmarkSuite: Benchmark[];
+  
+  constructor(private experimentId: string) {
+    this.benchmarkSuite = this.loadBenchmarkSuite();
+  }
+  
+  private loadBenchmarkSuite(): Benchmark[] {
+    return [
+      {
+        name: 'Simple Query Response',
+        type: 'latency',
+        input: 'What is 2+2?',
+        expectedTime: 1.0  // seconds
+      },
+      {
+        name: 'Complex Reasoning',
+        type: 'accuracy',
+        input: 'Explain quantum computing',
+        scoringRubric: { /* ... */ }
+      },
+      {
+        name: 'Multi-step Task',
+        type: 'completion',
+        steps: ['search', 'analyze', 'summarize'],
+        timeout: 30.0
+      }
+    ];
+  }
+  
+  async runBenchmarks() {
+    const results = [];
+    
+    for (const benchmark of this.benchmarkSuite) {
+      await lai.init({
+        sessionName: `Benchmark: ${benchmark.name}`,
+        experimentId: this.experimentId,
+        tags: [
+          'benchmark',
+          benchmark.type,
+          new Date().toISOString().split('T')[0]
+        ]
+      });
+      
+      const result = await this.executeBenchmark(benchmark);
+      const score = this.scoreBenchmark(benchmark, result);
+      
+      await lai.endSession({
+        isSuccessful: score >= 7,
+        sessionEval: score,
+        sessionEvalReason: JSON.stringify(result, null, 2)
+      });
+      
+      results.push({
+        benchmark: benchmark.name,
+        score,
+        result
+      });
+    }
+    
+    return results;
+  }
+  
+  private async executeBenchmark(benchmark: Benchmark) {
+    // Implementation depends on benchmark type
+    switch (benchmark.type) {
+      case 'latency':
+        return await measureLatency(benchmark.input);
+      case 'accuracy':
+        return await measureAccuracy(benchmark.input, benchmark.scoringRubric);
+      case 'completion':
+        return await measureCompletion(benchmark.steps, benchmark.timeout);
+    }
+  }
+  
+  private scoreBenchmark(benchmark: Benchmark, result: any): number {
+    // Scoring logic based on benchmark type
+    // Returns 0-10 score
+    return calculateScore(benchmark, result);
+  }
+}
+
+// Run daily benchmarks
+async function runDailyBenchmarks() {
+  // Assume experiment created in dashboard with naming pattern
+  const today = new Date().toISOString().split('T')[0];
+  const experimentId = `exp-benchmark-${today}`;  // Created in dashboard
+  
+  const benchmark = new PerformanceBenchmark(experimentId);
+  const results = await benchmark.runBenchmarks();
+  
+  // Log summary
+  const avgScore = results.reduce((sum, r) => sum + r.score, 0) / results.length;
+  console.log(`Daily Benchmark Complete: ${today}`);
+  console.log(`  Average Score: ${avgScore.toFixed(2)}`);
+  console.log(`  View details: https://dashboard.lucidic.ai/experiments/${experimentId}`);
+}
+
+await runDailyBenchmarks();
+```
+
+---
+
+## Best Practices
+
+### Experiment Organization
+
+1. **Naming Sessions Consistently**
+   ```typescript
+   // Good: Descriptive and searchable
+   const sessionName = `Test Case ${testId}: ${testDescription.substring(0, 50)}`;
+   
+   // Bad: Generic and unhelpful
+   const sessionName = "Test 1";
+   ```
+
+2. **Using Tags Effectively**
+   ```typescript
+   await lai.init({
+     sessionName: "Performance Test",
+     experimentId: EXPERIMENT_ID,
+     tags: [
+       `version:${VERSION}`,
+       `environment:${ENV}`,
+       `date:${new Date().toISOString().split('T')[0]}`,
+       `type:performance`
+     ]
+   });
+   ```
+
+3. **Providing Meaningful Evaluations**
+   ```typescript
+   // Good: Specific success criteria and scores
+   await lai.endSession({
+     isSuccessful: responseTime < 2.0 && accuracy > 0.95,
+     sessionEval: calculateWeightedScore(responseTime, accuracy),
+     sessionEvalReason: `Response: ${responseTime}s, Accuracy: ${(accuracy * 100).toFixed(1)}%`
+   });
+   
+   // Bad: No context
+   await lai.endSession({ isSuccessful: true });
+   ```
+
+### Error Handling
+
+Always ensure sessions end properly:
+
+```typescript
+import * as lai from 'lucidicai';
+
+async function safeTestExecution(
+  testCase: TestCase,
+  experimentId: string
+) {
+  let sessionId: string | null = null;
+  
+  try {
+    sessionId = await lai.init({
+      sessionName: testCase.name,
+      experimentId: experimentId
+    });
+    
+    // Your test logic
+    const result = await executeTest(testCase);
+    
+    await lai.endSession({
+      isSuccessful: true,
+      sessionEval: result.score
+    });
+    
+  } catch (error) {
+    // Ensure session ends even on error
+    if (sessionId) {
+      await lai.endSession({
+        isSuccessful: false,
+        sessionEval: 0,
+        sessionEvalReason: `Error: ${error}\n${error.stack}`
+      });
+    }
+    throw error;
+  }
+}
+```
+
+### Batch Processing
+
+For many sessions, consider batching:
+
+```typescript
+import * as lai from 'lucidicai';
+
+async function processBatch<T>(
+  items: T[],
+  experimentId: string,
+  batchSize: number = 10
+) {
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    
+    // Process batch in parallel
+    await Promise.all(
+      batch.map(async (item, index) => {
+        await lai.init({
+          sessionName: `Batch ${Math.floor(i/batchSize)} - Item ${item.id}`,
+          experimentId: experimentId
+        });
+        
+        await processItem(item);
+        
+        await lai.endSession({ isSuccessful: true });
+      })
+    );
+    
+    // Rate limiting between batches
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+}
+```
+
+---
+
+## Tips and Tricks
+
+### Finding Experiment IDs
+
+```typescript
+// Store experiment IDs in configuration
+class ExperimentConfig {
+  static readonly PRODUCTION = "exp-prod-baseline";
+  static readonly STAGING = "exp-staging-tests";
+  static readonly DEVELOPMENT = "exp-dev-testing";
+  
+  static getCurrent(): string {
+    const env = process.env.ENVIRONMENT || 'development';
+    return this[env.toUpperCase() as keyof typeof ExperimentConfig];
+  }
+}
+
+// Use in code
+await lai.init({
+  sessionName: "Test Run",
+  experimentId: ExperimentConfig.getCurrent()
+});
+```
+
+### Conditional Experiment Assignment
+
+```typescript
+// Only add to experiment if specified
+const experimentId = process.env.RUN_IN_EXPERIMENT
+  ? process.env.EXPERIMENT_ID
+  : undefined;
+
+await lai.init({
+  sessionName: "Conditional Test",
+  experimentId  // undefined means no experiment
+});
+```
+
+### Experiment Metadata in Sessions
+
+```typescript
+// Include experiment context in session data
+const EXPERIMENT_NAME = "Q4 Performance Tests";
+
+await lai.init({
+  sessionName: "Contextual Test",
+  experimentId: EXPERIMENT_ID,
+  task: `Experiment: ${EXPERIMENT_NAME} | Test: ${testName}`
+});
+```
+
+### Type Safety
+
+```typescript
+// Define experiment IDs with type safety
+enum ExperimentIds {
+  BASELINE = "exp-baseline-2024",
+  CANDIDATE = "exp-candidate-2024",
+  PERFORMANCE = "exp-performance-2024"
+}
+
+// Use with confidence
+await lai.init({
+  sessionName: "Type-safe Test",
+  experimentId: ExperimentIds.BASELINE
+});
+```
+
+---
+
+## Common Issues
+
+### Sessions Not Appearing in Experiment
+
+**Problem**: Sessions created but not showing in experiment dashboard
+
+**Solutions**:
+- Verify experimentId is exactly correct (copy from URL)
+- Ensure session has ended (call `await lai.endSession()`)
+- Refresh the dashboard page
+- Check that API key has correct permissions
+
+### Experiment ID Not Found
+
+**Problem**: Error when using experimentId
+
+**Solutions**:
+- Confirm experiment exists in dashboard
+- Check you're using the correct agent
+- Ensure experiment belongs to your project
+- Verify API key matches the project
+
+### Evaluations Not Running
+
+**Problem**: Rubrics applied but no evaluation scores
+
+**Solutions**:
+- Ensure sessions are properly ended
+- Check rubric configuration in dashboard
+- Verify evaluation credits available
+- Wait for async evaluation to complete
+
+### Async/Await Issues
+
+**Problem**: Sessions not completing in correct order
+
+**Solutions**:
+```typescript
+// Always await session operations
+await lai.init({ /* ... */ });
+await lai.endSession({ /* ... */ });
+
+// For parallel execution, use Promise.all
+await Promise.all(tests.map(test => runTest(test)));
+```
+
+---
+
+## Related Documentation
+
+- [init Function Reference](/typescript-sdk/init-session) - Complete init parameters
+- [Experiments Overview](/features/experiments-overview) - Dashboard features
+- [Getting Started with Experiments](/getting-started/experiments) - Tutorial
+- [Core Concepts: Experiments](/core-concepts/experiments) - Conceptual overview
+
+---
+
+## Next Steps
+
+1. Create your first experiment in the dashboard
+2. Copy the experiment ID from the URL
+3. Run the examples above with your ID
+4. View results in the experiment analytics
+5. Use failure analysis to identify patterns
