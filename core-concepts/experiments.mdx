@@ -1,0 +1,264 @@
+---
+title: Experiments
+description: Organize and analyze multiple AI agent sessions at scale with experiments
+---
+
+# Experiments
+
+An **Experiment** is an organizational container that groups multiple related sessions together for bulk analysis and evaluation. Experiments enable you to identify patterns, track performance metrics, and detect failure modes across multiple runs of your AI agents.
+
+---
+
+## What is an Experiment?
+
+An Experiment provides a framework for systematically analyzing agent behavior at scale. While a single session shows you how your agent performed once, an experiment reveals how it performs consistently across many executions.
+
+Think of experiments as a way to:
+- **Group related test runs** for comparative analysis
+- **Apply consistent evaluation** across all sessions
+- **Identify failure patterns** that only emerge at scale
+- **Track performance trends** over time and configurations
+
+<Note type="info">
+Experiments are created and managed through the Lucidic Dashboard. Your SDKs can then add sessions to these experiments programmatically.
+</Note>
+
+---
+
+## Key Concepts
+
+### Experiment Structure
+
+```
+Agent
+└── Experiment (created in dashboard)
+    ├── Sessions (added via dashboard or SDK)
+    │   ├── Steps
+    │   └── Events
+    ├── Rubrics (evaluation criteria)
+    └── Failure Groups (auto-generated patterns)
+```
+
+### Creating Experiments
+
+Experiments are created exclusively through the Lucidic Dashboard:
+
+1. Navigate to your agent's Session History
+2. Select sessions you want to analyze together
+3. Click "Create Experiment"
+4. Configure name, description, tags, and rubrics
+5. Note the experiment ID for SDK integration
+
+### Adding Sessions
+
+Once created, you can add sessions to experiments in two ways:
+
+**Via Dashboard:**
+- Select existing sessions
+- Add to experiment through the UI
+
+**Via SDK:**
+```python
+# Python
+lai.init(
+    session_name="Test Run",
+    experiment_id="exp-uuid-from-dashboard"
+)
+```
+
+```typescript
+// TypeScript
+await lai.init({
+    sessionName: "Test Run",
+    experimentId: "exp-uuid-from-dashboard"
+})
+```
+
+---
+
+## Core Features
+
+### 1. Bulk Session Analysis
+
+Experiments aggregate data across all included sessions:
+- **Success rates** - Overall and per-criteria pass rates
+- **Cost analysis** - Average, total, and distribution metrics
+- **Duration statistics** - Performance timing patterns
+- **Completion funnels** - Where agents succeed or fail
+
+### 2. Failure Pattern Detection
+
+The platform automatically identifies and groups similar failures:
+- **AI-powered clustering** - Groups similar error patterns
+- **Named categories** - Each group gets descriptive labels
+- **Affected session tracking** - See which runs had each issue
+- **Root cause hints** - Explanations of what went wrong
+
+<Note type="warning">
+Failure analysis requires evaluation credits (1 credit per 10 sessions).
+</Note>
+
+### 3. Evaluation Rubrics
+
+Apply consistent evaluation criteria across all sessions:
+- **Score rubrics** - Weighted numerical evaluations (0-10)
+- **Pass/Fail rubrics** - Binary success criteria
+- **Multi-criteria** - Combine multiple evaluation dimensions
+- **Automatic application** - Rubrics run on all experiment sessions
+
+### 4. Comparative Analysis
+
+Experiments excel at comparison scenarios:
+- **A/B testing** - Compare different prompts or configurations
+- **Regression detection** - Ensure changes don't degrade performance
+- **Version comparison** - Track improvements across iterations
+- **Baseline establishment** - Set performance benchmarks
+
+---
+
+## Common Use Cases
+
+### A/B Testing
+
+Test different configurations to find optimal settings:
+
+```python
+# Create two experiments in dashboard first
+EXPERIMENT_A = "exp-uuid-variant-a"  # From dashboard
+EXPERIMENT_B = "exp-uuid-variant-b"  # From dashboard
+
+# Run tests with each variant
+for test_case in test_cases:
+    # Variant A
+    lai.init(
+        session_name=f"Test {test_case.id} - A",
+        experiment_id=EXPERIMENT_A
+    )
+    run_with_config_a(test_case)
+    lai.end_session()
+    
+    # Variant B
+    lai.init(
+        session_name=f"Test {test_case.id} - B", 
+        experiment_id=EXPERIMENT_B
+    )
+    run_with_config_b(test_case)
+    lai.end_session()
+```
+
+### Regression Testing
+
+Ensure new changes maintain performance:
+
+```python
+# Baseline experiment created in dashboard
+BASELINE_EXPERIMENT = "exp-baseline-v1"
+
+# After making changes, create new experiment in dashboard
+NEW_VERSION_EXPERIMENT = "exp-candidate-v2"
+
+# Run same test suite on both
+for test in regression_suite:
+    lai.init(
+        session_name=test.name,
+        experiment_id=NEW_VERSION_EXPERIMENT
+    )
+    run_test(test)
+    lai.end_session()
+```
+
+### Load Testing
+
+Analyze behavior under stress:
+
+```python
+# Create load test experiment in dashboard
+LOAD_TEST_EXPERIMENT = "exp-load-test-1000"
+
+# Run many concurrent sessions
+import concurrent.futures
+
+def run_session(i):
+    lai.init(
+        session_name=f"Load Test {i}",
+        experiment_id=LOAD_TEST_EXPERIMENT
+    )
+    # Your agent workflow
+    lai.end_session()
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    futures = [executor.submit(run_session, i) for i in range(1000)]
+```
+
+### Performance Benchmarking
+
+Establish and track performance baselines:
+
+```python
+# Monthly performance experiments (created in dashboard)
+experiments = {
+    "January": "exp-perf-jan-2024",
+    "February": "exp-perf-feb-2024",
+    "March": "exp-perf-mar-2024"
+}
+
+# Run consistent test suite each month
+current_month_exp = experiments["March"]
+for benchmark in performance_benchmarks:
+    lai.init(
+        session_name=benchmark.name,
+        experiment_id=current_month_exp,
+        tags=["benchmark", "monthly"]
+    )
+    run_benchmark(benchmark)
+    lai.end_session()
+```
+
+---
+
+## Best Practices
+
+### Experiment Design
+
+1. **Clear scope** - Group sessions with similar purposes
+2. **Meaningful names** - Use descriptive, searchable names
+3. **Consistent tags** - Develop a tagging taxonomy
+4. **Appropriate size** - 50-100 sessions for reliable patterns
+
+### Workflow Recommendations
+
+1. **Create in dashboard first** - Set up experiment before running code
+2. **Note the ID** - Copy experiment ID for SDK use
+3. **Apply rubrics early** - Configure evaluation criteria upfront
+4. **Run analysis regularly** - Analyze after significant sessions added
+
+### Organization Tips
+
+- **One purpose per experiment** - Don't mix different test types
+- **Version tracking** - Include version info in names/tags
+- **Time boundaries** - Consider daily/weekly experiment groups
+- **Documentation** - Use descriptions to explain purpose
+
+---
+
+## Limitations
+
+- **Dashboard creation only** - Cannot create experiments via SDK
+- **One experiment per session** - Sessions belong to single experiment
+- **Credit costs** - Failure analysis consumes evaluation credits
+- **Processing time** - Large experiments take time to analyze
+
+---
+
+## Related Concepts
+
+- [Sessions](/core-concepts/sessions) - Individual agent execution runs
+- [Mass Simulations](/core-concepts/mass-simulations) - Running agents at scale
+- [Evaluations & Rubrics](/core-concepts/evaluations-rubrics) - Scoring mechanisms
+- [Steps](/core-concepts/steps) - Execution units within sessions
+
+---
+
+## Next Steps
+
+Ready to create your first experiment? Check out our [Getting Started with Experiments](/getting-started/experiments) guide, or dive into the [detailed feature overview](/features/experiments-overview) to explore all capabilities.

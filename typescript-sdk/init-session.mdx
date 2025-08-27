@@ -55,6 +55,10 @@ await lai.init({ sessionName: string, ... }: InitParams): Promise<string>
       Mass simulation ID to associate this session with.
     </ParamField>
     
+    <ParamField path="experimentId" type="string" optional>
+      ID of an experiment to include this session in. Experiments must be created in the dashboard first. The experiment ID can be found in the experiment URL.
+    </ParamField>
+    
     <ParamField path="rubrics" type="string[]" optional>
       Evaluation rubrics to apply.
     </ParamField>
@@ -122,6 +126,31 @@ for (let i = 0; i < 10; i++) {
   
   await lai.endSession();
 }
+```
+
+### With Experiment
+
+```typescript
+// Experiments must be created in the dashboard first
+// The experiment ID can be found in the URL after creation
+const EXPERIMENT_ID = "exp-123abc-456def"; // From dashboard URL
+
+// Add sessions to the experiment
+const sessionId = await lai.init({
+  sessionName: "Performance Test 1",
+  experimentId: EXPERIMENT_ID,
+  task: "Test checkout flow performance"
+});
+
+// Your agent workflow here
+await processCheckout();
+
+// End the session with evaluation
+await lai.endSession({
+  isSuccessful: true,
+  sessionEval: 9.5,
+  sessionEvalReason: "Checkout completed successfully"
+});
 ```
 
 ## Differences from init()

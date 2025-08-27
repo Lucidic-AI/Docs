@@ -1,0 +1,611 @@
+---
+title: Working with Experiments
+description: Add sessions to experiments for grouped analysis and insights
+---
+
+## Overview
+
+Experiments group related sessions for bulk analysis, pattern detection, and performance evaluation. While experiments are created and managed through the Lucidic Dashboard, the Python SDK allows you to programmatically add sessions to existing experiments.
+
+<Note type="important">
+Experiments must be created in the dashboard first. The SDK cannot create new experiments, only add sessions to existing ones.
+</Note>
+
+---
+
+## Prerequisites
+
+Before adding sessions to an experiment:
+
+1. **Create an experiment in the dashboard**
+   - Navigate to Session History
+   - Click "Create Experiment"
+   - Configure name, tags, and rubrics
+
+2. **Get the experiment ID**
+   - Found in the experiment URL: `https://dashboard.lucidic.ai/experiments/exp-123abc`
+   - Copy this ID for use in your code
+
+---
+
+## Basic Usage
+
+### Adding a Session to an Experiment
+
+```python
+import lucidicai as lai
+
+# Experiment ID from the dashboard
+EXPERIMENT_ID = "exp-123abc-456def-789ghi"
+
+# Initialize a session within the experiment
+session_id = lai.init(
+    session_name="Checkout Flow Test",
+    experiment_id=EXPERIMENT_ID,  # Links session to experiment
+    task="Test the checkout process with items in cart"
+)
+
+# Run your agent workflow
+add_items_to_cart(["item-1", "item-2"])
+proceed_to_checkout()
+complete_payment()
+
+# End the session with evaluation
+lai.end_session(
+    is_successful=True,
+    session_eval=9.0,
+    session_eval_reason="Checkout completed, minor UI delay"
+)
+```
+
+### Key Points
+
+- Sessions can only belong to one experiment
+- The experiment_id parameter is optional
+- Sessions without experiment_id won't appear in any experiment
+- Experiment assignment cannot be changed after session creation
+
+---
+
+## Common Patterns
+
+### A/B Testing
+
+Compare different configurations or prompts:
+
+```python
+import lucidicai as lai
+import random
+
+# Create two experiments in the dashboard first
+VARIANT_A_EXPERIMENT = "exp-prompt-concise-abc123"
+VARIANT_B_EXPERIMENT = "exp-prompt-detailed-def456"
+
+def run_ab_test(test_query: str):
+    """Run the same query with both variants"""
+    
+    # Test Variant A (Concise prompts)
+    lai.init(
+        session_name=f"Query: {test_query[:50]}",
+        experiment_id=VARIANT_A_EXPERIMENT,
+        tags=["ab-test", "variant-a", "concise"]
+    )
+    
+    response_a = chatbot_with_concise_prompt(test_query)
+    score_a = evaluate_response_quality(response_a)
+    
+    lai.end_session(
+        is_successful=score_a > 7,
+        session_eval=score_a,
+        session_eval_reason=f"Concise variant score: {score_a}"
+    )
+    
+    # Test Variant B (Detailed prompts)
+    lai.init(
+        session_name=f"Query: {test_query[:50]}",
+        experiment_id=VARIANT_B_EXPERIMENT,
+        tags=["ab-test", "variant-b", "detailed"]
+    )
+    
+    response_b = chatbot_with_detailed_prompt(test_query)
+    score_b = evaluate_response_quality(response_b)
+    
+    lai.end_session(
+        is_successful=score_b > 7,
+        session_eval=score_b,
+        session_eval_reason=f"Detailed variant score: {score_b}"
+    )
+
+# Run tests
+test_queries = [
+    "How do I reset my password?",
+    "What's your refund policy?",
+    "I need technical support",
+    # ... more queries
+]
+
+for query in test_queries:
+    run_ab_test(query)
+```
+
+### Regression Testing
+
+Ensure changes don't degrade performance:
+
+```python
+import lucidicai as lai
+from datetime import datetime
+
+# Experiments created in dashboard for each version
+BASELINE_EXPERIMENT = "exp-baseline-v1.0"
+CANDIDATE_EXPERIMENT = "exp-candidate-v1.1"
+
+class RegressionTest:
+    def __init__(self, experiment_id: str, version: str):
+        self.experiment_id = experiment_id
+        self.version = version
+    
+    def run_test_suite(self, test_cases: list):
+        """Run all test cases for this version"""
+        results = []
+        
+        for test in test_cases:
+            lai.init(
+                session_name=f"{test['name']} - {self.version}",
+                experiment_id=self.experiment_id,
+                tags=["regression", self.version, test['category']]
+            )
+            
+            try:
+                result = self.execute_test(test)
+                success = result == test['expected']
+                
+                lai.end_session(
+                    is_successful=success,
+                    session_eval=10 if success else 0,
+                    session_eval_reason=f"Expected: {test['expected']}, Got: {result}"
+                )
+                
+                results.append({
+                    'test': test['name'],
+                    'success': success,
+                    'result': result
+                })
+                
+            except Exception as e:
+                lai.end_session(
+                    is_successful=False,
+                    session_eval=0,
+                    session_eval_reason=f"Test failed with error: {str(e)}"
+                )
+                results.append({
+                    'test': test['name'],
+                    'success': False,
+                    'error': str(e)
+                })
+        
+        return results
+    
+    def execute_test(self, test):
+        """Execute individual test logic"""
+        # Your test implementation
+        pass
+
+# Run regression tests
+baseline_tester = RegressionTest(BASELINE_EXPERIMENT, "v1.0")
+candidate_tester = RegressionTest(CANDIDATE_EXPERIMENT, "v1.1")
+
+test_cases = load_regression_test_suite()
+
+baseline_results = baseline_tester.run_test_suite(test_cases)
+candidate_results = candidate_tester.run_test_suite(test_cases)
+
+# Compare results in the dashboard
+print(f"View comparison at: https://dashboard.lucidic.ai/experiments/compare")
+```
+
+### Load Testing
+
+Test performance under concurrent load:
+
+```python
+import lucidicai as lai
+import concurrent.futures
+import time
+from typing import List, Dict
+
+# Create load test experiment in dashboard
+LOAD_TEST_EXPERIMENT = "exp-load-test-1000-users"
+
+def simulate_user_session(user_id: int, scenario: Dict) -> Dict:
+    """Simulate a single user session"""
+    start_time = time.time()
+    
+    # Initialize session for this user
+    lai.init(
+        session_name=f"User {user_id} - {scenario['name']}",
+        experiment_id=LOAD_TEST_EXPERIMENT,
+        tags=["load-test", f"scenario:{scenario['name']}", f"batch:{user_id//100}"]
+    )
+    
+    try:
+        # Simulate user actions
+        results = []
+        for action in scenario['actions']:
+            result = perform_action(action)
+            results.append(result)
+            time.sleep(action.get('delay', 0))
+        
+        # Calculate metrics
+        duration = time.time() - start_time
+        success = all(r['success'] for r in results)
+        
+        lai.end_session(
+            is_successful=success,
+            session_eval=calculate_performance_score(duration, results),
+            session_eval_reason=f"Duration: {duration:.2f}s, Actions: {len(results)}"
+        )
+        
+        return {
+            'user_id': user_id,
+            'success': success,
+            'duration': duration,
+            'results': results
+        }
+        
+    except Exception as e:
+        lai.end_session(
+            is_successful=False,
+            session_eval=0,
+            session_eval_reason=f"Error: {str(e)}"
+        )
+        return {
+            'user_id': user_id,
+            'success': False,
+            'error': str(e)
+        }
+
+def run_load_test(num_users: int, max_workers: int = 10):
+    """Run load test with concurrent users"""
+    scenarios = [
+        {'name': 'browse', 'actions': [...]},
+        {'name': 'purchase', 'actions': [...]},
+        {'name': 'support', 'actions': [...]}
+    ]
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all user sessions
+        futures = []
+        for user_id in range(num_users):
+            scenario = scenarios[user_id % len(scenarios)]
+            future = executor.submit(simulate_user_session, user_id, scenario)
+            futures.append(future)
+        
+        # Collect results
+        results = []
+        for future in concurrent.futures.as_completed(futures):
+            results.append(future.result())
+    
+    # Summary statistics
+    successful = sum(1 for r in results if r['success'])
+    avg_duration = sum(r.get('duration', 0) for r in results) / len(results)
+    
+    print(f"Load Test Complete:")
+    print(f"  Total Users: {num_users}")
+    print(f"  Successful: {successful} ({100*successful/num_users:.1f}%)")
+    print(f"  Avg Duration: {avg_duration:.2f}s")
+    print(f"  View full results at: https://dashboard.lucidic.ai/experiments/{LOAD_TEST_EXPERIMENT}")
+
+# Run the load test
+run_load_test(num_users=1000, max_workers=20)
+```
+
+### Performance Benchmarking
+
+Track performance over time:
+
+```python
+import lucidicai as lai
+from datetime import datetime, timedelta
+import json
+
+class PerformanceBenchmark:
+    """Run consistent benchmarks and track in experiments"""
+    
+    def __init__(self, experiment_id: str):
+        self.experiment_id = experiment_id
+        self.benchmark_suite = self.load_benchmark_suite()
+    
+    def load_benchmark_suite(self):
+        """Load standard benchmark tests"""
+        return [
+            {
+                'name': 'Simple Query Response',
+                'type': 'latency',
+                'input': 'What is 2+2?',
+                'expected_time': 1.0  # seconds
+            },
+            {
+                'name': 'Complex Reasoning',
+                'type': 'accuracy',
+                'input': 'Explain quantum computing',
+                'scoring_rubric': {...}
+            },
+            {
+                'name': 'Multi-step Task',
+                'type': 'completion',
+                'steps': ['search', 'analyze', 'summarize'],
+                'timeout': 30.0
+            }
+        ]
+    
+    def run_benchmarks(self):
+        """Execute all benchmarks"""
+        results = []
+        
+        for benchmark in self.benchmark_suite:
+            lai.init(
+                session_name=f"Benchmark: {benchmark['name']}",
+                experiment_id=self.experiment_id,
+                tags=['benchmark', benchmark['type'], 
+                      datetime.now().strftime('%Y-%m-%d')]
+            )
+            
+            result = self.execute_benchmark(benchmark)
+            score = self.score_benchmark(benchmark, result)
+            
+            lai.end_session(
+                is_successful=score >= 7,
+                session_eval=score,
+                session_eval_reason=json.dumps(result, indent=2)
+            )
+            
+            results.append({
+                'benchmark': benchmark['name'],
+                'score': score,
+                'result': result
+            })
+        
+        return results
+    
+    def execute_benchmark(self, benchmark):
+        """Run individual benchmark"""
+        # Implementation depends on benchmark type
+        pass
+    
+    def score_benchmark(self, benchmark, result):
+        """Score benchmark result"""
+        # Scoring logic based on benchmark type
+        pass
+
+# Run daily benchmarks
+def run_daily_benchmarks():
+    """Create daily experiment and run benchmarks"""
+    # Assume experiment created in dashboard with naming pattern
+    today = datetime.now().strftime('%Y-%m-%d')
+    experiment_id = f"exp-benchmark-{today}"  # Created in dashboard
+    
+    benchmark = PerformanceBenchmark(experiment_id)
+    results = benchmark.run_benchmarks()
+    
+    # Log summary
+    avg_score = sum(r['score'] for r in results) / len(results)
+    print(f"Daily Benchmark Complete: {today}")
+    print(f"  Average Score: {avg_score:.2f}")
+    print(f"  View details: https://dashboard.lucidic.ai/experiments/{experiment_id}")
+
+# Schedule daily execution
+run_daily_benchmarks()
+```
+
+---
+
+## Best Practices
+
+### Experiment Organization
+
+1. **Naming Sessions Consistently**
+   ```python
+   # Good: Descriptive and searchable
+   session_name = f"Test Case {test_id}: {test_description[:50]}"
+   
+   # Bad: Generic and unhelpful
+   session_name = "Test 1"
+   ```
+
+2. **Using Tags Effectively**
+   ```python
+   lai.init(
+       session_name="Performance Test",
+       experiment_id=EXPERIMENT_ID,
+       tags=[
+           f"version:{VERSION}",
+           f"environment:{ENV}",
+           f"date:{datetime.now().strftime('%Y-%m-%d')}",
+           f"type:performance"
+       ]
+   )
+   ```
+
+3. **Providing Meaningful Evaluations**
+   ```python
+   # Good: Specific success criteria and scores
+   lai.end_session(
+       is_successful=(response_time < 2.0 and accuracy > 0.95),
+       session_eval=calculate_weighted_score(response_time, accuracy),
+       session_eval_reason=f"Response: {response_time}s, Accuracy: {accuracy:.2%}"
+   )
+   
+   # Bad: No context
+   lai.end_session(is_successful=True)
+   ```
+
+### Error Handling
+
+Always ensure sessions end properly:
+
+```python
+import lucidicai as lai
+import traceback
+
+def safe_test_execution(test_case, experiment_id):
+    """Execute test with proper error handling"""
+    session_id = None
+    
+    try:
+        session_id = lai.init(
+            session_name=test_case['name'],
+            experiment_id=experiment_id
+        )
+        
+        # Your test logic
+        result = execute_test(test_case)
+        
+        lai.end_session(
+            is_successful=True,
+            session_eval=result['score']
+        )
+        
+    except Exception as e:
+        # Ensure session ends even on error
+        if session_id:
+            lai.end_session(
+                is_successful=False,
+                session_eval=0,
+                session_eval_reason=f"Error: {str(e)}\n{traceback.format_exc()}"
+            )
+        raise
+```
+
+### Batch Processing
+
+For many sessions, consider batching:
+
+```python
+import lucidicai as lai
+from typing import List
+import time
+
+def process_batch(items: List, experiment_id: str, batch_size: int = 10):
+    """Process items in batches with rate limiting"""
+    
+    for i in range(0, len(items), batch_size):
+        batch = items[i:i + batch_size]
+        
+        for item in batch:
+            lai.init(
+                session_name=f"Batch {i//batch_size} - Item {item['id']}",
+                experiment_id=experiment_id
+            )
+            
+            process_item(item)
+            
+            lai.end_session(is_successful=True)
+        
+        # Rate limiting between batches
+        time.sleep(1)
+```
+
+---
+
+## Tips and Tricks
+
+### Finding Experiment IDs
+
+```python
+# Store experiment IDs in configuration
+class ExperimentConfig:
+    PRODUCTION = "exp-prod-baseline"
+    STAGING = "exp-staging-tests"
+    DEVELOPMENT = "exp-dev-testing"
+    
+    @classmethod
+    def get_current(cls):
+        """Get experiment ID based on environment"""
+        env = os.getenv('ENVIRONMENT', 'development')
+        return getattr(cls, env.upper())
+
+# Use in code
+lai.init(
+    session_name="Test Run",
+    experiment_id=ExperimentConfig.get_current()
+)
+```
+
+### Conditional Experiment Assignment
+
+```python
+# Only add to experiment if specified
+experiment_id = None
+if os.getenv('RUN_IN_EXPERIMENT'):
+    experiment_id = os.getenv('EXPERIMENT_ID')
+
+lai.init(
+    session_name="Conditional Test",
+    experiment_id=experiment_id  # None means no experiment
+)
+```
+
+### Experiment Metadata in Sessions
+
+```python
+# Include experiment context in session data
+lai.init(
+    session_name="Contextual Test",
+    experiment_id=EXPERIMENT_ID,
+    task=f"Experiment: {EXPERIMENT_NAME} | Test: {test_name}"
+)
+```
+
+---
+
+## Common Issues
+
+### Sessions Not Appearing in Experiment
+
+**Problem**: Sessions created but not showing in experiment dashboard
+
+**Solutions**:
+- Verify experiment_id is exactly correct (copy from URL)
+- Ensure session has ended (call `lai.end_session()`)
+- Refresh the dashboard page
+- Check that API key has correct permissions
+
+### Experiment ID Not Found
+
+**Problem**: Error when using experiment_id
+
+**Solutions**:
+- Confirm experiment exists in dashboard
+- Check you're using the correct agent
+- Ensure experiment belongs to your project
+- Verify API key matches the project
+
+### Evaluations Not Running
+
+**Problem**: Rubrics applied but no evaluation scores
+
+**Solutions**:
+- Ensure sessions are properly ended
+- Check rubric configuration in dashboard
+- Verify evaluation credits available
+- Wait for async evaluation to complete
+
+---
+
+## Related Documentation
+
+- [init Function Reference](/python-sdk/init) - Complete init parameters
+- [Experiments Overview](/features/experiments-overview) - Dashboard features
+- [Getting Started with Experiments](/getting-started/experiments) - Tutorial
+- [Core Concepts: Experiments](/core-concepts/experiments) - Conceptual overview
+
+---
+
+## Next Steps
+
+1. Create your first experiment in the dashboard
+2. Copy the experiment ID from the URL
+3. Run the examples above with your ID
+4. View results in the experiment analytics
+5. Use failure analysis to identify patterns

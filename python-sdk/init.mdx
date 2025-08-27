@@ -19,6 +19,7 @@ lai.init(
     providers: Optional[List[ProviderType]] = [],
     production_monitoring: Optional[bool] = False,
     mass_sim_id: Optional[str] = None,
+    experiment_id: Optional[str] = None,
     rubrics: Optional[list] = None,
     tags: Optional[list] = None,
     masking_function = None,
@@ -58,6 +59,10 @@ lai.init(
 
 <ParamField path="mass_sim_id" type="string" optional>
   ID of a mass simulation to include this session in. Use with `create_mass_sim()`.
+</ParamField>
+
+<ParamField path="experiment_id" type="string" optional>
+  ID of an experiment to include this session in. Experiments must be created in the dashboard first. The experiment ID can be found in the experiment URL.
 </ParamField>
 
 <ParamField path="rubrics" type="list" optional>
@@ -228,6 +233,33 @@ mass_sim_id = lai.create_mass_sim(
 lai.init(
     session_name="Test Session 1",
     mass_sim_id=mass_sim_id
+)
+```
+
+### Experiment Usage
+
+```python
+import lucidicai as lai
+
+# Experiments must be created in the dashboard first
+# The experiment ID can be found in the URL after creation
+EXPERIMENT_ID = "exp-123abc-456def"  # From dashboard URL
+
+# Add sessions to the experiment
+lai.init(
+    session_name="Performance Test 1",
+    experiment_id=EXPERIMENT_ID,
+    task="Test checkout flow performance"
+)
+
+# Your agent workflow here
+process_checkout()
+
+# End the session with evaluation
+lai.end_session(
+    is_successful=True,
+    session_eval=9.5,
+    session_eval_reason="Checkout completed successfully"
 )
 ```
 
