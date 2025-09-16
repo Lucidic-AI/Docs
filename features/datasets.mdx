@@ -1,0 +1,511 @@
+---
+title: Datasets
+description: Create and manage test datasets to systematically validate your AI agents with consistent, reproducible test cases.
+---
+
+# Datasets
+
+**Datasets** provide a structured way to create, manage, and run test cases for your AI agents, enabling systematic validation and regression testing.
+
+Instead of ad-hoc testing, datasets give you **repeatable, versioned test suites** that ensure your agents work correctly across diverse scenarios.
+
+---
+
+## Why Use Datasets?
+
+**Consistent testing is crucial** for reliable AI agents.
+
+Datasets help you:
+
+* Build comprehensive test suites with expected outputs
+* Run regression tests after changes
+* Compare performance across model versions
+* Share test cases across your team
+* Validate edge cases and failure modes
+* Ensure consistent quality before production
+
+### Use Cases
+
+* **Regression Testing**: Ensure updates don't break existing functionality
+* **Quality Assurance**: Validate agents meet requirements
+* **Benchmark Creation**: Establish performance baselines
+* **Edge Case Testing**: Test unusual or problematic inputs
+* **Compliance Validation**: Verify policy adherence
+
+---
+
+## Creating Datasets
+
+### Step 1: Access Dataset Management
+
+Navigate to your agent in the dashboard and click the **"Datasets"** tab.
+
+<Frame>
+  <img src="/images/datasets-list.png" alt="Datasets overview showing list of test datasets with metadata" />
+</Frame>
+
+### Step 2: Create a New Dataset
+
+Click **"Create Dataset"** to open the creation dialog:
+
+<Frame>
+  <img src="/images/dataset-create.png" alt="Dataset creation dialog with configuration options" />
+</Frame>
+
+#### Configuration Options
+
+**Basic Information**:
+- **Name** (Required): Descriptive identifier (e.g., "Customer Support Edge Cases")
+- **Description**: Detailed explanation of the dataset's purpose
+- **Tags**: Labels for organization and filtering
+
+**Test Configuration**:
+- **Default Rubrics**: Evaluation criteria to apply to all test runs
+- **Success Criteria**: Define what constitutes a passing test
+- **Timeout Settings**: Maximum execution time per test
+
+### Dataset Items and Configuration
+
+After creating the dataset, add individual test cases
+
+Each dataset item represents a single test case:
+
+**Required Fields**:
+- **Name**: Test case identifier (e.g., "Refund request with expired product")
+- **Input**: The data/prompt to send to your agent
+
+**Optional Fields**:
+- **Expected Output**: What the agent should produce
+- **Description**: Context about this test case
+- **Metadata**: Additional data for test execution
+- **Tags**: Categorize test cases within the dataset
+
+#### Input Format
+
+Inputs can be structured in various formats:
+
+```json
+// Simple text input
+{
+  "input": "How do I reset my password?"
+}
+
+// Structured input with context
+{
+  "input": {
+    "user_message": "I need a refund",
+    "user_context": {
+      "account_type": "premium",
+      "purchase_date": "2024-01-15",
+      "product": "Enterprise Plan"
+    }
+  }
+}
+
+// Multi-turn conversation
+{
+  "input": {
+    "messages": [
+      {"role": "user", "content": "Hello"},
+      {"role": "assistant", "content": "Hi! How can I help?"},
+      {"role": "user", "content": "I need technical support"}
+    ]
+  }
+}
+```
+
+#### Expected Output Format
+
+Define what successful execution looks like:
+
+```json
+// Exact match
+{
+  "expected_output": "Password reset link has been sent to your email."
+}
+
+// Partial match with key elements
+{
+  "expected_output": {
+    "must_include": ["refund", "processed", "3-5 business days"],
+    "must_not_include": ["error", "failed", "denied"]
+  }
+}
+
+// Structured validation
+{
+  "expected_output": {
+    "intent": "refund_request",
+    "status": "approved",
+    "estimated_days": 5
+  }
+}
+```
+
+---
+
+## Running Datasets
+
+### Programmatic Execution
+
+```python
+import lucidicai as lai
+
+# Run a specific dataset
+def run_dataset_tests(dataset_id):
+    # Get dataset items
+    dataset_items = lai.get_dataset_items(dataset_id)
+
+    results = []
+    for item in dataset_items:
+        # Initialize session with dataset item
+        session_id = lai.init(
+            session_name=f"Dataset Test: {item['name']}",
+            dataset_item_id=item['id'],
+            rubrics=["Default Evaluation"]
+        )
+
+        # Run your agent with the input
+        response = run_agent(item['input'])
+
+        # Validate against expected output
+        if item.get('expected_output'):
+            success = validate_output(response, item['expected_output'])
+            lai.create_event(
+                event_type="validation",
+                event_data={
+                    "success": success,
+                    "expected": item['expected_output'],
+                    "actual": response
+                }
+            )
+
+        lai.end_session(is_successful=success)
+        results.append({
+            "item": item['name'],
+            "success": success,
+            "session_id": session_id
+        })
+
+    return results
+```
+
+#### Batch Execution with Experiments
+
+When you need to run datasets systematically within experiments for A/B testing or comparative analysis, you can leverage batch execution capabilities.
+
+**Benefits of Batch Execution**:
+- **systematic testing**: ensures every test case is run consistently
+- **experiment tracking**: all results are grouped under one experiment
+- **comparative analysis**: compare how different configurations handle the same test cases
+- **automated validation**: built-in success/failure tracking per test case
+- **comprehensive reporting**: view results across all test cases in the experiment dashboard
+
+**Best Practices**:
+- use descriptive session names that include the test case identifier
+- add consistent tags for easy filtering and analysis
+- handle errors gracefully to avoid stopping the entire batch
+- validate outputs when expected results are defined
+- monitor experiment progress through the dashboard
+
+Read more about implementation at [Using Datasets with Experiments](/features/experiments-overview#using-datasets-with-experiments)
+
+---
+
+## Analyzing Results
+
+### Test Run Overview
+
+After running a dataset, view the results dashboard:
+
+**Summary Metrics**:
+- **Pass Rate**: Percentage of successful test cases
+- **Average Duration**: Mean execution time
+- **Cost per Test**: Token/API costs
+- **Failure Categories**: Common failure patterns
+
+### Individual Test Results
+
+Click on any test case to see:
+- Full execution trace as session
+- Input provided vs output generated
+- Evaluation scores from rubrics
+- Error messages if failed
+- Token usage and costs
+- Execution timeline
+
+### Comparing Runs
+
+Compare multiple dataset runs to track improvements:
+
+1. Select runs to compare
+2. View side-by-side metrics
+3. Identify regressions or improvements
+4. Export comparison report
+
+---
+
+## Dataset Versioning
+
+### Creating Versions
+
+Datasets automatically version when you:
+- Add or remove items
+- Modify expected outputs
+- Change metadata or configuration
+
+### Using Versions
+
+Reference specific versions in your tests:
+
+```python
+# Use specific dataset version
+dataset_v2 = lai.get_dataset(dataset_id, version=2)
+
+# Compare versions
+v1_results = run_dataset(dataset_id, version=1)
+v2_results = run_dataset(dataset_id, version=2)
+compare_results(v1_results, v2_results)
+```
+
+---
+
+## Integration with Experiments
+
+### Using Datasets in Experiments
+
+Datasets work seamlessly with experiments for A/B testing:
+
+1. Create an experiment in the dashboard
+2. Link a dataset to the experiment
+3. Run the dataset multiple times with different configurations
+4. Compare results across variants
+
+```python
+# Run dataset with different model versions
+for model in ["gpt-4", "gpt-3.5-turbo"]:
+    for item in dataset_items:
+        lai.init(
+            experiment_id="model_comparison",
+            dataset_item_id=item['id'],
+            tags=[f"model:{model}"]
+        )
+        # Run test with specific model
+        run_test_with_model(item, model)
+```
+
+### Automatic Dataset Runs
+
+Configure experiments to automatically run datasets:
+- On code deployments
+- Nightly regression tests
+- Before production releases
+- After model updates
+
+---
+
+## Best Practices
+
+### Dataset Design
+
+**Comprehensive Coverage**
+- Include happy path scenarios
+- Add edge cases and error conditions
+- Test boundary values
+- Cover different user personas
+
+**Clear Naming**
+```
+Good: "refund_request_expired_product_premium_user"
+Bad: "test_1" or "refund_test"
+```
+
+**Organized Structure**
+- Group related test cases with tags
+- Use consistent input/output formats
+- Document why each test exists
+- Include both positive and negative cases
+
+### Expected Outputs
+
+**Be Specific When Needed**
+```json
+// For deterministic operations
+{
+  "expected_output": {
+    "calculation": 42,
+    "status": "success"
+  }
+}
+```
+
+**Be Flexible When Appropriate**
+```json
+// For creative tasks
+{
+  "expected_output": {
+    "criteria": {
+      "tone": "professional",
+      "includes_greeting": true,
+      "word_count_range": [50, 150]
+    }
+  }
+}
+```
+
+### Maintenance
+
+**Regular Reviews**
+- Audit datasets quarterly
+- Remove obsolete test cases
+- Update expected outputs as requirements change
+- Add new cases for reported issues
+
+**Version Control Integration**
+```python
+# Store dataset definitions in code
+dataset_config = {
+    "name": "Customer Support Tests",
+    "items": [
+        {
+            "name": "password_reset",
+            "input": "How do I reset my password?",
+            "expected_output": {...}
+        }
+    ]
+}
+
+# Sync with Lucidic
+lai.sync_dataset(dataset_config)
+```
+
+---
+
+## Advanced Features
+
+### Dynamic Test Generation
+
+Generate test cases programmatically:
+
+```python
+def generate_test_cases(num_cases=100):
+    test_cases = []
+    for i in range(num_cases):
+        test_cases.append({
+            "name": f"synthetic_test_{i}",
+            "input": generate_synthetic_input(i),
+            "expected_output": calculate_expected(i)
+        })
+    return test_cases
+
+# Create dataset with generated cases
+lai.create_dataset_items(dataset_id, generate_test_cases())
+```
+
+### Conditional Testing
+
+Run different tests based on conditions:
+
+```python
+def select_tests(dataset_items, conditions):
+    selected = []
+    for item in dataset_items:
+        if should_run_test(item, conditions):
+            selected.append(item)
+    return selected
+
+# Run subset based on tags, priority, etc.
+priority_tests = select_tests(
+    dataset_items,
+    conditions={"priority": "high", "category": "security"}
+)
+```
+
+### Custom Validation
+
+Implement complex validation logic:
+
+```python
+def custom_validator(output, expected):
+    # Semantic similarity check
+    if calculate_similarity(output, expected) > 0.9:
+        return True
+
+    # Structured validation
+    if expected.get("type") == "json":
+        return validate_json_structure(output, expected["schema"])
+
+    # Regex patterns
+    if expected.get("pattern"):
+        return re.match(expected["pattern"], output)
+
+    return False
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Dataset items not running**
+- Check input format is correct
+- Verify agent can handle the input type
+- Ensure no syntax errors in JSON
+- Check for required fields
+
+**Validation always failing**
+- Review expected output format
+- Consider using flexible matching
+- Check for extra whitespace or formatting
+- Verify output extraction logic
+
+**Performance issues with large datasets**
+- Use batch execution
+- Implement parallel processing
+- Consider sampling for quick tests
+- Optimize agent code for repeated calls
+
+---
+
+## Tips and Tricks
+
+### Quick Wins
+
+1. **Start with 10-20 core test cases** before building comprehensive suites
+2. **Use tags extensively** for easy filtering and organization
+3. **Include timing expectations** to catch performance regressions
+4. **Document failures** as new test cases to prevent regressions
+
+### Testing Strategies
+
+1. **Golden Dataset**: Small set of critical tests that must always pass
+2. **Regression Suite**: Comprehensive tests run before releases
+3. **Smoke Tests**: Quick validation after deployments
+4. **Chaos Testing**: Deliberately malformed inputs to test error handling
+
+### Collaboration
+
+1. **Share datasets** across team members
+2. **Review test cases** in code reviews
+3. **Link datasets to issues** for traceability
+4. **Export results** for stakeholder reports
+
+---
+
+## Related Features
+
+- [Experiments](/features/experiments-overview) - Run datasets in experiments
+- [Mass Simulations](/features/mass-simulation-overview) - Parallel dataset execution
+- [Rubrics](/features/rubrics) - Evaluation criteria for test runs
+- [Production Monitoring](/features/production-monitoring) - Monitor real-world performance
+
+---
+
+## Next Steps
+
+1. Create your first dataset with 5-10 test cases
+2. Run the dataset against your current agent
+3. Add evaluation rubrics for automated scoring
+4. Set up regular regression test runs
+5. Expand coverage based on production issues

@@ -134,8 +134,56 @@ lai.init(
 
 ---
 
+## Using Rubrics with Datasets
+
+Rubrics work seamlessly with datasets to provide automated evaluation of test cases:
+
+```python
+import lucidicai as lai
+
+# Run dataset tests with automatic rubric evaluation
+dataset_items = lai.get_dataset_items(dataset_id="test_suite")
+
+for item in dataset_items:
+    lai.init(
+        session_name=f"Test: {item['name']}",
+        dataset_item_id=item['id'],
+        rubrics=["Quality Check", "Safety Validation"]  # Applied automatically
+    )
+
+    # Run your agent
+    result = process_agent(item['input'])
+
+    lai.end_session()
+    # Rubrics will automatically evaluate the session
+```
+
+This combination enables:
+- **Consistent Evaluation**: Same rubrics applied to all test cases
+- **Automated Scoring**: No manual evaluation needed
+- **Trend Analysis**: Track rubric scores across dataset runs
+- **Quality Gates**: Fail tests that don't meet rubric criteria
+
+See [Datasets](/features/datasets) for more information on creating test datasets.
+
+## Integration with Other Features
+
+### Production Monitoring
+
+Apply rubrics to production sessions for real-time quality monitoring:
+
+```python
+lai.init(
+    production_monitoring=True,
+    rubrics=["Customer Satisfaction", "Response Accuracy"]
+)
+```
+
+Track rubric scores in the [Production Monitoring](/features/production-monitoring) dashboard to ensure quality in production.
+
 ## Final Notes
 
-* Rubric results are **immutable once ran on a session**; any changes made afterward won’t retroactively affect past evaluations.
+* Rubric results are **immutable once ran on a session**; any changes made afterward won't retroactively affect past evaluations.
 * You can use multiple rubrics per session to get both high-level and detailed insights.
 * Whether you need nuanced score-based comparisons or simple go/no-go quality checks, rubrics give you a structured, explainable framework to evaluate AI agents.
+* Rubrics integrate seamlessly with datasets, experiments, and production monitoring for comprehensive evaluation coverage.

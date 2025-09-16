@@ -20,6 +20,7 @@ lai.init(
     production_monitoring: Optional[bool] = False,
     mass_sim_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
+    dataset_item_id: Optional[str] = None,
     rubrics: Optional[list] = None,
     tags: Optional[list] = None,
     masking_function = None,
@@ -54,7 +55,7 @@ lai.init(
 </ParamField>
 
 <ParamField path="production_monitoring" type="boolean" optional default="False">
-  Flag to enable production monitoring mode. Can also be set via `LUCIDIC_PRODUCTION_MONITORING` environment variable.
+  Flag to enable production monitoring mode for tracking sessions in production environments. When enabled, sessions appear in the Production Monitoring dashboard with comprehensive metrics on cost, performance, and errors. Can also be set via `LUCIDIC_PRODUCTION_MONITORING` environment variable. See [Production Monitoring](/features/production-monitoring) for details.
 </ParamField>
 
 <ParamField path="mass_sim_id" type="string" optional>
@@ -63,6 +64,10 @@ lai.init(
 
 <ParamField path="experiment_id" type="string" optional>
   ID of an experiment to include this session in. Experiments must be created in the dashboard first. The experiment ID can be found in the experiment URL.
+</ParamField>
+
+<ParamField path="dataset_item_id" type="string" optional>
+  ID of a dataset item being tested in this session. Links the session to a specific test case from a dataset. Use when running dataset tests to track which test case each session corresponds to. See [Working with Datasets](/python-sdk/datasets) for details.
 </ParamField>
 
 <ParamField path="rubrics" type="list" optional>
@@ -210,12 +215,38 @@ def mask_pii(text):
 
 lai.init(
     session_name="Production Agent",
-    production_monitoring=True,
+    production_monitoring=True,  # Enables production monitoring dashboard
     masking_function=mask_pii,
     tags=["production", "v2.0", "customer-service"],
     rubrics=["response_quality", "task_completion"],
     auto_end=True  # Ensures session ends even on crashes
 )
+
+# Sessions with production_monitoring=True will appear in the Production dashboard
+# with metrics on cost, performance, errors, and more
+```
+
+### Dataset Testing
+
+```python
+import lucidicai as lai
+
+# When running dataset tests, link sessions to dataset items
+dataset_items = lai.get_dataset_items(dataset_id="test_suite_v1")
+
+for item in dataset_items:
+    session_id = lai.init(
+        session_name=f"Test: {item['name']}",
+        dataset_item_id=item['id'],  # Links to specific test case
+        rubrics=["correctness", "completeness"]
+    )
+
+    # Run your agent with the test input
+    result = my_agent.process(item['input'])
+
+    # Validate against expected output
+    success = result == item['expected_output']
+    lai.end_session(is_successful=success)
 ```
 
 ### Mass Simulation Usage
