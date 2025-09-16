@@ -31,6 +31,7 @@
               "features/rubrics",
               "features/production-monitoring",
               "features/datasets",
+              "features/evolutionary-simulations",
               "features/prompt-db",
               "features/time-travel",
               "features/mass-simulation-overview",

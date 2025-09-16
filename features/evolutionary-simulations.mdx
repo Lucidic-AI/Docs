@@ -1,0 +1,390 @@
+---
+title: Evolutionary Simulations
+description: Automatically optimize your AI agents through intelligent hyperparameter evolution, discovering the best configurations for prompts, models, and workflows.
+---
+
+# Evolutionary Simulations
+
+**Evolutionary Simulations**, or agent auto-improvement, uses intelligent optimization algorithms to automatically discover the best configurations for your AI agents by testing variations of prompts, models, tools, and other hyperparameters.
+
+Instead of manual trial and error, let the system **systematically explore and evolve** your agent configurations to maximize performance while minimizing costs.
+
+---
+
+## Why Use Evolutionary Simulations?
+
+**Finding optimal agent configurations is complex** — with countless combinations of prompts, models, and parameters, manual optimization is time-consuming and often misses the best solutions.
+
+Evolutionary Simulations helps you:
+
+* Automatically discover optimal prompt variations
+* Find the best model-cost-performance balance
+* Optimize tool usage and agent workflows
+* Reduce operational costs while improving quality
+* Validate improvements with statistical rigor
+* Scale optimization across multiple parameters simultaneously
+
+### Use Cases
+
+* **Prompt Engineering**: Evolve prompts for better accuracy and relevance
+* **Model Selection**: Compare providers and versions systematically
+* **Cost Optimization**: Find configurations that reduce spending without sacrificing quality
+* **Performance Tuning**: Optimize for speed, accuracy, or specific metrics
+* **A/B Testing at Scale**: Test multiple variations simultaneously with statistical validation
+
+---
+
+## How It Works
+
+### Evolutionary Algorithm
+
+Evolutionary Simulations employs an intelligent optimization process:
+
+1. **Baseline Establishment**: Measures current performance metrics
+2. **Hypothesis Generation**: Creates improvement theories based on patterns
+3. **Variation Creation**: Generates promising configuration variations
+4. **Parallel Testing**: Runs multiple experiments simultaneously
+5. **Statistical Analysis**: Validates improvements with rigorous statistical tests
+6. **Evolution**: Best performers become parents for next generation
+7. **Convergence**: Stops when optimal configuration is found or criteria met
+
+### Optimization Strategies
+
+The system uses multiple optimization strategies:
+
+* **Grid Search**: Systematic exploration of parameter space
+* **Random Search**: Stochastic sampling for unexpected discoveries
+* **Bayesian Optimization**: Intelligent selection based on prior results
+* **Genetic Algorithms**: Evolution through mutation and crossover
+* **Multi-Armed Bandit**: Balancing exploration vs exploitation
+
+---
+
+## Creating an Evolutionary Simulation
+
+### Step 1: Access Auto-Improve
+
+Navigate to your agent in the dashboard and click the **"Auto-Improve"** or **"Evolutionary Simulations"** tab. Here you can click into an existing run, or create a new improvement run with the 'Create New' button.
+
+<Frame>
+  <img src="/images/evolutionary-main.png" alt="Evo Sims List" />
+</Frame>
+
+The Evo-Sim page looks as follows:
+
+<Frame>
+  <img src="/images/evolutionary-homepage.png" alt="Evolutionary Simulations main interface showing configuration options" />
+</Frame>
+
+### Step 2: Define Improvement Hypothesis
+
+Start by articulating what you want to improve:
+
+<Frame>
+  <img src="/images/evolutionary-hypothesis.png" alt="Improvement hypothesis input with generated plan" />
+</Frame>
+
+#### Writing Effective Hypotheses
+
+**Good Examples**:
+- "Reduce response time by optimizing prompt length while maintaining accuracy"
+- "Improve customer satisfaction scores by refining tone and response structure"
+- "Minimize API costs by finding optimal model-prompt combinations"
+
+**Components of a Hypothesis**:
+- **Goal**: What metric to optimize (accuracy, cost, speed)
+- **Method**: How to achieve it (prompt changes, model selection)
+- **Constraint**: What to maintain (quality thresholds, compliance)
+
+The system automatically generates an improvement plan based on your hypothesis.
+
+### Step 3: Configure Hyperparameters
+
+Add and select which parameters to optimize using the Parameter Blocks.
+
+#### Available Hyperparameter Types
+
+**Prompts**
+- Select multiple prompt versions to test
+- Create variations with different instructions
+- Test different formatting and structure
+- Combine prompts for multi-step workflows
+
+**Models**
+- Compare different providers (OpenAI, Anthropic, etc.)
+- Test model versions (GPT-4, GPT-3.5, Claude)
+- Evaluate cost vs performance tradeoffs
+- Mix models for different tasks
+
+**Tool Calls**
+- Enable/disable specific tools
+- Adjust tool parameters
+- Test tool combinations
+- Optimize tool usage patterns
+
+**Agents**
+- Configure sub-agent workflows
+- Test different agent compositions
+- Optimize agent coordination
+- Evaluate standalone vs collaborative approaches
+
+**Custom Parameters**
+- Define any JSON-configurable parameter
+- Test arbitrary configuration values
+- Create complex parameter spaces
+
+### Step 4: Select Datasets
+
+Choose test datasets for consistent evaluation:
+
+<Frame>
+  <img src="/images/evolutionary-datasets.png" alt="Dataset selector showing available test datasets" />
+</Frame>
+
+#### Dataset Configuration
+
+**Training Set** (80%)
+- Used to evaluate configurations
+- Guides optimization direction
+- Provides performance metrics
+
+**Test Set** (20%)
+- Validates final configuration
+- Prevents overfitting
+- Ensures generalization
+
+**Dataset Requirements**:
+- Minimum 20 samples for statistical validity
+- Include edge cases and typical scenarios
+- Balance different input types
+- Define clear success criteria
+
+### Step 5: Set Statistical Parameters
+
+Configure statistical rigor for results validation:
+
+<Frame>
+  <img src="/images/evolutionary-statistics.png" alt="Statistical parameters configuration panel" />
+</Frame>
+
+**P-Value Threshold**
+- Default: 0.05 (95% confidence)
+- Lower values = higher confidence required
+- Affects when improvements are considered significant
+
+**Confidence Level**
+- Default: 95%
+- Higher = more conservative optimization
+- Balances exploration vs exploitation
+
+**Train/Test Split**
+- Default: 80/20
+- Adjust based on dataset size
+- Larger test sets = better validation
+
+### Step 6: Select Baseline:
+
+After clicking 'Run Configuration', you can select a baseline for each paramter block:
+
+<Frame>
+  <img src="/images/evolutionary-baseline.png" alt="Baseline for a run configuration" />
+</Frame>
+
+
+### Step 7: Define Stopping Criteria
+
+After clicking 'Run Configuration' and Set when the optimization should stop:
+
+<Frame>
+  <img src="/images/evolutionary-stopping.png" alt="Stopping criteria cards with various termination conditions" />
+</Frame>
+
+**Available Criteria**:
+
+* **Cost Limit**: Stop at spending threshold
+* **Session Runs**: Maximum test executions
+* **Configurations Tested**: Number of variations tried
+* **Time Limit**: Maximum optimization duration
+* **Accuracy Threshold**: Stop when target metric achieved
+
+At least one criterion must be selected. The system stops when ANY criterion is met.
+
+### Step 7: Launch Optimization
+
+Review configuration and start the evolutionary process.
+
+## Monitoring Progress
+
+#### Key Metrics
+
+**Performance Indicators**:
+- Success rate across configurations
+- Average score improvements
+- Cost per successful outcome
+- Response time distributions
+
+**Optimization Progress**:
+- Configurations tested vs remaining
+- Best configuration so far
+- Convergence indicators
+- Estimated time to completion
+
+### Configuration Comparison
+
+Compare different configurations side-by-side in the 'Analytics' tab:
+
+<Frame>
+  <img src="/images/evolutionary-comparison.png" alt="Configuration comparison table with metrics" />
+</Frame>
+
+**Comparison Features**:
+- Baseline vs variations
+- Statistical significance indicators
+- Performance deltas
+- Cost-benefit analysis
+- Detailed hyperparameter differences
+
+### Performance Graphs
+
+Visualize optimization trends:
+
+**Success Rate Evolution**
+- Shows improvement over iterations
+- Identifies convergence patterns
+- Highlights breakthrough configurations
+
+**Cost-Performance Scatter**
+- Maps configurations by cost and quality
+- Identifies Pareto-optimal solutions
+- Shows efficiency frontier
+
+**Multi-Metric Radar**
+- Compares configurations across dimensions
+- Visualizes tradeoffs
+- Identifies balanced solutions
+
+---
+
+## Understanding Results
+
+### Best Configuration
+
+The system identifies the optimal configuration based on your criteria.
+
+**Results Include**:
+- Winning hyperparameter values
+- Performance improvements vs baseline
+- Statistical confidence levels
+- Cost savings achieved
+- Implementation recommendations
+
+### Hyperparameter Differences
+
+View exactly what changed between configurations as:
+
+**Diff Features**:
+- Side-by-side parameter comparison
+- Highlighted changes
+- Performance impact of each change
+- Interaction effects between parameters
+
+### Statistical Validation
+
+All improvements are statistically validated:
+
+**Validation Metrics**:
+- P-values for significance testing
+- Confidence intervals
+- Effect sizes (Cohen's d)
+- Power analysis results
+
+---
+
+## Implementing Winners
+
+### Deploying Optimal Configuration
+
+Once optimization completes, deploy the winning configuration:
+
+1. **Export Configuration**
+   ```json
+   {
+     "prompt_id": "optimized_prompt_v5",
+     "model": "gpt-3.5-turbo",
+     "temperature": 0.7,
+     "tools": ["search", "calculator"],
+     "performance_gain": "+23%",
+     "cost_reduction": "-45%"
+   }
+   ```
+
+2. **Monitor Performance**
+   - Track metrics in production
+   - Validate improvements hold
+   - Set up alerts for regression
+
+### Creating Variants
+
+Save successful configurations as new variants:
+
+**Prompt Variants**:
+- Save optimized prompts to Prompt Database
+- Version with descriptive labels
+- Document improvements achieved
+
+**Configuration Templates**:
+- Export as reusable templates
+- Share across team
+- Use as baselines for future optimization
+
+---
+
+## Integration with Other Features
+
+### With Datasets
+
+Evolutionary Simulations works seamlessly with [Datasets](/features/datasets):
+- Use existing test datasets
+- Create specialized optimization sets
+- Ensure reproducible results
+
+### With Experiments
+
+Results create [Experiments](/features/experiments-overview) automatically:
+- Each configuration generates an experiment
+- Compare experiments in detail
+- Analyze failure patterns
+
+### With Rubrics
+
+Apply [Rubrics](/features/rubrics) for evaluation:
+- Use rubrics as optimization targets
+- Multi-criteria optimization
+- Ensure quality standards
+
+### With Production Monitoring
+
+Validate improvements in [Production](/features/production-monitoring):
+- Deploy winning configurations
+- Monitor real-world performance
+- Detect regression automatically
+
+---
+
+## Related Features
+
+- [Datasets](/features/datasets) - Create test sets for optimization
+- [Experiments](/features/experiments-overview) - Detailed configuration analysis
+- [Prompt Database](/features/prompt-db) - Manage prompt variants
+- [Production Monitoring](/features/production-monitoring) - Validate improvements
+
+---
+
+## Next Steps
+
+1. Define your improvement hypothesis
+2. Select 2-3 hyperparameters to optimize
+3. Create or select a test dataset
+4. Run your first evolutionary simulation
+5. Deploy winning configuration to production
+6. Monitor improvements over time
