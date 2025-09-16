@@ -188,6 +188,27 @@ for item in dataset_items:
 
 See [Datasets](/features/datasets) for more information on creating and managing test datasets. For batch execution of datasets within experiments, see the [Batch Execution with Experiments](/features/datasets#batch-execution-with-experiments) section.
 
+### Evolutionary Simulations Integration
+
+Experiments are automatically created by [Evolutionary Simulations](/features/evolutionary-simulations) when testing different configurations:
+
+#### How It Works
+
+When you run an evolutionary simulation:
+1. Each configuration variation creates a separate experiment
+2. Results are automatically tracked and compared
+3. Statistical validation is performed across experiments
+4. The best configuration is identified based on your criteria
+
+#### Benefits
+
+- **Automated A/B Testing**: Multiple configurations tested simultaneously
+- **Statistical Rigor**: Built-in significance testing
+- **Optimization History**: Track how configurations evolved
+- **Easy Deployment**: Apply winning configurations directly
+
+See [Evolutionary Simulations](/features/evolutionary-simulations) for automated agent optimization.
+
 ---
 
 ## Analytics Tab
