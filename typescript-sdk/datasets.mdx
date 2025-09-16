@@ -1,0 +1,197 @@
+---
+title: 'Working with Datasets'
+description: 'Use datasets to run systematic tests and validations on your AI agents'
+---
+
+## Overview
+
+The dataset functions allow you to programmatically work with test datasets, enabling systematic validation and regression testing of your AI agents.
+
+## Core Functions
+
+### getDataset
+
+Retrieves a dataset configuration and its items.
+
+```typescript
+const dataset = await lucidic.getDataset({
+  datasetId: string,
+  version?: number
+}): Promise<Dataset>
+```
+
+#### Parameters
+
+<ParamField path="datasetId" type="string" required>
+  The unique identifier of the dataset to retrieve.
+</ParamField>
+
+<ParamField path="version" type="number" optional>
+  Specific version number to retrieve. If not provided, returns the latest version.
+</ParamField>
+
+#### Returns
+
+Returns a Dataset object containing:
+- `id`: Dataset identifier
+- `name`: Dataset name
+- `description`: Dataset description
+- `items`: Array of dataset items
+- `tags`: Associated tags
+- `version`: Version number
+- `createdAt`: Creation timestamp
+
+### getDatasetItems
+
+Retrieves all items from a specific dataset.
+
+```typescript
+const items = await lucidic.getDatasetItems({
+  datasetId: string,
+  tags?: string[]
+}): Promise<DatasetItem[]>
+```
+
+#### Parameters
+
+<ParamField path="datasetId" type="string" required>
+  The unique identifier of the dataset.
+</ParamField>
+
+<ParamField path="tags" type="string[]" optional>
+  Filter items by specific tags.
+</ParamField>
+
+#### Returns
+
+Returns an array of dataset items, each containing:
+- `id`: Item identifier
+- `name`: Test case name
+- `input`: Input data for the test
+- `expectedOutput`: Expected result (if defined)
+- `metadata`: Additional item metadata
+- `tags`: Item-specific tags
+
+## Working with Dataset Items
+
+### Initialize Session with Dataset Item
+
+When running individual dataset items, link them to sessions:
+
+```typescript
+// Get a specific dataset item
+const items = await lucidic.getDatasetItems({
+  datasetId: 'dataset_123'
+});
+const item = items[0];
+
+// Initialize session linked to dataset item
+const sessionId = await lucidic.init({
+  sessionName: `Testing: ${item.name}`,
+  datasetItemId: item.id,  // Link to dataset item
+  rubrics: ['Default Evaluation']
+});
+
+// Run your agent
+const result = await processAgent(item.input);
+
+// Validate if expected output exists
+let success: boolean;
+if (item.expectedOutput) {
+  success = result === item.expectedOutput;
+} else {
+  success = result !== null && !result.error;
+}
+
+await lucidic.endSession({ isSuccessful: success });
+```
+
+### Parallel Execution with Promise.all
+
+```typescript
+async function runDatasetParallel(datasetId: string) {
+  const items = await lucidic.getDatasetItems({ datasetId });
+
+  // Run all tests in parallel
+  const promises = items.map(item => runTest(item));
+  const results = await Promise.all(promises);
+
+  // Aggregate results
+  const summary = {
+    total: results.length,
+    passed: results.filter(r => r.success).length,
+    failed: results.filter(r => !r.success).length,
+    duration: results.reduce((sum, r) => sum + r.duration, 0)
+  };
+
+  return summary;
+}
+```
+
+## TypeScript Types
+
+```typescript
+interface Dataset {
+  id: string;
+  name: string;
+  description: string;
+  items: DatasetItem[];
+  tags: string[];
+  version: number;
+  createdAt: Date;
+}
+
+interface DatasetItem {
+  id: string;
+  name: string;
+  input: any;
+  expectedOutput?: any;
+  metadata?: Record<string, any>;
+  tags?: string[];
+}
+```
+
+## Best Practices
+
+1. **Type Safety**: Use TypeScript interfaces for dataset items
+   ```typescript
+   interface MyTestCase extends DatasetItem {
+     input: {
+       query: string;
+       context: string;
+     };
+     expectedOutput: {
+       answer: string;
+       confidence: number;
+     };
+   }
+   ```
+
+2. **Error Handling**: Always wrap test execution in try-catch blocks
+
+3. **Async/Await**: Use async/await for cleaner test flow
+
+4. **Result Persistence**: Store test results for historical analysis
+   ```typescript
+   const testRun = {
+     date: new Date(),
+     datasetVersion: dataset.version,
+     results,
+     passRate: results.filter(r => r.success).length / results.length
+   };
+   await saveTestRun(testRun);
+   ```
+
+5. **Timeout Handling**: Set appropriate timeouts for long-running tests
+   ```typescript
+   const result = await Promise.race([
+     runTest(item),
+     timeout(30000) // 30 second timeout
+   ]);
+   ```
+
+## Related Functions
+
+- [`init`](/typescript-sdk/init) - Initialize sessions with dataset items
+- [`runMassSimulation`](/typescript-sdk/run-mass-simulation) - Run large-scale dataset tests
+- [`getPrompt`](/typescript-sdk/get-prompt) - Retrieve prompts for testing

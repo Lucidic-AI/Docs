@@ -1,0 +1,390 @@
+---
+title: Production Monitoring
+description: Monitor your AI agents in production with real-time analytics, cost tracking, and performance insights to ensure reliability at scale.
+---
+
+# Production Monitoring
+
+**Production Monitoring** enables you to track and analyze your AI agents' performance in real-world production environments, providing critical insights into cost, reliability, and user experience.
+
+Instead of flying blind in production, you get **comprehensive visibility** into how your agents perform with real users and data.
+
+---
+
+## Why Use Production Monitoring?
+
+**Production is different from development** — real users, real data, real stakes.
+
+Production Monitoring helps you:
+
+* Track costs and resource usage in real-time
+* Identify and diagnose production errors quickly
+* Monitor performance degradation before users complain
+* Establish baselines for normal behavior
+* Detect anomalies and unusual patterns
+* Prove ROI with detailed cost analytics
+
+### Use Cases
+
+* **Cost Management**: Track token usage and API costs per session
+* **Error Tracking**: Catch and diagnose failures before they impact users
+* **Performance Monitoring**: Ensure response times meet SLAs
+* **Capacity Planning**: Understand usage patterns and scale appropriately
+* **Compliance**: Audit agent behavior for safety and policy adherence
+
+---
+
+## Enabling Production Monitoring
+
+### Step 1: In Your Code
+
+Enable production monitoring when initializing sessions:
+
+```python
+import lucidicai as lai
+
+# Enable production monitoring for this session
+session_id = lai.init(
+    session_name="prod_user_support",
+    production_monitoring=True,  # Enable production tracking
+    api_key="your-api-key",
+    agent_id="your-agent-id"
+)
+```
+
+You can also set it via environment variable:
+
+```bash
+export LUCIDIC_PRODUCTION_MONITORING=true
+```
+
+### Step 2: In the Dashboard
+
+Navigate to your agent and click the **"Production"** tab to access the monitoring dashboard.
+
+---
+
+## Understanding the Dashboard
+
+### Overview Metrics
+
+The top of the dashboard displays real-time KPIs:
+
+<Frame>
+  <img src="/images/production-metrics.png" alt="Production metrics cards showing sessions, costs, tokens, and errors" />
+</Frame>
+
+* **Total Sessions**: Count of production sessions in selected timeframe
+* **Average Duration**: Mean session execution time
+* **Total Cost**: Aggregate spend across all sessions
+
+### Cost Analysis
+
+Track and optimize your AI spending:
+
+<Frame>
+  <img src="/images/production-cost-chart.png" alt="Cost trend chart showing daily spending and projections" />
+</Frame>
+
+**Cost Breakdown Views**:
+- **By Time**: 1 day, 3 day, 1 week, 2 week, and 1 month metrics
+- **By Percentiles**: Median, 90th percentile, and 99th percentile cost breakdown
+
+**Cost Optimization Insights**:
+- Identify expensive outlier sessions
+- Find opportunities to use cheaper models
+- Click into sessions that cost too much
+
+### Error Monitoring
+
+Proactively catch and fix production issues in the errors tab:
+
+<Frame>
+  <img src="/images/production-errors.png" alt="Error tracking interface showing error types and affected sessions" />
+</Frame>
+
+**Error Tracking Features**:
+- **Error Types**: Categorized by type (timeout, API, validation)
+- **Error Messages**: Full error details and stack traces
+- **Affected Sessions**: Direct links to problematic sessions
+
+### Monitor latency:
+
+Monitor time taken for each session to finish to catch outliers in execution
+
+<Frame>
+  <img src="/images/production-latency.png" alt="Error tracking interface showing error types and affected sessions" />
+</Frame>
+
+**Key Performance Indicators**:
+- **Response Time Distribution**: P50, P95, P99 latencies
+- **Event Duration**: Time spent in each workflow event
+
+**Performance Alerts** (coming soon):
+- Set thresholds for key metrics
+- Get notified of degradations
+- Automatic anomaly detection
+
+---
+
+## Filtering and Analysis
+
+### Time Range Selection
+
+Choose from preset ranges or custom dates:
+- Last 24 hours
+- Last 3 days
+- Last 7 days
+- Last 30 days
+
+### Comparison Views
+
+Compare different time periods or segments:
+- Week-over-week changes
+- Before/after deployments
+- A/B test variants
+- User cohorts
+
+---
+
+## Session Deep Dives
+
+Click any session from the monitoring dashboard to investigate:
+
+**Session Details Include**:
+- Complete execution timeline
+- All LLM calls with prompts/responses
+- Token usage per call
+- Cost breakdown
+- Error details and stack traces
+- Performance waterfall chart
+
+**Investigation Tools**:
+- [Time Travel](/features/time-travel) to replay sessions
+- Export session data for offline analysis
+
+---
+
+## Establishing Baselines
+
+### Creating Performance Baselines
+
+1. **Collect Initial Data**
+   - Run in production for 1-2 weeks
+   - Ensure representative traffic
+   - Include peak and off-peak periods
+
+2. **Calculate Baselines**
+   - Average session duration
+   - Typical cost per session
+   - Normal error rate
+   - Expected token usage
+
+3. **Set Thresholds**
+   - Define acceptable ranges
+   - Configure alerts (when available)
+   - Document expected variations
+
+### Using Baselines
+
+Monitor deviations from baseline to detect:
+- Performance regressions after updates
+- Unusual user behavior patterns
+- System degradation over time
+- Cost increases from prompt changes
+
+---
+
+## Best Practices
+
+### Production Monitoring Setup
+
+**Start Small**
+- Enable for a subset of users first
+- Gradually increase monitoring coverage
+- Validate data accuracy
+
+**Tag Everything**
+```python
+lai.init(
+    production_monitoring=True,
+    tags=["user_tier:premium", "feature:chat", "version:2.1.0"]
+)
+```
+
+**Use Descriptive Names**
+```python
+lai.init(
+    session_name=f"support_chat_{user_id}_{timestamp}",
+    production_monitoring=True
+)
+```
+
+### Cost Optimization
+
+**Monitor Regularly**
+- Daily cost reviews during rollout
+- Weekly trending analysis
+- Monthly budget reconciliation
+
+**Optimize Strategically**
+- Identify most expensive operations
+- Consider model downgrades where appropriate
+- Cache repeated operations
+- Batch similar requests
+
+### Error Management
+
+**Categorize Errors**
+- User errors vs system errors
+- Recoverable vs fatal
+- Expected vs unexpected
+
+**Create Runbooks**
+- Document common errors
+- Define resolution steps
+- Assign ownership
+
+**Track Resolution**
+- Time to detection
+- Time to resolution
+- Recurrence prevention
+
+### Performance Monitoring
+
+**Define SLAs**
+- Set clear performance targets
+- Monitor compliance
+- Report on violations
+
+**Optimize Bottlenecks**
+- Focus on P95/P99 latencies
+- Address slowest operations first
+- Consider async processing
+
+---
+
+## Integration with Other Features
+
+### With Experiments
+
+Compare production performance to experiments:
+```python
+# Run experiment
+lai.init(
+    experiment_id="exp_new_model",
+    production_monitoring=False
+)
+
+# Compare to production baseline
+lai.init(
+    production_monitoring=True
+)
+```
+
+### With Rubrics
+
+Apply evaluation rubrics to production sessions:
+```python
+lai.init(
+    production_monitoring=True,
+    rubrics=["Customer Satisfaction", "Response Quality"]
+)
+```
+
+Monitor rubric scores across production traffic to ensure quality.
+
+### With Mass Simulations
+
+Use production data to inform simulations:
+1. Identify common production scenarios
+2. Create mass simulations based on real patterns
+3. Test changes before production deployment
+
+---
+
+
+### API Access
+
+Query production metrics programmatically:
+
+```python
+# Get production metrics via API (coming soon)
+GET /api/agents/{agent_id}/production/metrics
+{
+    "start_date": "2024-01-01",
+    "end_date": "2024-01-31",
+    "metrics": ["cost", "duration", "errors"]
+}
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Sessions not appearing in production view**
+- Verify `production_monitoring=True` is set
+- Check session has completed
+- Refresh the dashboard
+- Ensure correct time range selected
+
+**Metrics seem incorrect**
+- Verify timezone settings
+- Check filter configuration
+- Clear browser cache
+- Contact support if persists
+
+**High costs unexpectedly**
+- Review error retry logic
+- Check for infinite loops
+- Audit model selection
+- Review prompt templates
+
+---
+
+## Advanced Configuration
+
+### Environment-Specific Monitoring
+
+```python
+import os
+
+# Different monitoring for different environments
+if os.getenv("ENVIRONMENT") == "production":
+    lai.init(production_monitoring=True)
+elif os.getenv("ENVIRONMENT") == "staging":
+    lai.init(production_monitoring=False, tags=["env:staging"])
+```
+
+### Custom Monitoring Policies
+
+```python
+# Monitor only high-value users
+def should_monitor(user):
+    return user.tier == "enterprise" or user.monthly_spend > 1000
+
+lai.init(
+    production_monitoring=should_monitor(current_user),
+    session_name=f"user_{user.id}"
+)
+```
+
+---
+
+## Related Features
+
+- [Experiments](/features/experiments-overview) - Compare production to test variants
+- [Rubrics](/features/rubrics) - Evaluate production quality
+- [Time Travel](/features/time-travel) - Replay production sessions
+
+---
+
+## Next Steps
+
+1. Enable production monitoring in your code
+2. Run for a week to establish baselines
+3. Set up regular monitoring reviews
+4. Optimize based on insights
+5. Share reports with stakeholders

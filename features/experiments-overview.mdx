@@ -147,6 +147,47 @@ Two methods to add sessions:
    )
    ```
 
+### Using Datasets with Experiments
+
+Datasets provide a powerful way to systematically test your experiments with predefined test cases:
+
+#### Running Dataset Tests in Experiments
+
+```python
+import lucidicai as lai
+
+# Get your dataset items
+dataset_items = lai.get_dataset_items(dataset_id="validation_suite")
+
+# Run each test case as part of the experiment
+for item in dataset_items:
+    session_id = lai.init(
+        session_name=f"Dataset Test: {item['name']}",
+        experiment_id="exp-id-from-dashboard",
+        dataset_item_id=item['id'],  # Link to dataset item
+        tags=["dataset_test", f"test_case:{item['name']}"]
+    )
+
+    # Run your agent with the test input
+    result = run_agent(item['input'])
+
+    # Validate against expected output
+    if item.get('expected_output'):
+        success = validate(result, item['expected_output'])
+        lai.end_session(is_successful=success)
+    else:
+        lai.end_session()
+```
+
+#### Benefits of Dataset-Driven Experiments
+
+- **Consistency**: Same test cases across all experiment variants
+- **Reproducibility**: Easily re-run the exact same tests
+- **Comparison**: Direct comparison of how variants handle each test case
+- **Coverage**: Ensure comprehensive testing of edge cases
+
+See [Datasets](/features/datasets) for more information on creating and managing test datasets. For batch execution of datasets within experiments, see the [Batch Execution with Experiments](/features/datasets#batch-execution-with-experiments) section.
+
 ---
 
 ## Analytics Tab

@@ -29,6 +29,8 @@
             "pages": [
               "features/workflow-sandbox",
               "features/rubrics",
+              "features/production-monitoring",
+              "features/datasets",
               "features/prompt-db",
               "features/time-travel",
               "features/mass-simulation-overview",
@@ -103,6 +105,7 @@
                 "pages": [
                   "python-sdk/get_prompt",
                   "python-sdk/create_mass_sim",
+                  "python-sdk/datasets",
                   "python-sdk/working-with-experiments"
                 ]
               },
@@ -159,6 +162,7 @@
                 "pages": [
                   "typescript-sdk/get-prompt",
                   "typescript-sdk/run-mass-simulation",
+                  "typescript-sdk/datasets",
                   "typescript-sdk/working-with-experiments"
                 ]
               },

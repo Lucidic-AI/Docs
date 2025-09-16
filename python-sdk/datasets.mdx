@@ -1,0 +1,138 @@
+---
+title: 'Working with Datasets'
+description: 'Use datasets to run systematic tests and validations on your AI agents'
+---
+
+## Overview
+
+The dataset functions allow you to programmatically work with test datasets, enabling systematic validation and regression testing of your AI agents.
+
+## Core Functions
+
+### get_dataset
+
+Retrieves a dataset configuration and its items.
+
+```python
+dataset = lai.get_dataset(
+    dataset_id: str,
+    version: Optional[int] = None
+) -> Dict
+```
+
+#### Parameters
+
+<ParamField path="dataset_id" type="string" required>
+  The unique identifier of the dataset to retrieve.
+</ParamField>
+
+<ParamField path="version" type="integer" optional>
+  Specific version number to retrieve. If not provided, returns the latest version.
+</ParamField>
+
+#### Returns
+
+Returns a dictionary containing:
+- `id`: Dataset identifier
+- `name`: Dataset name
+- `description`: Dataset description
+- `items`: List of dataset items
+- `tags`: Associated tags
+- `version`: Version number
+- `created_at`: Creation timestamp
+
+### get_dataset_items
+
+Retrieves all items from a specific dataset.
+
+```python
+items = lai.get_dataset_items(
+    dataset_id: str,
+    tags: Optional[List[str]] = None
+) -> List[Dict]
+```
+
+#### Parameters
+
+<ParamField path="dataset_id" type="string" required>
+  The unique identifier of the dataset.
+</ParamField>
+
+<ParamField path="tags" type="list" optional>
+  Filter items by specific tags.
+</ParamField>
+
+#### Returns
+
+Returns a list of dataset items, each containing:
+- `id`: Item identifier
+- `name`: Test case name
+- `input`: Input data for the test
+- `expected_output`: Expected result (if defined)
+- `metadata`: Additional item metadata
+- `tags`: Item-specific tags
+
+
+
+## Working with Dataset Items
+
+### Initialize Session with Dataset Item
+
+When running individual dataset items, link them to sessions:
+
+```python
+# Get a specific dataset item
+items = lai.get_dataset_items(dataset_id="dataset_123")
+item = items[0]
+
+# Initialize session linked to dataset item
+session_id = lai.init(
+    session_name=f"Testing: {item['name']}",
+    dataset_item_id=item['id'],  # Link to dataset item
+    rubrics=["Default Evaluation"]
+)
+
+# Run your agent
+result = process_agent(item['input'])
+
+# Validate if expected output exists
+if item.get('expected_output'):
+    success = result == item['expected_output']
+else:
+    success = result is not None and 'error' not in result
+
+lai.end_session(is_successful=success)
+```
+
+## Best Practices
+
+1. **Version Control**: Track dataset versions when running tests
+   ```python
+   dataset_v1 = lai.get_dataset(dataset_id, version=1)
+   dataset_v2 = lai.get_dataset(dataset_id, version=2)
+   ```
+
+2. **Meaningful Names**: Use descriptive names for test cases
+   ```python
+   item_name = "user_login_with_expired_token_should_fail"
+   ```
+
+3. **Comprehensive Coverage**: Include both positive and negative test cases
+
+4. **Parallel Execution**: Use parallel execution for large datasets to save time
+
+5. **Result Tracking**: Store test results for trend analysis
+   ```python
+   results_history = {
+       'date': datetime.now(),
+       'dataset_version': dataset['version'],
+       'results': results,
+       'pass_rate': sum(1 for r in results if r['success']) / len(results)
+   }
+   ```
+
+## Related Functions
+
+- [`init`](/python-sdk/init) - Initialize sessions with dataset items
+- [`create_mass_sim`](/python-sdk/create_mass_sim) - Run large-scale dataset tests
+- [`get_prompt`](/python-sdk/get_prompt) - Retrieve prompts for testing
