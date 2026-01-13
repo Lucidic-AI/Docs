@@ -1,0 +1,267 @@
+---
+title: Production Monitoring
+description: Monitor your AI agents in production with real-time analytics, cost tracking, and performance insights to ensure reliability at scale.
+---
+
+# Production Monitoring
+
+**Production Monitoring** enables you to track and analyze your AI agents' performance in real-world production environments, providing critical insights into cost, reliability, and user experience.
+
+Instead of flying blind in production, you get **comprehensive visibility** into how your agents perform with real users and data.
+
+---
+
+## Why Use Production Monitoring?
+
+**Production is different from development** — real users, real data, real stakes.
+
+Production Monitoring helps you:
+
+* Track costs and resource usage in real-time
+* Identify and diagnose production errors quickly
+* Monitor performance degradation before users complain
+* Establish baselines for normal behavior
+* Detect anomalies and unusual patterns
+* Prove ROI with detailed cost analytics
+
+### Use Cases
+
+* **Cost Management**: Track token usage and API costs per session
+* **Error Tracking**: Catch and diagnose failures before they impact users
+* **Performance Monitoring**: Ensure response times meet SLAs
+* **Capacity Planning**: Understand usage patterns and scale appropriately
+* **Compliance**: Audit agent behavior for safety and policy adherence
+
+---
+
+## Enabling Production Monitoring
+
+### In Your Code
+
+<Tabs>
+  <Tab title="Python">
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+# Enable production monitoring for this session
+with client.sessions.create(
+    session_name="prod_user_support",
+    production_monitoring=True
+):
+    # Your agent logic
+    result = run_agent()
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+await client.sessions.create({
+    sessionName: 'prod_user_support',
+    productionMonitoring: true
+});
+
+// Your agent logic
+const result = await runAgent();
+
+await client.sessions.end();
+```
+  </Tab>
+</Tabs>
+
+You can also set it via environment variable:
+
+```bash
+export LUCIDIC_PRODUCTION_MONITORING=true
+```
+
+### In the Dashboard
+
+Navigate to your agent and click the **"Production"** tab to access the monitoring dashboard.
+
+---
+
+## Understanding the Dashboard
+
+### Overview Metrics
+
+The top of the dashboard displays real-time KPIs:
+
+<Frame>
+  <img src="/images/production-metrics.png" alt="Production metrics cards showing sessions, costs, tokens, and errors" />
+</Frame>
+
+* **Total Sessions**: Count of production sessions in selected timeframe
+* **Average Duration**: Mean session execution time
+* **Total Cost**: Aggregate spend across all sessions
+
+### Cost Analysis
+
+Track and optimize your AI spending:
+
+<Frame>
+  <img src="/images/production-cost-chart.png" alt="Cost trend chart showing daily spending and projections" />
+</Frame>
+
+**Cost Breakdown Views**:
+- **By Time**: 1 day, 3 day, 1 week, 2 week, and 1 month metrics
+- **By Percentiles**: Median, 90th percentile, and 99th percentile cost breakdown
+
+**Cost Optimization Insights**:
+- Identify expensive outlier sessions
+- Find opportunities to use cheaper models
+- Click into sessions that cost too much
+
+### Error Monitoring
+
+Proactively catch and fix production issues in the errors tab:
+
+<Frame>
+  <img src="/images/production-errors.png" alt="Error tracking interface showing error types and affected sessions" />
+</Frame>
+
+**Error Tracking Features**:
+- **Error Types**: Categorized by type (timeout, API, validation)
+- **Error Messages**: Full error details and stack traces
+- **Affected Sessions**: Direct links to problematic sessions
+
+### Latency Monitoring
+
+Monitor time taken for each session to catch outliers:
+
+<Frame>
+  <img src="/images/production-latency.png" alt="Latency tracking interface" />
+</Frame>
+
+**Key Performance Indicators**:
+- **Response Time Distribution**: P50, P95, P99 latencies
+- **Event Duration**: Time spent in each workflow event
+
+---
+
+## Session Deep Dives
+
+Click any session from the monitoring dashboard to investigate:
+
+**Session Details Include**:
+- Complete execution timeline
+- All LLM calls with prompts/responses
+- Token usage per call
+- Cost breakdown
+- Error details and stack traces
+- Performance waterfall chart
+
+**Investigation Tools**:
+- [Time Travel](/feature-overview/time-travel) to replay sessions
+- Export session data for offline analysis
+
+---
+
+## Best Practices
+
+### Production Monitoring Setup
+
+**Start Small**
+- Enable for a subset of users first
+- Gradually increase monitoring coverage
+- Validate data accuracy
+
+**Tag Everything**
+```python
+with client.sessions.create(
+    session_name=f"support_chat_{user_id}",
+    production_monitoring=True,
+    tags=["user_tier:premium", "feature:chat", "version:2.1.0"]
+):
+    # Your agent logic
+    ...
+```
+
+### Cost Optimization
+
+**Monitor Regularly**
+- Daily cost reviews during rollout
+- Weekly trending analysis
+- Monthly budget reconciliation
+
+**Optimize Strategically**
+- Identify most expensive operations
+- Consider model downgrades where appropriate
+- Cache repeated operations
+- Batch similar requests
+
+### Error Management
+
+**Categorize Errors**
+- User errors vs system errors
+- Recoverable vs fatal
+- Expected vs unexpected
+
+**Track Resolution**
+- Time to detection
+- Time to resolution
+- Recurrence prevention
+
+---
+
+## Integration with Other Features
+
+### With Experiments
+
+Compare production performance to experiments:
+```python
+# Run experiment
+with client.sessions.create(
+    session_name="Test Variant",
+    experiment_id="exp_new_model"
+):
+    # Test new approach
+    ...
+
+# Compare to production baseline in dashboard
+```
+
+### With Rubrics
+
+Apply evaluation rubrics to production sessions:
+```python
+with client.sessions.create(
+    session_name="Production Task",
+    production_monitoring=True,
+    rubrics=["Customer Satisfaction", "Response Quality"]
+):
+    # Your agent logic
+    ...
+```
+
+Monitor rubric scores across production traffic to ensure quality.
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**Sessions not appearing in production view**
+- Verify `production_monitoring=True` is set
+- Check session has completed
+- Refresh the dashboard
+- Ensure correct time range selected
+
+**High costs unexpectedly**
+- Review error retry logic
+- Check for infinite loops
+- Audit model selection
+- Review prompt templates
+
+---
+
+## Related Features
+
+- [Experiments](/feature-overview/experiments) - Compare production to test variants
+- [Rubrics](/feature-overview/rubrics) - Evaluate production quality
+- [Time Travel](/feature-overview/time-travel) - Replay production sessions

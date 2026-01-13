@@ -11,24 +11,25 @@ Lucidic makes it easy to **automatically track OpenAI completions** as part of y
 
 ## How It Works
 
-When you set:
+When you initialize with:
 
 ```python
-lai.init(..., providers=["openai"])
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
 ```
 
 Lucidic will:
 
 - **Instrument** the OpenAI client using OpenTelemetry
 - Automatically log each LLM call as an **Event**
-- Attach the call to the currently active **Step**
+- Track events within the currently active **Session**
 
 This means:
 
-- **Automatic Event Creation**: Every OpenAI API call is automatically captured as an event - no manual `create_event()` or `end_event()` needed
+- **Automatic Event Creation**: Every OpenAI API call is automatically captured as an event
 - You get **full observability into prompt, model, cost, result, and more — out of the box**
 - Works with both sync and async OpenAI client methods
-- Even if you forget to create a step, Lucidic will create one automatically when the LLM call happens
 
 ---
 
@@ -48,10 +49,10 @@ We automatically capture the following from OpenAI API calls:
 
 ## Why This Matters
 
-LLM calls are a core part of most agent workflows — but without visibility, it’s impossible to debug or optimize:
+LLM calls are a core part of most agent workflows — but without visibility, it's impossible to debug or optimize:
 
 - Which call caused the **failure**?
-- Which **step** was it part of?
+- Which **session** was it part of?
 - How much did it **cost**?
 - What was the actual **response**?
 
@@ -62,72 +63,84 @@ This integration gives you full transparency, with **zero boilerplate**.
 ## Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from openai import OpenAI
 
-# Just initialize - that's it!
-lai.init(providers=["openai"])
+# Initialize clients
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
 
-client = OpenAI()
-
-# Steps and events are automatically created
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-
-# Session auto-ends when script exits
+# Use context manager for session lifecycle
+with client.sessions.create(session_name="chatbot_run"):
+    # LLM calls are automatically tracked as events
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+# Session auto-ends when context exits
 ```
 
 ### Streaming Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from openai import OpenAI
 
-lai.init(providers=["openai"])
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
 
-client = OpenAI()
+with client.sessions.create(session_name="streaming_demo"):
+    # Streaming responses are also tracked automatically
+    stream = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Tell me a story"}],
+        stream=True
+    )
 
-# Streaming responses are also tracked automatically
-stream = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "Tell me a story"}],
-    stream=True
-)
-
-for chunk in stream:
-    if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="")
+    for chunk in stream:
+        if chunk.choices[0].delta.content:
+            print(chunk.choices[0].delta.content, end="")
 ```
 
-### Explicit Step Management
+### With Function Decorators
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from openai import OpenAI
 
-lai.init(
-    session_name="chatbot_run",
-    providers=["openai"]  # API key and agent ID from env vars
-)
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
 
-client = OpenAI()
+@client.event()
+def research_questions(topic: str) -> str:
+    """Generate research questions - tracked as a Function Call event."""
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"What are key areas in {topic} research?"}]
+    )
+    return response.choices[0].message.content
 
-lai.create_step(state="Research", goal="Generate research questions")
+@client.event()
+def analyze_challenges(questions: str) -> str:
+    """Analyze challenges - tracked as a Function Call event."""
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"What are the main challenges in each area? {questions}"}]
+    )
+    return response.choices[0].message.content
 
-# All LLM calls are automatically tracked as events within this step
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "What are key areas in AI safety research?"}]
-)
+# Run the workflow
+with client.sessions.create(session_name="research_session"):
+    questions = research_questions("AI safety")
+    analysis = analyze_challenges(questions)
+    print(analysis)
 
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "What are the main challenges in each area?"}]
-)
-
-lai.end_step()
+# Event hierarchy:
+# Session
+# └── Event: research_questions (Function Call)
+#     └── Event: GPT-4 call (LLM Generation)
+# └── Event: analyze_challenges (Function Call)
+#     └── Event: GPT-4 call (LLM Generation)
 ```
 
 ---
@@ -136,8 +149,14 @@ lai.end_step()
 
 - All OpenAI client methods are instrumented (chat completions, embeddings, etc.)
 - Both sync and async methods are supported
-- If no step exists when an LLM call is made, Lucidic automatically creates one
-- You can always add custom events using `create_event()` for additional context
+- Events are automatically nested within decorated functions
+- You can always add custom events using `client.events.emit()` for additional context
 - Works with the latest OpenAI Python SDK (v1.0+)
 
 ---
+
+## See Also
+
+- [Event Management](/python-sdk/events/index) - Overview of events
+- [Decorators](/python-sdk/decorators) - Automatic function tracking
+- [Examples](/python-sdk/examples) - More usage patterns

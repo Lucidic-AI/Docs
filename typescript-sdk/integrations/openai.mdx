@@ -11,7 +11,7 @@ The TypeScript SDK provides automatic instrumentation for all OpenAI API calls u
 
 ## How It Works
 
-When you initialize with `instrumentModules: { OpenAI }`:
+When you initialize with `instrumentModules: { OpenAI }` or `providers: ['openai']`:
 
 1. The SDK instruments the OpenAI client using OpenTelemetry
 2. Every API call is automatically captured as an Event
@@ -23,18 +23,26 @@ When you initialize with `instrumentModules: { OpenAI }`:
 ## Setup
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
 import OpenAI from 'openai';
 
 // Initialize with manual instrumentation (ESM-friendly)
-await lai.init({
-  sessionName: 'OpenAI Demo',
-  instrumentModules: { OpenAI }
+const client = new LucidicAI({
+    apiKey: '...',
+    instrumentModules: { OpenAI }
 });
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI();
 
-// All calls are now automatically tracked!
+// Use context manager for session lifecycle
+await client.sessions.create({ sessionName: 'OpenAI Demo' }, async () => {
+    // All calls are now automatically tracked!
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello!' }]
+    });
+});
+// Session auto-ends when callback completes
 ```
 
 ---
@@ -58,99 +66,109 @@ For every OpenAI API call:
 ### Basic Chat Completion
 
 ```typescript
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [
-    { role: 'system', content: 'You are a helpful assistant.' },
-    { role: 'user', content: 'Explain quantum computing in simple terms.' }
-  ]
-});
+await client.sessions.create({ sessionName: 'Chat Example' }, async () => {
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+            { role: 'system', content: 'You are a helpful assistant.' },
+            { role: 'user', content: 'Explain quantum computing in simple terms.' }
+        ]
+    });
 
-// Automatically tracked with:
-// - Model: gpt-4
-// - Input/output tokens
-// - Cost calculation
-// - Response content
+    // Automatically tracked with:
+    // - Model: gpt-4
+    // - Input/output tokens
+    // - Cost calculation
+    // - Response content
+});
 ```
 
 ### Streaming Responses
 
 ```typescript
-const stream = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [{ role: 'user', content: 'Write a haiku about coding' }],
-  stream: true
+await client.sessions.create({ sessionName: 'Streaming Example' }, async () => {
+    const stream = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Write a haiku about coding' }],
+        stream: true
+    });
+
+    for await (const chunk of stream) {
+        process.stdout.write(chunk.choices[0]?.delta?.content || '');
+    }
+
+    // Streaming is tracked with accumulated tokens
 });
-
-for await (const chunk of stream) {
-  process.stdout.write(chunk.choices[0]?.delta?.content || '');
-}
-
-// Streaming is tracked with accumulated tokens
 ```
 
 ### Vision Models
 
 ```typescript
-const response = await openai.chat.completions.create({
-  model: 'gpt-4-vision-preview',
-  messages: [{
-    role: 'user',
-    content: [
-      { type: 'text', text: 'What is in this image?' },
-      { 
-        type: 'image_url', 
-        image_url: { 
-          url: 'data:image/jpeg;base64,/9j/4AAQSkZJRg...' 
-        } 
-      }
-    ]
-  }]
-});
+await client.sessions.create({ sessionName: 'Vision Example' }, async () => {
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4-vision-preview',
+        messages: [{
+            role: 'user',
+            content: [
+                { type: 'text', text: 'What is in this image?' },
+                {
+                    type: 'image_url',
+                    image_url: {
+                        url: 'data:image/jpeg;base64,/9j/4AAQSkZJRg...'
+                    }
+                }
+            ]
+        }]
+    });
 
-// Images are automatically:
-// - Extracted from the request
-// - Uploaded to Lucidic
-// - Linked to the event
+    // Images are automatically:
+    // - Extracted from the request
+    // - Uploaded to Lucidic
+    // - Linked to the event
+});
 ```
 
 ### Function Calling
 
 ```typescript
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [{ role: 'user', content: 'What is the weather in SF?' }],
-  tools: [{
-    type: 'function',
-    function: {
-      name: 'get_weather',
-      description: 'Get weather for a location',
-      parameters: {
-        type: 'object',
-        properties: {
-          location: { type: 'string' }
-        }
-      }
-    }
-  }]
-});
+await client.sessions.create({ sessionName: 'Function Calling' }, async () => {
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'What is the weather in SF?' }],
+        tools: [{
+            type: 'function',
+            function: {
+                name: 'get_weather',
+                description: 'Get weather for a location',
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        location: { type: 'string' }
+                    }
+                }
+            }
+        }]
+    });
 
-// Tool calls are captured in the event
+    // Tool calls are captured in the event
+});
 ```
 
 ### Embeddings
 
 ```typescript
-const embedding = await openai.embeddings.create({
-  model: 'text-embedding-3-small',
-  input: 'The quick brown fox jumps over the lazy dog'
-});
+await client.sessions.create({ sessionName: 'Embeddings' }, async () => {
+    const embedding = await openai.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: 'The quick brown fox jumps over the lazy dog'
+    });
 
-// Embedding calls are tracked with:
-// - Model used
-// - Input text
-// - Token count
-// - Cost
+    // Embedding calls are tracked with:
+    // - Model used
+    // - Input text
+    // - Token count
+    // - Cost
+});
 ```
 
 ---
@@ -158,15 +176,18 @@ const embedding = await openai.embeddings.create({
 ## Minimal Example
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
 import OpenAI from 'openai';
 
-// Just these 3 lines for full tracking!
-await lai.init({ instrumentModules: { OpenAI } });
+// Just these lines for full tracking!
+const client = new LucidicAI({ instrumentModules: { OpenAI } });
 const openai = new OpenAI();
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [{ role: 'user', content: 'Hello!' }]
+
+await client.sessions.create({ sessionName: 'Minimal' }, async () => {
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello!' }]
+    });
 });
 
 // That's it! Check your dashboard for the tracked event
@@ -195,32 +216,36 @@ Costs are automatically calculated and attached to each event.
 ### Custom OpenAI Client Options
 
 ```typescript
-await lai.init({ providers: ['openai'] });
+const client = new LucidicAI({ providers: ['openai'] });
 
-const OpenAI = (await import('openai')).default;
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  organization: 'org-...',
-  baseURL: 'https://api.openai.com/v1',
-  timeout: 60000,
-  maxRetries: 3
+await client.sessions.create({ sessionName: 'Custom Client' }, async () => {
+    const OpenAI = (await import('openai')).default;
+    const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+        organization: 'org-...',
+        baseURL: 'https://api.openai.com/v1',
+        timeout: 60000,
+        maxRetries: 3
+    });
+
+    // All options work with tracking
 });
-
-// All options work with tracking
 ```
 
 ### Error Handling
 
 ```typescript
-try {
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4',
-    messages: [{ role: 'user', content: 'Hello!' }]
-  });
-} catch (error) {
-  // Errors are also tracked as events
-  console.error('OpenAI error:', error);
-}
+await client.sessions.create({ sessionName: 'Error Handling' }, async () => {
+    try {
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4',
+            messages: [{ role: 'user', content: 'Hello!' }]
+        });
+    } catch (error) {
+        // Errors are also tracked as events
+        console.error('OpenAI error:', error);
+    }
+});
 ```
 
 ---
@@ -229,8 +254,8 @@ try {
 
 ### Events Not Appearing
 
-1. **Check import order** - OpenAI must be imported AFTER `lai.init()`
-2. **Verify initialization** - Ensure `instrumentModules` included the OpenAI module
+1. **Check import order** - OpenAI must be imported AFTER creating the LucidicAI client
+2. **Verify initialization** - Ensure `instrumentModules` includes the OpenAI module
 
 ### Incorrect Costs
 
@@ -238,10 +263,10 @@ The SDK uses built-in pricing data. For custom models or pricing:
 
 ```typescript
 // Manually create event with custom cost
-await lai.createEvent({
-  description: 'Custom model call',
-  model: 'ft:gpt-3.5-turbo-custom',
-  costAdded: 0.05
+await client.events.create({
+    name: 'Custom model call',
+    model: 'ft:gpt-3.5-turbo-custom',
+    cost: 0.05
 });
 ```
 

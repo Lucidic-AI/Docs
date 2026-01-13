@@ -1,176 +1,289 @@
 ---
-title: 'init'
-description: 'Initialize the Lucidic SDK and optionally create a session'
+title: 'init / sessions.create'
+description: 'Initialize the Lucidic SDK and create sessions'
 ---
 
 ## Overview
 
-The `init` function initializes the Lucidic SDK with your credentials, configures providers, and optionally starts a new session. This must be called before any other SDK operations.
+The Lucidic TypeScript SDK uses a client-based initialization pattern. First, create a `LucidicAI` client, then use `client.sessions.create()` to start tracking sessions.
 
-## Syntax
+## Client Initialization
 
 ```typescript
-await lai.init(params?: InitParams): Promise<string>
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({
+    apiKey?: string,
+    agentId?: string,
+    providers?: string[],
+    instrumentModules?: Record<string, any>,
+    productionMonitoring?: boolean,
+    debug?: boolean
+});
 ```
 
-## Parameters
+### Client Parameters
 
-<ParamField path="params" type="InitParams" optional>
-  Initialization object with the following properties:
-  
-  <Expandable title="properties">
-    <ParamField path="apiKey" type="string" optional>
-      Your Lucidic API key. If not provided, uses `LUCIDIC_API_KEY` environment variable.
-    </ParamField>
-    
-    <ParamField path="agentId" type="string" optional>
-      Your agent identifier. If not provided, uses `LUCIDIC_AGENT_ID` environment variable.
-    </ParamField>
-    
-    <ParamField path="sessionName" type="string" optional>
-      If provided, automatically creates a session with this name.
-    </ParamField>
-    
-    <ParamField path="sessionId" type="string" optional>
-      If provided, continues an existing session instead of creating a new one.
-    </ParamField>
-    
-    <ParamField path="task" type="string" optional>
-      High-level description of the task or workflow.
-    </ParamField>
-    
-    <ParamField path="providers" type="string[]" optional>
-      Providers to enable (OpenTelemetry instrumentation). Optional when using `instrumentModules`.
-    </ParamField>
-    
-    <ParamField path="massSimId" type="string" optional>
-      Optional mass simulation ID to associate the session with.
-    </ParamField>
-    
-    <ParamField path="experimentId" type="string" optional>
-      Optional experiment ID to associate the session with.
-    </ParamField>
-    
-    <ParamField path="maskingFunction" type="(text: string) => string" optional>
-      Custom function to mask sensitive data.
-    </ParamField>
-    
-    <ParamField path="autoEnd" type="boolean" optional default="true">
-      Automatically end session on process exit. Spans are flushed on exit even when `autoEnd` is false.
-    </ParamField>
+<ParamField path="apiKey" type="string" optional>
+  Your Lucidic API key. If not provided, uses `LUCIDIC_API_KEY` environment variable.
+</ParamField>
 
-    <ParamField path="debug" type="boolean" optional default="false">
-      Enable verbose SDK logging.
-    </ParamField>
-    
-    <ParamField path="useSpanProcessor" type="boolean" optional>
-      Force simple span processor (defaults to batch unless LUCIDIC_EXPORT_MODE indicates simple).
-    </ParamField>
-    
-    <ParamField path="instrumentModules" type="Record<string, any>" optional>
-      Manual module references for ESM/Next.js to ensure instrumentation (e.g., `{ OpenAI, Anthropic }`).
-    </ParamField>
-  </Expandable>
+<ParamField path="agentId" type="string" optional>
+  Your agent identifier. If not provided, uses `LUCIDIC_AGENT_ID` environment variable.
+</ParamField>
+
+<ParamField path="providers" type="string[]" optional>
+  Providers to enable (OpenTelemetry instrumentation). Options: `'openai'`, `'anthropic'`, `'vercel-ai'`.
+</ParamField>
+
+<ParamField path="instrumentModules" type="Record<string, any>" optional>
+  Manual module references for ESM/Next.js to ensure instrumentation (e.g., `{ OpenAI, Anthropic }`).
+</ParamField>
+
+<ParamField path="productionMonitoring" type="boolean" optional default="false">
+  Enable production monitoring mode. Sessions appear in the Production Monitoring dashboard.
+</ParamField>
+
+<ParamField path="debug" type="boolean" optional default="false">
+  Enable verbose SDK logging.
+</ParamField>
+
+## Session Creation
+
+### With Callback (Recommended)
+
+```typescript
+await client.sessions.create({
+    sessionName?: string,
+    sessionId?: string,
+    task?: string,
+    experimentId?: string,
+    datasetItemId?: string,
+    rubrics?: string[],
+    tags?: string[],
+    maskingFunction?: (text: string) => string
+}, async (session) => {
+    // Your workflow here
+    // Session auto-ends when callback completes
+});
+```
+
+### Manual Management
+
+```typescript
+const session = await client.sessions.create({
+    sessionName: 'My Session'
+});
+
+try {
+    // Your workflow
+} finally {
+    await client.sessions.end();
+}
+```
+
+### Session Parameters
+
+<ParamField path="sessionName" type="string" optional>
+  Human-readable name for the session. Used for identification in the dashboard.
+</ParamField>
+
+<ParamField path="sessionId" type="string" optional>
+  ID for the session. If provided, continues an existing session instead of creating a new one.
+</ParamField>
+
+<ParamField path="task" type="string" optional>
+  High-level description of the task or workflow.
+</ParamField>
+
+<ParamField path="experimentId" type="string" optional>
+  Optional experiment ID to associate the session with.
+</ParamField>
+
+<ParamField path="datasetItemId" type="string" optional>
+  Optional dataset item ID for test case tracking.
+</ParamField>
+
+<ParamField path="rubrics" type="string[]" optional>
+  List of evaluation rubrics to apply.
+</ParamField>
+
+<ParamField path="tags" type="string[]" optional>
+  Tags for categorizing and filtering sessions.
+</ParamField>
+
+<ParamField path="maskingFunction" type="(text: string) => string" optional>
+  Custom function to mask sensitive data before sending to Lucidic.
 </ParamField>
 
 ## Returns
 
-Returns a Promise that resolves to the session ID (string).
+- **Client initialization**: Returns a `LucidicAI` client instance
+- **Session creation with callback**: Returns a Promise that resolves when the callback completes
+- **Session creation without callback**: Returns a session object with `sessionId` property
 
 ## Examples
 
 ### Basic Initialization
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
 
 // Initialize with environment variables
-await lai.init();
+const client = new LucidicAI({ providers: ['openai'] });
 ```
 
 ### With Session Creation
 
 ```typescript
+import { LucidicAI } from 'lucidicai';
 import OpenAI from 'openai';
-await lai.init({
-  sessionName: "Customer Support Bot",
-  instrumentModules: { OpenAI },
-  task: "Answer customer questions"
+
+const client = new LucidicAI({
+    apiKey: '...',
+    providers: ['openai']
 });
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const openai = new OpenAI();
+
+await client.sessions.create({
+    sessionName: 'Customer Support Bot',
+    task: 'Answer customer questions'
+}, async () => {
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello!' }]
+    });
+    // Response is auto-tracked
+});
 ```
 
-### With Custom Configuration
+### ESM/Next.js Instrumentation
+
+For ESM or Next.js environments, pass module references directly:
 
 ```typescript
-await lai.init({
-  apiKey: "your-api-key",
-  agentId: "your-agent-id",
-  sessionName: "Production Agent",
-  providers: ["openai", "anthropic"],
-  maskingFunction: (text) => text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, 'XXX-XX-XXXX'),
-  debug: true
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
+import { Anthropic } from '@anthropic-ai/sdk';
+
+const client = new LucidicAI({
+    apiKey: '...',
+    instrumentModules: { OpenAI, anthropic: Anthropic }
 });
 ```
 
 ### Continue Existing Session
 
 ```typescript
-import { Anthropic } from '@anthropic-ai/sdk';
-await lai.init({
-  sessionId: "existing-session-uuid",
-  instrumentModules: { anthropic: Anthropic }
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ providers: ['openai'] });
+
+// Continue a previous session by ID
+await client.sessions.create({
+    sessionId: 'existing-session-uuid'
+}, async () => {
+    // Add more events to the existing session
+    client.events.emit({
+        name: 'Resumed task',
+        output: { status: 'continuing' }
+    });
+});
+```
+
+### Production Configuration
+
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({
+    apiKey: '...',
+    providers: ['openai', 'anthropic'],
+    productionMonitoring: true
+});
+
+await client.sessions.create({
+    sessionName: 'Production Agent',
+    maskingFunction: (text) => text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, 'XXX-XX-XXXX'),
+    tags: ['production', 'v2.0']
+}, async () => {
+    // Production workflow
+});
+```
+
+### Experiment Usage
+
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ providers: ['openai'] });
+
+// Experiments must be created in the dashboard first
+const EXPERIMENT_ID = 'exp-123abc-456def';
+
+await client.sessions.create({
+    sessionName: 'A/B Test Run 1',
+    experimentId: EXPERIMENT_ID,
+    task: 'Test new prompt variation'
+}, async () => {
+    // Your workflow
 });
 ```
 
 ## Important Notes
 
-### Provider Import Order
+### Provider Instrumentation
 
-Preferred pattern: import providers and pass them via `instrumentModules`:
+For ESM environments, prefer passing modules via `instrumentModules`:
 
 ```typescript
-// ✅ Preferred (ESM)
+// Preferred (ESM)
 import OpenAI from 'openai';
-await lai.init({ instrumentModules: { OpenAI } });
+const client = new LucidicAI({ instrumentModules: { OpenAI } });
 
-// ❌ WRONG - do not rely on providers array for ESM imports
-await lai.init({ providers: ["openai"] }); // discouraged
-import OpenAI from 'openai'; // importing after init may miss instrumentation
+// Alternative (CommonJS compatible)
+const client = new LucidicAI({ providers: ['openai'] });
 ```
 
-### Auto-End Behavior
+### Context Manager Benefits
 
-When `autoEnd` is true (default), the SDK:
-- Registers exit handlers for graceful shutdown
-- Automatically ends active sessions on process exit
-- Cleans up telemetry instrumentation
+Using the callback pattern provides:
+- Automatic session cleanup on completion
+- Automatic error tracking
+- Proper async context propagation
 
 ### Environment Variables
 
 The SDK checks these environment variables if not provided in config:
 - `LUCIDIC_API_KEY` - API key for authentication
 - `LUCIDIC_AGENT_ID` - Agent identifier
+- `LUCIDIC_PRODUCTION_MONITORING` - Enable production mode
 
 ## Error Handling
 
 ```typescript
+import { LucidicAI, APIError } from 'lucidicai';
+
 try {
-  await lai.init({
-    sessionName: "My Session",
-    providers: ["openai"]
-  });
+    const client = new LucidicAI({ providers: ['openai'] });
+
+    await client.sessions.create({
+        sessionName: 'My Session'
+    }, async () => {
+        // Your workflow
+    });
 } catch (error) {
-  if (error.message.includes('API key')) {
-    console.error('Invalid API credentials');
-  } else {
-    console.error('Initialization failed:', error);
-  }
+    if (error instanceof APIError) {
+        console.error('API error:', error.message);
+    } else {
+        console.error('Unexpected error:', error);
+    }
 }
 ```
 
 ## See Also
 
-- [initSession](/typescript-sdk/init-session) - Create sessions explicitly
-- [continueSession](/typescript-sdk/continue-session) - Continue existing sessions
+- [Session Context](/typescript-sdk/session-context) - Async-safe session context
+- [Event Management](/typescript-sdk/events/index) - Creating and managing events
 - [Quick Start Guide](/typescript-sdk/quick-start) - Getting started tutorial

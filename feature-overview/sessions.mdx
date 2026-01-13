@@ -1,0 +1,188 @@
+---
+title: Sessions
+description: Understand the lifecycle, structure, and analysis of a Session – a single run of your AI agent.
+---
+
+# Sessions
+
+A **Session** represents a single run of an AI agent as it attempts to complete a task. It captures the full trace of the agent's behavior — from initial state to final outcome — and provides deep visibility into each decision, action, and outcome along the way.
+
+---
+
+## What is a Session?
+
+A Session is a top-level unit of observability. It begins when an agent starts a task and ends when the task is either completed, failed, or interrupted.
+
+Within each Session in the Lucidic dashboard ([Workflow Sandbox](/feature-overview/workflow-sandbox)), you'll find:
+
+- A **timeline of Events** (LLM calls, function calls, errors, and custom events)
+- A **trace view** visualizing the session's execution
+- A **GIF/video replay** of the agent's interaction (if available)
+- Evaluation scores, cost metrics, metadata, and more
+
+<Note type="info">
+Sessions are non-deterministic by nature. Re-running the same task may lead to different outcomes due to the agent's autonomy and stochasticity.
+</Note>
+
+---
+
+## Session Structure
+
+### Event Hierarchy
+
+A Session is composed of **Events** that can be nested within each other. Events represent operations like LLM calls, function invocations, errors, or custom tracking points.
+
+```
+Session
+├── Event (LLM Generation) ← auto-captured
+├── Event (Function Call) ← via @client.event() decorator
+│   └── Event (LLM Generation) ← nested, auto-captured
+├── Event (Error Traceback) ← auto-captured on exception
+└── Event (Generic) ← manually created
+```
+
+<Note type="note">
+Learn more about the different event types in [Events](/feature-overview/events).
+</Note>
+
+---
+
+## Creating Sessions
+
+<Tabs>
+  <Tab title="Python">
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+# Using context manager (recommended)
+with client.sessions.create(session_name="My Task") as session:
+    # LLM calls are automatically captured as events
+    response = openai.chat.completions.create(...)
+# Session auto-ends when context exits
+
+# Or explicit management
+client.sessions.create(session_name="My Task")
+# ... your agent logic ...
+client.sessions.end(is_successful=True)
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+// Create and manage session
+await client.sessions.create({ sessionName: 'My Task' });
+// ... your agent logic ...
+await client.sessions.end({ isSuccessful: true });
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Session Dashboard
+
+Each Session in the [Workflow Sandbox](/feature-overview/workflow-sandbox) includes:
+
+- **Overview metrics**: duration, event count, cost, completion status
+- **Visual replay**: full session video or GIF (if captured)
+- **Trace view**: timeline of all events with inputs/outputs
+- **Evaluation scores**: human or LLM-generated
+
+---
+
+## Evaluation and Scoring
+
+Sessions can be evaluated via multiple systems:
+
+### 1. User-Provided Eval Score
+
+Passed in at runtime using the SDK. Useful for customized or domain-specific scoring.
+
+<Tabs>
+  <Tab title="Python">
+```python
+client.sessions.end(
+    is_successful=True,
+    session_eval=4.5,
+    session_eval_reason="Agent completed primary objectives but took longer than expected"
+)
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+await client.sessions.end({
+    isSuccessful: true,
+    sessionEval: 4.5,
+    sessionEvalReason: "Agent completed primary objectives but took longer than expected"
+});
+```
+  </Tab>
+</Tabs>
+
+### 2. Rubric-Based Evaluation
+
+Define structured, weighted rubrics with multiple criteria and score definitions.
+
+```yaml
+criteria:
+  - name: "Task Completion"
+    weight: 0.6
+    scores:
+      10: "Fully completed all objectives"
+      5: "Partially completed"
+      1: "Failed to complete"
+
+  - name: "Efficiency"
+    weight: 0.4
+    scores:
+      10: "Optimal resource usage"
+      5: "Reasonable resource usage"
+      1: "Excessive resource usage"
+```
+
+These rubrics produce both per-criterion and composite scores.
+
+### 3. Default Evaluation
+
+Our built-in system outputs:
+- A score (0 or 1) based on task completion
+- Graph highlights of failure points
+
+---
+
+## Debugging with Sessions
+
+Sessions give you rich insight into how your agent operates and where it goes wrong:
+
+- **Replay stuck behavior** via video
+- **Identify high-cost operations**
+- **Trace decision-making** back to specific prompts or events
+- **Track errors** with full stack traces
+- **Analyze LLM calls** with full input/output visibility
+
+---
+
+## Metadata and Tagging
+
+Each Session contains rich metadata including:
+
+- Task description
+- Agent identity and version
+- Total cost
+- Timestamps
+- Replay data and trace reference
+
+Sessions can be tagged for organization and filtering in [Experiments](/feature-overview/experiments).
+
+---
+
+## Related
+
+- [Events](/feature-overview/events) - Understand the event types within sessions
+- [Workflow Sandbox](/feature-overview/workflow-sandbox) - Deep-dive into session debugging
+- [Experiments](/feature-overview/experiments) - Group sessions for analysis

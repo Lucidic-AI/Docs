@@ -1,29 +1,23 @@
 ---
-title: session
-description: Full-lifecycle session context manager (init → bind → end on exit)
+title: sessions.create
+description: Full-lifecycle session context manager (create → bind → end on exit)
 ---
 
 ## Overview
 
-The `session` context manager creates a new session, binds it to the current async/thread context, and automatically ends it when the context exits. This is the recommended pattern for self-contained workflows.
+The `sessions.create()` context manager creates a new session, binds it to the current async/thread context, and automatically ends it when the context exits. This is the recommended pattern for self-contained workflows.
 
 ## Syntax
 
 ```python
-with lai.session(
+with client.sessions.create(
   session_name: Optional[str] = None,
   session_id: Optional[str] = None,
-  api_key: Optional[str] = None,
-  agent_id: Optional[str] = None,
   task: Optional[str] = None,
-  providers: Optional[List[ProviderType]] = [],
-  production_monitoring: Optional[bool] = False,
-  mass_sim_id: Optional[str] = None,
   experiment_id: Optional[str] = None,
   rubrics: Optional[list] = None,
   tags: Optional[list] = None,
-  masking_function = None,
-  auto_end: Optional[bool] = True,
+  production_monitoring: Optional[bool] = False,
 ):
   ...
 ```
@@ -32,38 +26,41 @@ with lai.session(
 
 - `session_name` (string, optional): Display name for the session.
 - `session_id` (string, optional): Provide to resume under this ID; otherwise a new one is created.
-- `api_key`, `agent_id` (string, optional): Credentials; fall back to `LUCIDIC_API_KEY` and `LUCIDIC_AGENT_ID`.
-- `task`, `rubrics`, `tags` (optional): Session metadata.
-- `providers` (list, optional): Instrumentation targets like `"openai"`, `"anthropic"`, etc.
-- `masking_function` (callable, optional): Mask sensitive data before sending.
-- `auto_end` (bool, optional): Ignored inside this context; session always ends on exit.
+- `task` (string, optional): Description of what this session is doing.
+- `experiment_id` (string, optional): Link to an experiment.
+- `rubrics`, `tags` (optional): Session metadata for evaluation and filtering.
+- `production_monitoring` (bool, optional): Enable production monitoring mode.
 
 ## Returns
 
-None. The active session is bound to context for the duration of the `with` block.
+A session context. The active session is bound for the duration of the `with` block.
 
 ## Examples
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from openai import OpenAI
 
-with lai.session(session_name="Process Order", providers=["openai"]):
-    client = OpenAI()
-    resp = client.chat.completions.create(
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
+
+with client.sessions.create(session_name="Process Order"):
+    resp = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": "Summarize the order"}],
     )
+# Session auto-ends when context exits
 ```
 
 ## Notes
 
 - Spans are stamped with the active `lucidic.session_id` at start for correct attribution.
 - Prefer this for request-scoped work or jobs that should clean up automatically.
+- Provider instrumentation is configured when initializing the `LucidicAI` client.
 
 ## See Also
 
-- [`session_async`](/python-sdk/context/session_async)
-- [`bind_session`](/python-sdk/context/bind_session)
-- [`run_session`](/python-sdk/context/run_session)
+- [`sessions.acreate`](/python-sdk/context/session_async)
+- [`sessions.bind`](/python-sdk/context/bind_session)
+- [`sessions.run`](/python-sdk/context/run_session)
 

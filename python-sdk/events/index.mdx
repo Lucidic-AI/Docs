@@ -1,0 +1,150 @@
+---
+title: Event Management
+description: Overview of event management in the Lucidic Python SDK
+---
+
+# Event Management
+
+Events are the core tracking unit in Lucidic, representing operations within your agent's execution. This section covers how to create, emit, and manage events using the Python SDK.
+
+---
+
+## Event Types
+
+Lucidic tracks four types of events:
+
+| Type | How Created | Description |
+|------|-------------|-------------|
+| **LLM Generation** | Automatic | Captured automatically when using instrumented providers |
+| **Function Call** | `@client.event()` | Created via decorator on functions |
+| **Error Traceback** | Automatic | Captured on uncaught exceptions |
+| **Generic Event** | Manual | Created via `client.events.create()` or `.emit()` |
+
+---
+
+## Quick Start
+
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+with client.sessions.create(session_name="My Task"):
+    # LLM calls are automatically captured
+    response = openai.chat.completions.create(...)
+
+    # Function calls via decorator
+    @client.event()
+    def process_data(data):
+        return transformed_data
+
+    result = process_data(my_data)
+
+    # Manual events
+    client.events.emit(
+        name="Custom operation",
+        input={"key": "value"},
+        output={"result": "success"}
+    )
+```
+
+---
+
+## API Reference
+
+<CardGroup cols={2}>
+  <Card title="create / acreate" icon="plus" href="/python-sdk/events/create">
+    Create events synchronously or asynchronously
+  </Card>
+  <Card title="emit" icon="bolt" href="/python-sdk/events/emit">
+    Zero-latency background event emission
+  </Card>
+  <Card title="@client.event()" icon="at" href="/python-sdk/events/decorator">
+    Decorator for automatic function call tracking
+  </Card>
+</CardGroup>
+
+---
+
+## Choosing the Right Method
+
+| Method | Use Case | Latency Impact |
+|--------|----------|----------------|
+| `client.events.create()` | When you need to wait for confirmation | Adds latency |
+| `client.events.acreate()` | Async code that needs confirmation | Adds latency (async) |
+| `client.events.emit()` | Hot paths, high-frequency events | Zero latency |
+| `@client.event()` | Function call tracking | Minimal overhead |
+
+---
+
+## Event Properties
+
+Events can include the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `str` | Descriptive name of the event |
+| `type` | `str` | Event type (auto-set for decorated functions) |
+| `input` | `dict` | Input data/parameters |
+| `output` | `dict` | Output/result data |
+| `duration_ms` | `int` | Duration in milliseconds |
+| `cost` | `float` | Cost of the operation |
+| `model` | `str` | Model name (for LLM events) |
+| `metadata` | `dict` | Custom metadata |
+
+---
+
+## Event Nesting
+
+Events automatically nest based on execution context. For example, an LLM call inside a decorated function creates a nested structure:
+
+```python
+@client.event()
+def analyze_document(doc):
+    # This LLM call creates a nested event
+    response = openai.chat.completions.create(...)
+    return response.choices[0].message.content
+
+# Results in:
+# Session
+# └── Event: analyze_document (Function Call)
+#     └── Event: GPT-4 call (LLM Generation)
+```
+
+---
+
+## Best Practices
+
+### 1. Use `.emit()` for Hot Paths
+
+```python
+# Won't slow down your application
+client.events.emit(name="cache_check", input={"key": key})
+```
+
+### 2. Decorate Key Functions
+
+```python
+@client.event()
+def critical_operation(data):
+    # Automatically tracked with inputs/outputs
+    return process(data)
+```
+
+### 3. Add Meaningful Names
+
+```python
+# Good - describes what happened
+client.events.emit(name="User preference fetched from database")
+
+# Less helpful
+client.events.emit(name="db_call")
+```
+
+---
+
+## Related
+
+- [Sessions](/python-sdk/init) - Managing sessions
+- [Events Concept](/feature-overview/events) - Understanding events
+- [Decorators](/python-sdk/decorators) - Using decorators

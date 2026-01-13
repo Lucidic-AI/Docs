@@ -97,55 +97,58 @@ Now you can add new sessions to your experiment using the SDK:
 ### Python Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
 
 # Your experiment ID from the dashboard
 EXPERIMENT_ID = "exp-123abc-456def-789ghi"
 
 # Initialize a session that belongs to the experiment
-session_id = lai.init(
+with client.sessions.create(
     session_name="Login Test Run 1",
     experiment_id=EXPERIMENT_ID,  # Add to experiment
     task="Test user login flow"
-)
+):
+    # Run your agent workflow
+    user = simulate_login("testuser@example.com", "password123")
+    verify_dashboard_access(user)
 
-# Run your agent workflow
-user = simulate_login("testuser@example.com", "password123")
-verify_dashboard_access(user)
-
-# End the session with evaluation
-lai.end_session(
-    is_successful=True,
-    session_eval=8.5,
-    session_eval_reason="Login successful, minor UI delay"
-)
+    # Update the session with evaluation
+    client.sessions.update(
+        is_successful=True,
+        is_successful_reason="Login successful, minor UI delay"
+    )
+# Session auto-ends when context exits
 ```
 
 ### TypeScript Example
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
 
 // Your experiment ID from the dashboard
 const EXPERIMENT_ID = "exp-123abc-456def-789ghi";
 
 // Initialize a session that belongs to the experiment
-const sessionId = await lai.init({
+await client.sessions.create({
     sessionName: "Login Test Run 1",
     experimentId: EXPERIMENT_ID,  // Add to experiment
     task: "Test user login flow"
-});
+}, async () => {
+    // Run your agent workflow
+    const user = await simulateLogin("testuser@example.com", "password123");
+    await verifyDashboardAccess(user);
 
-// Run your agent workflow
-const user = await simulateLogin("testuser@example.com", "password123");
-await verifyDashboardAccess(user);
-
-// End the session
-await lai.endSession({
-    isSuccessful: true,
-    sessionEval: 8.5,
-    sessionEvalReason: "Login successful, minor UI delay"
+    // Update the session with evaluation
+    await client.sessions.update({
+        isSuccessful: true,
+        isSuccessfulReason: "Login successful, minor UI delay"
+    });
 });
+// Session auto-ends when callback completes
 ```
 
 ---
@@ -155,7 +158,9 @@ await lai.endSession({
 To get meaningful insights, run multiple sessions with variations:
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
 
 EXPERIMENT_ID = "exp-123abc-456def-789ghi"
 
@@ -169,25 +174,21 @@ test_cases = [
 
 for i, test_case in enumerate(test_cases):
     # Each session is added to the experiment
-    lai.init(
+    with client.sessions.create(
         session_name=f"Login Test {i+1}: {test_case['expected']}",
         experiment_id=EXPERIMENT_ID,
         tags=["automated", test_case['expected']]
-    )
-    
-    try:
-        result = test_login(test_case['email'], test_case['password'])
-        success = (result == test_case['expected'])
-        
-        lai.end_session(
-            is_successful=success,
-            session_eval=10 if success else 0
-        )
-    except Exception as e:
-        lai.end_session(
-            is_successful=False,
-            session_eval_reason=str(e)
-        )
+    ):
+        try:
+            result = test_login(test_case['email'], test_case['password'])
+            success = (result == test_case['expected'])
+
+            client.sessions.update(is_successful=success)
+        except Exception as e:
+            client.sessions.update(
+                is_successful=False,
+                is_successful_reason=str(e)
+            )
 ```
 
 ---
@@ -256,8 +257,9 @@ Based on the analysis:
 Here's a complete example of using experiments for A/B testing:
 
 ```python
-import lucidicai as lai
-import random
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
 
 # Step 1: Create two experiments in the dashboard
 # - "Prompt Version A - Concise"
@@ -276,22 +278,22 @@ test_queries = [
 
 for query in test_queries:
     # Test Version A
-    lai.init(
+    with client.sessions.create(
         session_name=f"Query: {query[:30]}",
         experiment_id=EXPERIMENT_A
-    )
-    response_a = chatbot_with_prompt_a(query)
-    score_a = evaluate_response(response_a, query)
-    lai.end_session(session_eval=score_a)
-    
+    ):
+        response_a = chatbot_with_prompt_a(query)
+        score_a = evaluate_response(response_a, query)
+        client.sessions.update(is_successful=score_a >= 7)
+
     # Test Version B
-    lai.init(
+    with client.sessions.create(
         session_name=f"Query: {query[:30]}",
         experiment_id=EXPERIMENT_B
-    )
-    response_b = chatbot_with_prompt_b(query)
-    score_b = evaluate_response(response_b, query)
-    lai.end_session(session_eval=score_b)
+    ):
+        response_b = chatbot_with_prompt_b(query)
+        score_b = evaluate_response(response_b, query)
+        client.sessions.update(is_successful=score_b >= 7)
 
 # Step 3: Compare in dashboard
 # Navigate to each experiment to see:

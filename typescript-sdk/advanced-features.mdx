@@ -1,6 +1,6 @@
 ---
 title: Advanced Features
-description: Multimodal support, data masking, mass simulations, and more
+description: Multimodal support, data masking, prompt management, and more
 ---
 
 # Advanced Features
@@ -16,25 +16,33 @@ The SDK automatically handles text and image inputs for supported providers.
 ### Automatic Image Tracking
 
 ```typescript
-// Images in OpenAI calls are automatically tracked
-const response = await openai.chat.completions.create({
-  model: 'gpt-4-vision-preview',
-  messages: [{
-    role: 'user',
-    content: [
-      { type: 'text', text: 'Describe this chart' },
-      { 
-        type: 'image_url', 
-        image_url: { url: 'data:image/png;base64,iVBORw0...' } 
-      }
-    ]
-  }]
-});
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
 
-// The image is automatically:
-// - Extracted from the request
-// - Uploaded to Lucidic storage
-// - Linked to the event
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+const openai = new OpenAI();
+
+await client.sessions.create({ sessionName: 'Image Analysis' }, async () => {
+    // Images in OpenAI calls are automatically tracked
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4-vision-preview',
+        messages: [{
+            role: 'user',
+            content: [
+                { type: 'text', text: 'Describe this chart' },
+                {
+                    type: 'image_url',
+                    image_url: { url: 'data:image/png;base64,iVBORw0...' }
+                }
+            ]
+        }]
+    });
+
+    // The image is automatically:
+    // - Extracted from the request
+    // - Uploaded to Lucidic storage
+    // - Linked to the event
+});
 ```
 
 ---
@@ -46,18 +54,28 @@ Protect sensitive information before it's sent to Lucidic.
 ### Built-in Masking
 
 ```typescript
-await lai.init({
-  maskingFunction: (text: string) => {
-    return text
-      // Mask SSNs
-      .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '***-**-****')
-      // Mask emails
-      .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '***@***.***')
-      // Mask credit cards
-      .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '**** **** **** ****')
-      // Mask API keys
-      .replace(/\b(sk-|api-|key-)[a-zA-Z0-9]{20,}\b/g, '$1***');
-  }
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({
+    apiKey: '...',
+    providers: ['openai']
+});
+
+await client.sessions.create({
+    sessionName: 'Secure Session',
+    maskingFunction: (text: string) => {
+        return text
+            // Mask SSNs
+            .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '***-**-****')
+            // Mask emails
+            .replace(/\b[\w.-]+@[\w.-]+\.\w+\b/g, '***@***.***')
+            // Mask credit cards
+            .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '**** **** **** ****')
+            // Mask API keys
+            .replace(/\b(sk-|api-|key-)[a-zA-Z0-9]{20,}\b/g, '$1***');
+    }
+}, async () => {
+    // All data in this session will be masked
 });
 ```
 
@@ -65,92 +83,32 @@ await lai.init({
 
 ```typescript
 interface SensitiveData {
-  userId: string;
-  accountNumber: string;
-  apiKey: string;
+    userId: string;
+    accountNumber: string;
+    apiKey: string;
 }
 
-await lai.init({ maskingFunction: (text: string) => {
-  // Parse and mask JSON
-  try {
-    const data = JSON.parse(text);
-    if (data.accountNumber) {
-      data.accountNumber = '***MASKED***';
+await client.sessions.create({
+    sessionName: 'Custom Masking',
+    maskingFunction: (text: string) => {
+        // Parse and mask JSON
+        try {
+            const data = JSON.parse(text);
+            if (data.accountNumber) {
+                data.accountNumber = '***MASKED***';
+            }
+            if (data.apiKey) {
+                data.apiKey = data.apiKey.substring(0, 8) + '***';
+            }
+            return JSON.stringify(data);
+        } catch {
+            // Not JSON, apply text masks
+            return text.replace(/Account: \d+/g, 'Account: ***');
+        }
     }
-    if (data.apiKey) {
-      data.apiKey = data.apiKey.substring(0, 8) + '***';
-    }
-    return JSON.stringify(data);
-  } catch {
-    // Not JSON, apply text masks
-    return text.replace(/Account: \d+/g, 'Account: ***');
-  }
-}) });
-```
-
----
-
-## Mass Simulations
-
-Run large-scale tests to understand agent behavior at scale.
-
-### Basic Mass Simulation (Pattern)
-
-```typescript
-for (let i = 0; i < 100; i++) {
-  const sessionId = await lai.init({ sessionName: `Load Test - ${i}` });
-  
-  await lai.createStep({
-    state: `Test ${i}`,
-    goal: 'Complete test scenario'
-  });
-
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4',
-    messages: [{ role: 'user', content: `Test query ${i}` }]
-  });
-
-  await lai.endStep({
-    evalScore: Math.random() > 0.1 ? 90 : 50,
-    evalDescription: 'Test completed'
-  });
-
-  await lai.endSession({ isSuccessful: true });
-}
-```
-
-### Advanced Simulation with Variations (Pattern)
-
-```typescript
-const testScenarios = [
-  'Reset password',
-  'Update billing info',
-  'Cancel subscription',
-  'Technical support'
-];
-
-for (let sessionNum = 0; sessionNum < 200; sessionNum++) {
-  const scenario = testScenarios[sessionNum % testScenarios.length];
-  await lai.init({ sessionName: `Customer Support Test - ${sessionNum}` });
-
-  await lai.updateSession({
-    task: `Testing: ${scenario}`,
-    tags: [
-      `scenario:${scenario}`,
-      `testRun:${sessionNum}`
-    ]
-  });
-
-  // Simulate different paths
-  if (scenario === 'Reset password') {
-    await handlePasswordReset();
-  } else if (scenario === 'Technical support') {
-    await handleTechnicalSupport();
-  }
-  // ... more scenarios
-
-  await lai.endSession({ isSuccessful: true });
-}
+}, async () => {
+    // Your workflow
+});
 ```
 
 ---
@@ -162,16 +120,26 @@ Fetch and cache prompts from the Lucidic platform.
 ### Basic Prompt Fetching
 
 ```typescript
-// Fetch a prompt (cached by default)
-const prompt = await lai.getPrompt('customer-support-prompt');
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
 
-// Use in your LLM call
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [
-    { role: 'system', content: prompt },
-    { role: 'user', content: userMessage }
-  ]
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+const openai = new OpenAI();
+
+await client.sessions.create({ sessionName: 'Prompt Demo' }, async () => {
+    // Fetch a prompt (cached by default)
+    const prompt = await client.prompts.get({
+        promptName: 'customer-support-prompt'
+    });
+
+    // Use in your LLM call
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+            { role: 'system', content: prompt },
+            { role: 'user', content: userMessage }
+        ]
+    });
 });
 ```
 
@@ -179,10 +147,16 @@ const response = await openai.chat.completions.create({
 
 ```typescript
 // Always fetch fresh
-const freshPrompt = await lai.getPrompt({ promptName: 'dynamic-prompt', cacheTtl: 0 });
+const freshPrompt = await client.prompts.get({
+    promptName: 'dynamic-prompt',
+    cacheTtl: 0
+});
 
 // Cache for 5 minutes (default)
-const cachedPrompt = await lai.getPrompt({ promptName: 'stable-prompt', cacheTtl: 300 });
+const cachedPrompt = await client.prompts.get({
+    promptName: 'stable-prompt',
+    cacheTtl: 300
+});
 ```
 
 ### Prompt Versioning
@@ -200,13 +174,21 @@ In the Lucidic dashboard, you can:
 Add custom metadata to sessions for better organization.
 
 ```typescript
-// During initialization
-await lai.init({ sessionName: 'Customer Chat' });
+import { LucidicAI } from 'lucidicai';
 
-// Update during session
-await lai.updateSession({
-  task: 'Updated task description',
-  tags: ['priority:high', 'department:technical', 'issueType:bug', 'customField:any-value']
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+// During initialization
+await client.sessions.create({
+    sessionName: 'Customer Chat',
+    tags: ['priority:high', 'department:technical', 'issueType:bug']
+}, async () => {
+    // Your workflow
+
+    // Update tags during session
+    await client.sessions.update({
+        tags: ['priority:high', 'department:technical', 'issueType:bug', 'resolved:true']
+    });
 });
 ```
 
@@ -217,36 +199,40 @@ await lai.updateSession({
 The TypeScript SDK includes these automatic behaviors:
 
 ### 1. Auto Session Management
+
 ```typescript
-// No need to explicitly end sessions
-import OpenAI from 'openai';
-await lai.init({ instrumentModules: { OpenAI } });
-// ... do work ...
-// Session auto-ends on process exit
+// Sessions auto-end when callback completes
+await client.sessions.create({ sessionName: 'Auto-cleanup' }, async () => {
+    // ... do work ...
+}); // Session ends automatically here
 ```
 
-### 2. Auto Step Creation
-```typescript
-// No active step? No problem!
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [{ role: 'user', content: 'Hello!' }]
-});
-// Step is created automatically
-```
+### 2. Auto Event Creation
 
-### 3. Auto Event Creation
 ```typescript
 // Every LLM call becomes an event automatically
 // No manual event creation needed for supported providers
+const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Hello!' }]
+});
+// Event created automatically with inputs, outputs, tokens, cost, timing
 ```
 
-### 4. Auto Cost Calculation
+### 3. Auto Cost Calculation
+
+Costs are calculated based on:
+- Model used
+- Token counts (input and output)
+- Built-in pricing data for supported models
+
+### 4. Auto Error Tracking
+
 ```typescript
-// Costs are calculated based on:
-// - Model used
-// - Token counts
-// - Built-in pricing data
+await client.sessions.create({ sessionName: 'Error Tracking' }, async () => {
+    throw new Error('Something went wrong');
+    // Error is automatically captured as an event with stack trace
+});
 ```
 
 ---
@@ -256,22 +242,19 @@ const response = await openai.chat.completions.create({
 The SDK provides specific error types for better error handling:
 
 ```typescript
-import { APIError } from 'lucidicai';
+import { LucidicAI, APIError } from 'lucidicai';
 
 try {
-  await lai.init({ apiKey: 'invalid' });
-} catch (error) {
-  if (error instanceof APIError) {
-    console.error('API error:', error.message);
-    // Handle network issues, server errors, etc.
-  }
-}
+    const client = new LucidicAI({ apiKey: 'invalid' });
 
-// Session-specific errors
-try {
-  await lai.createStep({ state: 'Processing' });
+    await client.sessions.create({ sessionName: 'Test' }, async () => {
+        // Your workflow
+    });
 } catch (error) {
-  // Handle errors
+    if (error instanceof APIError) {
+        console.error('API error:', error.message);
+        // Handle network issues, server errors, etc.
+    }
 }
 ```
 
@@ -282,25 +265,51 @@ try {
 ### Batching and Async Operations
 
 ```typescript
-// Good: Parallel operations
-const [analysis, summary, translation] = await Promise.all([
-  analyzeText(content),
-  summarizeText(content),
-  translateText(content)
-]);
+await client.sessions.create({ sessionName: 'Parallel Work' }, async () => {
+    // Good: Parallel operations
+    const [analysis, summary, translation] = await Promise.all([
+        analyzeText(content),
+        summarizeText(content),
+        translateText(content)
+    ]);
 
-// Each LLM call is tracked independently
+    // Each LLM call is tracked independently as nested events
+});
+```
+
+### High-Frequency Event Tracking
+
+```typescript
+await client.sessions.create({ sessionName: 'Batch Processing' }, async () => {
+    // Use emit() for high-frequency events - zero latency impact
+    for (const item of largeDataset) {
+        client.events.emit({
+            name: 'Item processed',
+            input: { id: item.id },
+            output: { success: true }
+        });
+        await processItem(item);
+    }
+});
 ```
 
 ### Memory Management
 
 ```typescript
-// For long-running processes
-setInterval(async () => {
-  // Periodically end and start new sessions
-  await lai.endSession({ isSuccessful: true, isSuccessfulReason: 'Checkpoint reached' });
-  await lai.init({ sessionName: 'Continued processing', task: 'Resume from checkpoint' });
-}, 3600000); // Every hour
+// For long-running processes, consider splitting into multiple sessions
+async function longRunningProcess() {
+    const checkpoints = ['phase1', 'phase2', 'phase3'];
+
+    for (const phase of checkpoints) {
+        await client.sessions.create({
+            sessionName: `Long process - ${phase}`,
+            tags: ['long-running', phase]
+        }, async () => {
+            await processPhase(phase);
+        });
+        // Each phase gets its own session for better organization
+    }
+}
 ```
 
 ---
@@ -309,4 +318,5 @@ setInterval(async () => {
 
 - [API Reference](/typescript-sdk/index) - Complete function documentation
 - [Examples](/typescript-sdk/examples) - Real-world implementations
+
 ---

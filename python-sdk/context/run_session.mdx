@@ -1,18 +1,18 @@
 ---
-title: run_session
+title: sessions.run
 description: Run a function inside a new session context
 ---
 
 ## Overview
 
-`run_session` creates a new session with the given init params, runs your function within that context, and then ends the session after the function returns.
+`sessions.run()` creates a new session, runs your function within that context, and then ends the session after the function returns.
 
 ## Syntax
 
 ```python
-result = lai.run_session(
+result = client.sessions.run(
   fn: Callable[..., T],
-  init_params: Optional[dict] = None,
+  session_name: Optional[str] = None,
   *args,
   **kwargs
 ) -> T
@@ -21,7 +21,7 @@ result = lai.run_session(
 ## Parameters
 
 - `fn` (callable, required): Function to execute within the session.
-- `init_params` (dict, optional): Parameters to pass to `init/session` (e.g., `session_name`, `providers`).
+- `session_name` (string, optional): Display name for the session.
 - `*args`, `**kwargs`: Arguments forwarded to `fn`.
 
 ## Returns
@@ -31,16 +31,18 @@ Returns whatever `fn` returns.
 ## Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
 
 def work(x: int) -> int:
     return x * 2
 
-result = lai.run_session(work, init_params={"session_name": "wrapped", "providers": ["openai"]}, x=5)
+result = client.sessions.run(work, session_name="wrapped", x=5)
 ```
 
 ## See Also
 
-- [`run_in_session`](/python-sdk/context/run_in_session)
-- [`session`](/python-sdk/context/session)
+- [`sessions.run_in`](/python-sdk/context/run_in_session)
+- [`sessions.create`](/python-sdk/context/session)
 

@@ -1,0 +1,205 @@
+---
+title: events.emit
+description: Zero-latency background event emission in the Lucidic Python SDK
+---
+
+# events.emit
+
+Emit events in the background with zero latency impact on your application. This is ideal for hot paths and high-frequency event tracking.
+
+---
+
+## Syntax
+
+```python
+client.events.emit(
+    name: str,
+    input: dict = None,
+    output: dict = None,
+    duration_ms: int = None,
+    cost: float = None,
+    model: str = None,
+    metadata: dict = None
+)
+```
+
+---
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `str` | Yes | Descriptive name for the event |
+| `input` | `dict` | No | Input data/parameters for the event |
+| `output` | `dict` | No | Output/result from the event |
+| `duration_ms` | `int` | No | Duration of the operation in milliseconds |
+| `cost` | `float` | No | Cost of the operation |
+| `model` | `str` | No | Model name (for LLM-related events) |
+| `metadata` | `dict` | No | Additional custom metadata |
+
+---
+
+## Returns
+
+Returns immediately. The event is sent to Lucidic in the background without blocking your code.
+
+---
+
+## Examples
+
+### Basic Usage
+
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+with client.sessions.create(session_name="High-Performance Task"):
+    # Zero latency - doesn't block execution
+    client.events.emit(
+        name="Cache lookup",
+        input={"key": "user:123"},
+        output={"hit": True, "value": {...}}
+    )
+```
+
+### Hot Path Tracking
+
+```python
+def process_request(request):
+    with client.sessions.create(session_name="Request Handler"):
+        # Track without adding latency to the request
+        client.events.emit(
+            name="Request received",
+            input={"path": request.path, "method": request.method}
+        )
+
+        # Process the request
+        result = handle_request(request)
+
+        # Track completion
+        client.events.emit(
+            name="Request completed",
+            output={"status": result.status_code}
+        )
+
+        return result
+```
+
+### High-Frequency Events
+
+```python
+with client.sessions.create(session_name="Batch Processing"):
+    for i, item in enumerate(items):
+        # Track each item without slowing down the loop
+        client.events.emit(
+            name=f"Process item {i}",
+            input={"item_id": item.id},
+            output={"processed": True}
+        )
+
+        process_item(item)
+```
+
+### Logging Events
+
+```python
+with client.sessions.create(session_name="User Session"):
+    # Log user actions without blocking
+    client.events.emit(
+        name="User clicked button",
+        input={"button_id": "submit", "page": "checkout"},
+        metadata={"user_id": user.id}
+    )
+
+    # Continue processing immediately
+    process_checkout()
+```
+
+### Performance Monitoring
+
+```python
+import time
+
+with client.sessions.create(session_name="Performance Test"):
+    start = time.time()
+
+    # Your operation
+    result = expensive_operation()
+
+    duration = int((time.time() - start) * 1000)
+
+    # Track performance without adding to duration
+    client.events.emit(
+        name="Expensive operation completed",
+        duration_ms=duration,
+        output={"result_size": len(result)},
+        metadata={"optimization_version": "v2"}
+    )
+```
+
+---
+
+## How It Works
+
+1. `emit()` queues the event for background transmission
+2. Your code continues immediately without waiting
+3. Events are batched and sent efficiently to Lucidic
+4. If the session ends, pending events are flushed
+
+---
+
+## When to Use `emit` vs `create`
+
+| Use `emit` | Use `create` / `acreate` |
+|------------|--------------------------|
+| Hot paths where latency matters | When you need the event ID |
+| High-frequency events | Critical events requiring confirmation |
+| Logging and monitoring | When event ordering is critical |
+| Non-critical tracking | Sequential event dependencies |
+
+---
+
+## Best Practices
+
+### 1. Use for High-Volume Events
+
+```python
+# Good - won't slow down your loop
+for item in large_dataset:
+    client.events.emit(name="Item processed", input={"id": item.id})
+    process(item)
+```
+
+### 2. Track Performance Metrics
+
+```python
+# Good - capture metrics without impacting performance
+client.events.emit(
+    name="API latency",
+    duration_ms=response_time,
+    metadata={"endpoint": "/api/users"}
+)
+```
+
+### 3. Add Context with Metadata
+
+```python
+client.events.emit(
+    name="User action",
+    input={"action": "click"},
+    metadata={
+        "user_id": user.id,
+        "session_type": "authenticated",
+        "feature_flag": "new_ui"
+    }
+)
+```
+
+---
+
+## Related
+
+- [events.create](/python-sdk/events/create) - Synchronous event creation
+- [@client.event()](/python-sdk/events/decorator) - Decorator for function tracking
+- [Event Management](/python-sdk/events/index) - Overview of events

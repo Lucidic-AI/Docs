@@ -1,0 +1,240 @@
+---
+title: Evaluation Rubrics
+description: Build flexible, structured evaluation rubrics to score or validate your agent's behavior across sessions.
+---
+
+# Rubrics
+
+**Rubrics** let you define structured evaluation criteria for your agents — turning your domain knowledge into consistent, explainable scoring or validation systems.
+
+Instead of relying on a single metric, rubrics help you **quantify or verify agent quality** across dimensions you care about.
+
+---
+
+## Why Create Custom Rubrics?
+
+**Agents don't just succeed or fail** — they perform along a spectrum, or meet/don't meet specific expectations.
+
+Rubrics help you:
+
+* Capture nuanced behaviors
+* Enforce domain-specific quality standards
+* Compare model changes or prompt variations
+* Identify regressions or improvement trends
+
+### Use Cases
+
+* **Score Rubric**: Rate task completion, efficiency, safety, etc.
+* **Pass/Fail Rubric**: Validate key requirements, such as compliance, user safety, or response correctness
+
+---
+
+## Rubric Modes
+
+### 1. Score Rubrics
+
+Score rubrics provide **weighted numeric evaluations** across several criteria. Each criterion has a defined scoring range (e.g., 1–10), with descriptions for what qualifies as high, medium, or low performance.
+
+* Each criterion has optional **weights**, which are used to compute a **weighted average**.
+* The final rubric score is a single float value.
+* Ideal for comparative analysis, model iteration, or benchmarking performance.
+
+#### Example
+
+```yaml
+Rubric: "Task Quality"
+
+Criteria:
+  - name: "Task Completion"
+    weight: 2
+    scores:
+      10: "Fully completed all objectives"
+      5: "Partially completed"
+      1: "Failed to complete"
+
+  - name: "Efficiency"
+    weight: 1
+    scores:
+      10: "Optimal resource usage"
+      5: "Reasonable resource usage"
+      1: "Excessive resource usage"
+```
+
+### 2. Pass/Fail Rubrics
+
+Pass/Fail rubrics are designed for **binary validation** of agent behavior.
+
+* Each criterion has a **Pass Definition** and **Fail Definition**
+* If **all criteria pass**, the rubric evaluates to **True**
+* If **any criterion fails**, the rubric evaluates to **False**
+* The system **automatically identifies which events** caused each failure
+
+#### Example
+
+```yaml
+Rubric: "Customer Service QA Check"
+
+Criteria:
+  - name: "Polite Communication"
+    pass_definition: "Agent maintains professional tone throughout"
+    fail_definition: "Agent uses inappropriate or dismissive language"
+
+  - name: "Issue Resolution"
+    pass_definition: "Customer issue is fully resolved"
+    fail_definition: "Customer problem remains unresolved or unclear"
+```
+
+---
+
+## How to Use Rubrics
+
+Using rubrics consists of two parts: **1) creating one in the UI** and **2) using it in your code**.
+
+### In the UI
+
+* Navigate to the **Rubrics** tab on any Agent located directly under the agent name.
+* Click the **Create New Evaluation Rubric** button
+
+* Give your **Rubric a name, description, and icon**
+* Choose a **Rubric Mode**:
+
+  * **Score Rubric**: Numerical scoring system (e.g., 1–10 scale)
+  * **Pass/Fail Rubric**: Binary outcomes (Pass/Fail) per criterion
+
+#### For Score Rubrics:
+
+* Add multiple **Criteria**, each with:
+
+  * A name
+  * Optional weight (for weighted average)
+  * **Score Definitions** (what a score of 1, 5, or 10 means)
+
+#### For Pass/Fail Rubrics:
+
+* Add multiple **Criteria**, each with:
+
+  * A name
+  * A **Pass Definition** (what success looks like)
+  * A **Fail Definition** (what failure looks like)
+
+* **Click Save**
+
+> **Pro Tip:** Click on the **Evaluation Rubric Summary** to see a quick summary of all criteria.
+
+### In Code
+
+Attach rubrics to sessions at runtime:
+
+<Tabs>
+  <Tab title="Python">
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+with client.sessions.create(
+    session_name="My Task",
+    rubrics=["Default", "My Custom Rubric"]
+):
+    # Your agent logic
+    ...
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+await client.sessions.create({
+    sessionName: 'My Task',
+    rubrics: ['Default', 'My Custom Rubric']
+});
+
+// Your agent logic
+...
+
+await client.sessions.end();
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Using Rubrics with Datasets
+
+Rubrics work seamlessly with datasets to provide automated evaluation of test cases:
+
+<Tabs>
+  <Tab title="Python">
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+# Run dataset tests with automatic rubric evaluation
+dataset_items = client.datasets.get_items(dataset_id="test_suite")
+
+for item in dataset_items:
+    with client.sessions.create(
+        session_name=f"Test: {item['name']}",
+        dataset_item_id=item['id'],
+        rubrics=["Quality Check", "Safety Validation"]
+    ):
+        # Run your agent
+        result = process_agent(item['input'])
+    # Rubrics will automatically evaluate the session
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+const datasetItems = await client.datasets.getItems({ datasetId: 'test_suite' });
+
+for (const item of datasetItems) {
+    await client.sessions.create({
+        sessionName: `Test: ${item.name}`,
+        datasetItemId: item.id,
+        rubrics: ['Quality Check', 'Safety Validation']
+    });
+
+    // Run your agent
+    const result = await processAgent(item.input);
+
+    await client.sessions.end();
+}
+```
+  </Tab>
+</Tabs>
+
+This combination enables:
+- **Consistent Evaluation**: Same rubrics applied to all test cases
+- **Automated Scoring**: No manual evaluation needed
+- **Trend Analysis**: Track rubric scores across dataset runs
+- **Quality Gates**: Fail tests that don't meet rubric criteria
+
+See [Datasets](/feature-overview/datasets) for more information on creating test datasets.
+
+## Integration with Other Features
+
+### Production Monitoring
+
+Apply rubrics to production sessions for real-time quality monitoring:
+
+```python
+with client.sessions.create(
+    session_name="Production Task",
+    production_monitoring=True,
+    rubrics=["Customer Satisfaction", "Response Accuracy"]
+):
+    # Your agent logic
+    ...
+```
+
+Track rubric scores in the [Production Monitoring](/feature-overview/production-monitoring) dashboard to ensure quality in production.
+
+## Final Notes
+
+* Rubric results are **immutable once ran on a session**; any changes made afterward won't retroactively affect past evaluations.
+* You can use multiple rubrics per session to get both high-level and detailed insights.
+* Whether you need nuanced score-based comparisons or simple go/no-go quality checks, rubrics give you a structured, explainable framework to evaluate AI agents.
+* Rubrics integrate seamlessly with datasets, experiments, and production monitoring for comprehensive evaluation coverage.

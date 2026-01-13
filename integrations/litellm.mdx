@@ -5,29 +5,28 @@ description: Track LiteLLM calls with Lucidic (supports many LLM providers throu
 
 # LiteLLM Integration
 
-Lucidic integrates with LiteLLM via a custom callback bridge that maps LiteLLM events into Lucidic sessions/steps/events. This enables automatic tracking for any provider supported by LiteLLM.
+Lucidic integrates with LiteLLM via a custom callback bridge that maps LiteLLM events into Lucidic sessions and events. This enables automatic tracking for any provider supported by LiteLLM.
 
 ---
 
 ## Setup
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+import litellm
 
 # Initialize with the LiteLLM provider enabled
-lai.init(session_name="LiteLLM Demo", providers=["litellm"])  
+client = LucidicAI(api_key="...", providers=["litellm"])
 
-# Configure LiteLLM (example: OpenAI-compatible model)
-import litellm
+# Configure LiteLLM (optional)
 litellm.set_verbose = False
 
-response = litellm.completion(
-    model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "Say 'hello from litellm'"}]
-)
-
-# Event is auto-created. Close the session when done.
-lai.end_session()
+with client.sessions.create(session_name="LiteLLM Demo"):
+    response = litellm.completion(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Say 'hello from litellm'"}]
+    )
+# Session auto-ends when context exits
 ```
 
 ---
@@ -42,16 +41,42 @@ lai.end_session()
 
 ---
 
+## Example with Multiple Providers
+
+```python
+from lucidicai import LucidicAI
+import litellm
+
+client = LucidicAI(api_key="...", providers=["litellm"])
+
+with client.sessions.create(session_name="Multi-Provider Test"):
+    # OpenAI via LiteLLM
+    response1 = litellm.completion(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello from OpenAI"}]
+    )
+
+    # Anthropic via LiteLLM
+    response2 = litellm.completion(
+        model="claude-3-sonnet-20240229",
+        messages=[{"role": "user", "content": "Hello from Claude"}]
+    )
+
+    # All calls are tracked as events in the same session
+```
+
+---
+
 ## Notes
 
-- Ensure your provider-specific API keys are configured per LiteLLM’s docs
+- Ensure your provider-specific API keys are configured per LiteLLM's docs
 - The bridge waits briefly on shutdown for pending callbacks to finish
-- Cost is estimated using Lucidic’s pricing tables when usage is provided
+- Cost is estimated using Lucidic's pricing tables when usage is provided
 
 ---
 
 ## See Also
 
 - [Python init](/python-sdk/init)
-- [Events](/core-concepts/events)
-
+- [Events](/feature-overview/events)
+- [Examples](/python-sdk/examples)

@@ -5,56 +5,62 @@ description: Async-safe context managers and helpers for Python SDK sessions
 
 ## Overview
 
-The Python SDK provides async- and thread-safe session context using Python contextvars, analogous to the TypeScript SDK’s AsyncLocalStorage. This ensures spans from concurrent requests are attributed to the correct session. Use the context helpers below to manage session lifecycle and binding in a reliable, ergonomic way.
+The Python SDK provides async- and thread-safe session context using Python contextvars, analogous to the TypeScript SDK's AsyncLocalStorage. This ensures spans from concurrent requests are attributed to the correct session. Use the context helpers below to manage session lifecycle and binding in a reliable, ergonomic way.
 
 ---
 
 ## When to use
 
-- Use `with lai.session(...)` for self-contained workflows that should start and end within a single function or request handler.
-- Use `with lai.bind_session(session_id)` when you need to attach an existing session to a block of work without ending it.
+- Use `with client.sessions.create(...)` for self-contained workflows that should start and end within a single function or request handler.
+- Use `with client.sessions.bind(session_id)` when you need to attach an existing session to a block of work without ending it.
 - Prefer these context helpers over relying on a global session in concurrent environments.
 
 ---
 
-## Full lifecycle: session
+## Full lifecycle: sessions.create
 
 Creates a new session, binds it to the current context, and automatically ends it on context exit.
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from openai import OpenAI
 
-with lai.session(session_name="Order Processor", providers=["openai"]):
-    client = OpenAI()
-    resp = client.chat.completions.create(
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
+
+with client.sessions.create(session_name="Order Processor"):
+    resp = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": "Summarize the order"}],
     )
     # LLM calls are captured as events for this session
+# Session auto-ends when context exits
 ```
 
 Notes:
-- Inside `session(...)`, `auto_end` is ignored; the session always ends on context exit.
+- Inside context manager, the session always ends on context exit.
 - Telemetry stamps `lucidic.session_id` on spans at start to ensure correct attribution.
 
 ---
 
-## Bind only: bind_session
+## Bind only: sessions.bind
 
 Bind an existing session to a block of code. The session is not ended on exit.
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-sid = lai.init(session_name="request-123", providers=["openai"], auto_end=False)
+client = LucidicAI(api_key="...", providers=["openai"])
 
-with lai.bind_session(sid):
-    # Work attributed to session sid
+# Create session without auto-ending
+session_id = client.sessions.create(session_name="request-123", auto_end=False)
+
+with client.sessions.bind(session_id):
+    # Work attributed to session
     do_work()
 
 # End the session later when appropriate
-lai.end_session()
+client.sessions.end()
 ```
 
 ---
@@ -64,14 +70,17 @@ lai.end_session()
 Use these in async code paths.
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
 
 async def handle_request():
-    async with lai.session_async(session_name="async-task", providers=["openai"]):
+    async with client.sessions.acreate(session_name="async-task"):
         await do_async_work()
 
-    sid = lai.init(session_id="existing", providers=["openai"])  # bind context
-    async with lai.bind_session_async(sid):
+    # Or bind to existing session
+    session_id = await client.sessions.acreate(session_name="external", auto_end=False)
+    async with client.sessions.bind_async(session_id):
         await do_more_async_work()
 ```
 
@@ -82,15 +91,17 @@ async def handle_request():
 Wrap a function to run within a session context.
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
 
 def do_work(x: int) -> int:
     return x * 2
 
-result = lai.run_session(do_work, init_params={"session_name": "wrapped", "providers": ["openai"]}, x=5)
+result = client.sessions.run(do_work, session_name="wrapped", x=5)
 
-sid = lai.init(session_name="external", providers=["openai"], auto_end=False)
-result = lai.run_in_session(sid, do_work, x=10)
+session_id = client.sessions.create(session_name="external", auto_end=False)
+result = client.sessions.run_in(session_id, do_work, x=10)
 ```
 
 ---
@@ -100,26 +111,28 @@ result = lai.run_in_session(sid, do_work, x=10)
 You can manually bind and clear the active session when needed.
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-sid = lai.init(session_name="manual", providers=["openai"], auto_end=True)
-lai.set_active_session(sid)
+client = LucidicAI(api_key="...", providers=["openai"])
+
+session_id = client.sessions.create(session_name="manual", auto_end=False)
+client.sessions.set_active(session_id)
 # ... perform work ...
-lai.clear_active_session()
-lai.end_session()
+client.sessions.clear_active()
+client.sessions.end()
 ```
 
 ---
 
 ## Important behaviors
 
-- `init(...)` binds the created or resumed session id to the current context automatically.
+- `sessions.create(...)` binds the created or resumed session id to the current context automatically.
 - Exporter and span processor use the context-stamped `lucidic.session_id` so events are created for the correct session even under concurrency.
-- Use provider instrumentation via `providers=[...]` inside `init/session` to capture LLM calls automatically.
+- Use provider instrumentation via `providers=[...]` when initializing the client to capture LLM calls automatically.
 
 ---
 
 ## See also
 
-- [`init`](/python-sdk/init)
+- [`sessions.create`](/python-sdk/init)
 

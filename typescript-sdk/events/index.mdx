@@ -1,0 +1,166 @@
+---
+title: Event Management
+description: Overview of event management in the Lucidic TypeScript SDK
+---
+
+# Event Management
+
+Events are the core tracking unit in Lucidic, representing operations within your agent's execution. This section covers how to create and emit events using the TypeScript SDK.
+
+---
+
+## Event Types
+
+Lucidic tracks four types of events:
+
+| Type | How Created | Description |
+|------|-------------|-------------|
+| **LLM Generation** | Automatic | Captured automatically when using instrumented providers |
+| **Function Call** | Manual | Created via `client.events.create()` |
+| **Error Traceback** | Automatic | Captured on uncaught exceptions |
+| **Generic Event** | Manual | Created via `client.events.create()` or `.emit()` |
+
+---
+
+## Quick Start
+
+```typescript
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+const openai = new OpenAI();
+
+await client.sessions.create({ sessionName: 'My Task' });
+
+// LLM calls are automatically captured
+const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+// Manual events
+await client.events.create({
+    name: 'Custom operation',
+    input: { key: 'value' },
+    output: { result: 'success' }
+});
+
+// Zero-latency background emit
+client.events.emit({
+    name: 'Background event',
+    input: { action: 'logged' }
+});
+
+await client.sessions.end();
+```
+
+---
+
+## API Reference
+
+<CardGroup cols={2}>
+  <Card title="create" icon="plus" href="/typescript-sdk/events/create">
+    Create events asynchronously
+  </Card>
+  <Card title="emit" icon="bolt" href="/typescript-sdk/events/emit">
+    Zero-latency background event emission
+  </Card>
+</CardGroup>
+
+---
+
+## Choosing the Right Method
+
+| Method | Use Case | Latency Impact |
+|--------|----------|----------------|
+| `client.events.create()` | When you need to wait for confirmation | Adds latency |
+| `client.events.emit()` | Hot paths, high-frequency events | Zero latency |
+
+---
+
+## Event Properties
+
+Events can include the following properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `string` | Descriptive name of the event |
+| `type` | `string` | Event type |
+| `input` | `object` | Input data/parameters |
+| `output` | `object` | Output/result data |
+| `durationMs` | `number` | Duration in milliseconds |
+| `cost` | `number` | Cost of the operation |
+| `model` | `string` | Model name (for LLM events) |
+| `metadata` | `object` | Custom metadata |
+
+---
+
+## Event Nesting
+
+Events automatically nest based on execution context. LLM calls made during your session create nested events in the trace:
+
+```typescript
+await client.sessions.create({ sessionName: 'Nested Events' });
+
+// Parent event
+await client.events.create({
+    name: 'Process document',
+    input: { docId: '123' }
+});
+
+// LLM call creates a nested event automatically
+const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Summarize this document' }]
+});
+
+await client.sessions.end();
+
+// Results in:
+// Session
+// └── Event: Process document
+// └── Event: GPT-4 call (LLM Generation)
+```
+
+---
+
+## Best Practices
+
+### 1. Use `.emit()` for Hot Paths
+
+```typescript
+// Won't slow down your application
+client.events.emit({ name: 'cache_check', input: { key } });
+```
+
+### 2. Add Meaningful Names
+
+```typescript
+// Good - describes what happened
+await client.events.create({
+    name: 'User preference fetched from database'
+});
+
+// Less helpful
+await client.events.create({ name: 'db_call' });
+```
+
+### 3. Include Relevant Context
+
+```typescript
+await client.events.create({
+    name: 'API request',
+    input: { endpoint: '/users', method: 'GET' },
+    output: { status: 200, count: 50 },
+    durationMs: 150,
+    metadata: { service: 'user-service' }
+});
+```
+
+---
+
+## Related
+
+- [Sessions](/typescript-sdk/init) - Managing sessions
+- [Events Concept](/feature-overview/events) - Understanding events

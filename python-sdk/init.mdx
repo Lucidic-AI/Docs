@@ -1,42 +1,26 @@
 ---
-title: 'init'
-description: 'Initialize a new Lucidic session'
+title: 'init / sessions.create'
+description: 'Initialize a Lucidic client and create sessions'
 ---
 
 ## Overview
 
-The `init` function initializes a new or existing Lucidic session for tracking and monitoring AI agent workflows. It sets up the SDK with your credentials, configures providers, and starts or continues a session.
+The Lucidic Python SDK uses a client-based initialization pattern. First, create a `LucidicAI` client, then use `client.sessions.create()` to start tracking sessions.
 
-## Syntax
+## Client Initialization
 
 ```python
-lai.init(
-    session_name: Optional[str] = None,
-    session_id: Optional[str] = None,
+from lucidicai import LucidicAI
+
+client = LucidicAI(
     api_key: Optional[str] = None,
     agent_id: Optional[str] = None,
-    task: Optional[str] = None,
     providers: Optional[List[ProviderType]] = [],
     production_monitoring: Optional[bool] = False,
-    mass_sim_id: Optional[str] = None,
-    experiment_id: Optional[str] = None,
-    dataset_item_id: Optional[str] = None,
-    rubrics: Optional[list] = None,
-    tags: Optional[list] = None,
-    masking_function = None,
-    auto_end: Optional[bool] = True,
-) -> str
+)
 ```
 
-## Parameters
-
-<ParamField path="session_name" type="string" optional>
-  The display name for this session. Used for easy identification in the Lucidic dashboard. If not provided, the session will be created without a name.
-</ParamField>
-
-<ParamField path="session_id" type="string" optional>
-  ID for the session. If not provided, a random ID will be generated and returned by init().
-</ParamField>
+### Client Parameters
 
 <ParamField path="api_key" type="string" optional>
   Your Lucidic API key for authentication. If not provided, the SDK will use the `LUCIDIC_API_KEY` environment variable.
@@ -46,20 +30,45 @@ lai.init(
   Your agent identifier. If not provided, the SDK will use the `LUCIDIC_AGENT_ID` environment variable.
 </ParamField>
 
-<ParamField path="task" type="string" optional>
-  A high-level description of the task or workflow being performed in this session.
-</ParamField>
-
 <ParamField path="providers" type="List[ProviderType]" optional default="[]">
-  List of LLM providers to automatically instrument. Supported values: `"openai"`, `"anthropic"`, `"langchain"`, `"pydantic_ai"`, `"openai_agents"`.
+  List of LLM providers to automatically instrument. Supported values: `"openai"`, `"anthropic"`, `"langchain"`, `"pydantic_ai"`, `"openai_agents"`, `"litellm"`.
 </ParamField>
 
 <ParamField path="production_monitoring" type="boolean" optional default="False">
-  Flag to enable production monitoring mode for tracking sessions in production environments. When enabled, sessions appear in the Production Monitoring dashboard with comprehensive metrics on cost, performance, and errors. Can also be set via `LUCIDIC_PRODUCTION_MONITORING` environment variable. See [Production Monitoring](/features/production-monitoring) for details.
+  Flag to enable production monitoring mode. When enabled, sessions appear in the Production Monitoring dashboard. Can also be set via `LUCIDIC_PRODUCTION_MONITORING` environment variable. See [Production Monitoring](/feature-overview/production-monitoring) for details.
 </ParamField>
 
-<ParamField path="mass_sim_id" type="string" optional>
-  ID of a mass simulation to include this session in. Use with `create_mass_sim()`.
+## Session Creation
+
+### Context Manager (Recommended)
+
+```python
+with client.sessions.create(
+    session_name: Optional[str] = None,
+    session_id: Optional[str] = None,
+    task: Optional[str] = None,
+    experiment_id: Optional[str] = None,
+    dataset_item_id: Optional[str] = None,
+    rubrics: Optional[list] = None,
+    tags: Optional[list] = None,
+    masking_function = None,
+) as session:
+    # Your workflow here
+    # Session auto-ends when context exits
+```
+
+### Session Parameters
+
+<ParamField path="session_name" type="string" optional>
+  The display name for this session. Used for easy identification in the Lucidic dashboard.
+</ParamField>
+
+<ParamField path="session_id" type="string" optional>
+  ID for the session. If not provided, a random ID will be generated. Use this to continue an existing session.
+</ParamField>
+
+<ParamField path="task" type="string" optional>
+  A high-level description of the task or workflow being performed in this session.
 </ParamField>
 
 <ParamField path="experiment_id" type="string" optional>
@@ -67,7 +76,7 @@ lai.init(
 </ParamField>
 
 <ParamField path="dataset_item_id" type="string" optional>
-  ID of a dataset item being tested in this session. Links the session to a specific test case from a dataset. Use when running dataset tests to track which test case each session corresponds to. See [Working with Datasets](/python-sdk/datasets) for details.
+  ID of a dataset item being tested in this session. Links the session to a specific test case from a dataset. See [Working with Datasets](/python-sdk/datasets) for details.
 </ParamField>
 
 <ParamField path="rubrics" type="list" optional>
@@ -82,13 +91,10 @@ lai.init(
   Custom function to mask sensitive data before sending to Lucidic. Function should accept text and return masked text.
 </ParamField>
 
-<ParamField path="auto_end" type="boolean" optional default="True">
-  Automatically end the session when the process exits. Ensures data is not lost on unexpected termination.
-</ParamField>
-
 ## Returns
 
-Returns the session ID as a string.
+- **Client initialization**: Returns a `LucidicAI` client instance
+- **Session creation**: Returns a session object with `session_id` property
 
 ## Authentication
 
@@ -108,27 +114,31 @@ export LUCIDIC_AGENT_ID=your-agent-id
 Then initialize without passing credentials:
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-lai.init(
-    session_name="My Session",
-    providers=["openai"]
-)
+client = LucidicAI(providers=["openai"])
+
+with client.sessions.create(session_name="My Session"):
+    # Your workflow
+    pass
 ```
 
 #### Option 2: Direct Parameters
 
-Pass credentials directly to the init function:
+Pass credentials directly to the client:
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-lai.init(
-    session_name="My Session",
-    api_key="your-api-key",   
-    agent_id="your-agent-id",         
+client = LucidicAI(
+    api_key="your-api-key",
+    agent_id="your-agent-id",
     providers=["openai"]
 )
+
+with client.sessions.create(session_name="My Session"):
+    # Your workflow
+    pass
 ```
 
 #### Option 3: Using python-dotenv
@@ -143,14 +153,15 @@ LUCIDIC_AGENT_ID=your-agent-id
 
 ```python
 from dotenv import load_dotenv
-import lucidicai as lai
+from lucidicai import LucidicAI
 
 load_dotenv()  # Load environment variables from .env file
 
-lai.init(
-    session_name="My Session",
-    providers=["anthropic"]
-)
+client = LucidicAI(providers=["anthropic"])
+
+with client.sessions.create(session_name="My Session"):
+    # Your workflow
+    pass
 ```
 
 ### Getting Your Credentials
@@ -173,54 +184,59 @@ lai.init(
 ### Basic Usage
 
 ```python
-import lucidicai as lai
-
-# Initialize with minimal configuration
-session_id = lai.init()
-
-# any llm calls after this will automatically be traced
-# ...
-
-```
-
-### With Provider Integration
-
-```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from openai import OpenAI
 
-# Initialize with OpenAI provider
-lai.init(
-    session_name="AI Assistant",
-    providers=["openai"],
-    task="Answer customer questions"
-)
+# Initialize client
+client = LucidicAI(providers=["openai"])
+openai_client = OpenAI()
 
-# OpenAI calls are now automatically tracked
-client = OpenAI()
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
+# Use context manager for session lifecycle
+with client.sessions.create(session_name="AI Assistant"):
+    # LLM calls are automatically tracked
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+# Session auto-ends when context exits
+```
+
+### With Multiple Providers
+
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(providers=["openai", "anthropic"])
+
+with client.sessions.create(
+    session_name="Multi-Provider Task",
+    task="Compare responses from different LLMs"
+):
+    # Both OpenAI and Anthropic calls are tracked
+    pass
 ```
 
 ### Production Configuration
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
 def mask_pii(text):
     # Custom logic to mask sensitive information
     return text.replace("SSN:", "XXX-XX-")
 
-lai.init(
-    session_name="Production Agent",
-    production_monitoring=True,  # Enables production monitoring dashboard
-    masking_function=mask_pii,
-    tags=["production", "v2.0", "customer-service"],
-    rubrics=["response_quality", "task_completion"],
-    auto_end=True  # Ensures session ends even on crashes
+client = LucidicAI(
+    providers=["openai"],
+    production_monitoring=True  # Enables production monitoring dashboard
 )
+
+with client.sessions.create(
+    session_name="Production Agent",
+    masking_function=mask_pii,
+    tags=["production", "v2.0", "customer-service"]
+):
+    # Your production workflow
+    pass
 
 # Sessions with production_monitoring=True will appear in the Production dashboard
 # with metrics on cost, performance, errors, and more
@@ -229,89 +245,118 @@ lai.init(
 ### Dataset Testing
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+
+client = LucidicAI(providers=["openai"])
 
 # When running dataset tests, link sessions to dataset items
-dataset_items = lai.get_dataset_items(dataset_id="test_suite_v1")
+dataset_items = client.datasets.get_items(dataset_id="test_suite_v1")
 
 for item in dataset_items:
-    session_id = lai.init(
+    with client.sessions.create(
         session_name=f"Test: {item['name']}",
-        dataset_item_id=item['id'],  # Links to specific test case
-        rubrics=["correctness", "completeness"]
-    )
+        dataset_item_id=item['id']  # Links to specific test case
+    ):
+        # Run your agent with the test input
+        result = my_agent.process(item['input'])
 
-    # Run your agent with the test input
-    result = my_agent.process(item['input'])
-
-    # Validate against expected output
-    success = result == item['expected_output']
-    lai.end_session(is_successful=success)
-```
-
-### Mass Simulation Usage
-
-```python
-import lucidicai as lai
-
-# First create a mass simulation
-mass_sim_id = lai.create_mass_sim(
-    mass_sim_name="Load Test",
-    total_num_sessions=1000
-)
-
-# Then initialize sessions as part of the simulation
-lai.init(
-    session_name="Test Session 1",
-    mass_sim_id=mass_sim_id
-)
+        # Update session success based on result
+        client.sessions.update(is_successful=result == item['expected_output'])
 ```
 
 ### Experiment Usage
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+
+client = LucidicAI(providers=["openai"])
 
 # Experiments must be created in the dashboard first
 # The experiment ID can be found in the URL after creation
-EXPERIMENT_ID = "exp-123abc-456def"  # From dashboard URL
+EXPERIMENT_ID = "exp-123abc-456def"
 
 # Add sessions to the experiment
-lai.init(
+with client.sessions.create(
     session_name="Performance Test 1",
     experiment_id=EXPERIMENT_ID,
     task="Test checkout flow performance"
-)
+):
+    # Your agent workflow here
+    process_checkout()
+```
 
-# Your agent workflow here
-process_checkout()
+### Continuing Existing Sessions
 
-# End the session with evaluation
-lai.end_session(
-    session_eval_reason="Checkout completed successfully"
-)
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(providers=["openai"])
+
+# Continue a previous session by passing its ID
+with client.sessions.create(session_id="existing-session-uuid"):
+    # Add more events to the existing session
+    client.events.emit(
+        name="Resumed task",
+        input={"action": "resume"},
+        output={"status": "continuing"}
+    )
+```
+
+## Manual Session Management
+
+If you need more control, you can manage sessions manually:
+
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(providers=["openai"])
+
+# Start session manually
+session = client.sessions.create(session_name="Manual Session")
+session_id = session.session_id
+
+try:
+    # Your workflow
+    pass
+finally:
+    # End session explicitly
+    client.sessions.end(
+        is_successful=True,
+        is_successful_reason="Task completed successfully"
+    )
 ```
 
 ## Notes
 
 - Either `api_key` or `LUCIDIC_API_KEY` environment variable must be set
 - Either `agent_id` or `LUCIDIC_AGENT_ID` environment variable must be set
-- The SDK can only have one active session at a time
-- If a session is already active, calling `init` will switch to the new session.
-- `init(...)` binds the created session to the current async/thread context for correct attribution in concurrent environments
-- Prefer `with lai.session(...)` for self-contained workflows; see [Session Context](/python-sdk/session-context)
-- The `auto_end` feature ensures your session data is preserved even on unexpected exits
+- Using context managers is recommended as they handle cleanup automatically
+- Sessions can contain nested events (LLM calls, function calls, etc.)
 - Provider instrumentation happens automatically once configured
+- Session context is async/thread-safe for concurrent environments
 
 ## Error Handling
 
 ```python
+from lucidicai import LucidicAI
 from lucidicai.errors import APIKeyVerificationError, InvalidOperationError
 
 try:
-    lai.init(session_name="My Session")
+    client = LucidicAI(providers=["openai"])
+
+    with client.sessions.create(session_name="My Session"):
+        # Your workflow
+        pass
+
 except APIKeyVerificationError:
     print("Please set your LUCIDIC_API_KEY environment variable")
 except InvalidOperationError:
-    print("Something went wrong. Please double check IDs passed to init()")
+    print("Something went wrong. Please double check IDs passed")
 ```
+
+## See Also
+
+- [Session Context](/python-sdk/session-context) - Async-safe context managers
+- [Event Management](/python-sdk/events/index) - Creating and managing events
+- [Decorators](/python-sdk/decorators) - Automatic function tracking
+- [End Session](/python-sdk/end_session) - Session completion options

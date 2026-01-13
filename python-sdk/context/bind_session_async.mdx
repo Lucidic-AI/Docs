@@ -1,33 +1,35 @@
 ---
-title: bind_session_async
+title: sessions.bind_async
 description: Async bind-only session context manager
 ---
 
 ## Overview
 
-Async version of `bind_session`. Binds an existing session for the duration of the async context, without ending it on exit.
+Async version of `sessions.bind()`. Binds an existing session for the duration of the async context, without ending it on exit.
 
 ## Syntax
 
 ```python
-async with lai.bind_session_async(session_id: str):
+async with client.sessions.bind_async(session_id: str):
   ...
 ```
 
 ## Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-sid = lai.init(session_name="external", providers=["openai"], auto_end=False)
+client = LucidicAI(api_key="...", providers=["openai"])
+
+session_id = client.sessions.create(session_name="external", auto_end=False)
 
 async def handle():
-    async with lai.bind_session_async(sid):
+    async with client.sessions.bind_async(session_id):
         await do_more_async_work()
 ```
 
 ## See Also
 
-- [`bind_session`](/python-sdk/context/bind_session)
-- [`session_async`](/python-sdk/context/session_async)
+- [`sessions.bind`](/python-sdk/context/bind_session)
+- [`sessions.acreate`](/python-sdk/context/session_async)
 

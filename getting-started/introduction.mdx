@@ -7,17 +7,17 @@ mode: "wide"
 Lucidic is the **complete agentic engineering** platform that helps you understand, test, and improve your AI agents. We provide full observability into multi-step workflows and custom evaluations, letting you pinpoint why agents succeed or fail. We make debugging and performance tuning fast, systematic, and scalable.
 
 <Columns cols={3}>
-    <Card title="Tracing" icon="chart-gantt" href="/features/workflow-sandbox">
+    <Card title="Tracing" icon="chart-gantt" href="/feature-overview/workflow-sandbox">
         + Visualize trace logs
         + Session replays
         + Iterate with Time Travels
     </Card>
-    <Card title="Evaluations" icon="chart-line" href="/features/rubrics">
+    <Card title="Evaluations" icon="chart-line" href="/feature-overview/rubrics">
         + Custom Rubric evaluations
         + Track experiments and changes
         + Monitor performance in real time
     </Card>
-    <Card title="Prompts" icon="folder-open" href="/features/prompt-db">
+    <Card title="Prompts" icon="folder-open" href="/feature-overview/prompt-db">
         + Version control
         + Edit and test instantly
         + Insert Variables at runtime
@@ -60,23 +60,20 @@ To build agents you can trust, you need to see what they're doing — and why.
 
 We help you:
 
-- Analyze individual [Sessions](/features/workflow-sandbox) of agent behavior
-- Inspect each [Step](/core-concepts/steps) and the [Events](/core-concepts/events) within
-- Run [Mass Simulations](/features/mass-simulation-overview) to observe variability at scale
-- Visualize agent behavior through [Workflow Trajectories](/features/workflow-trajectory)
-- Define structured, flexible [Rubric Evaluations](/features/rubrics)
-- Version and experiment with prompts via [Prompt DB](/features/prompt-db)
-- Debug stuck logic using [Time Travel](/features/time-travel)
+- Analyze individual [Sessions](/feature-overview/workflow-sandbox) of agent behavior
+- Inspect each [Event](/feature-overview/events) within your session trace
+- Run [Experiments](/feature-overview/experiments) to observe variability at scale
+- Define structured, flexible [Rubric Evaluations](/feature-overview/rubrics)
+- Version and experiment with prompts via [Prompt DB](/feature-overview/prompt-db)
+- Debug stuck logic using [Time Travel](/feature-overview/time-travel)
 
 ---
 
 ## Automatic Instrumentation
 
-Lucidic is designed to be as **non-intrusive** as possible. With just two lines of code, you get:
+Lucidic is designed to be as **non-intrusive** as possible. With just a few lines of code, you get:
 
 - **Auto Event Creation**: LLM calls from supported providers (OpenAI, Anthropic, LangChain, PydanticAI) are automatically captured
-- **Auto Step Creation**: If no step exists when an LLM call occurs, one is created automatically
-- **Auto-Ending Steps**: Steps are automatically ended when your session ends
 - **Auto Session Ending**: Sessions automatically end when your script exits via an `atexit` handler
 - **Auto Cost Tracking**: Token usage and costs are calculated automatically for each LLM call
 - **Auto Error Handling**: Failed operations are tracked without breaking your workflow
@@ -86,22 +83,22 @@ Lucidic is designed to be as **non-intrusive** as possible. With just two lines 
 When you initialize Lucidic with a provider:
 
 ```python
-import lucidicai as lai
-lai.init(providers=["openai"])
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+with client.sessions.create(session_name="My Session"):
+    # All OpenAI calls are automatically tracked as events
+    response = openai.chat.completions.create(...)
 ```
 
 The SDK:
 1. **Instruments the provider** using OpenTelemetry under the hood
 2. **Intercepts all API calls** to track inputs, outputs, tokens, and timing
-3. **Creates steps and events automatically** as your code runs
+3. **Creates events automatically** as your code runs
 4. **Handles cleanup gracefully** even if your script crashes
 
-This means you can add Lucidic to existing codebases without any refactoring - just add the two lines at the top of your script and you're done!
-
-```python
-import lucidicai as lai
-lai.init(providers=["openai"])  # That's it! All OpenAI calls are now tracked
-```
+This means you can add Lucidic to existing codebases with minimal refactoring!
 
 ---
 
@@ -110,7 +107,7 @@ lai.init(providers=["openai"])  # That's it! All OpenAI calls are now tracked
 Ready to dive in?
 
 - **[Get Started in the UI](/getting-started/dashboard)** — Run your first Session and view the dashboard
-- **[Quick Start](/getting-started/quickstart)** — Add 2 lines of code to track your agents
+- **[Quick Start](/getting-started/quickstart)** — Add a few lines of code to track your agents
 - **[Use the TypeScript SDK](/typescript-sdk/overview)** — Full observability for your TypeScript/JavaScript applications
 
 We're excited to help you build agents that are **observable**, **debuggable**, and **production-ready**.
@@ -121,6 +118,6 @@ We're excited to help you build agents that are **observable**, **debuggable**, 
 
 Questions, feedback, or something not working right?
 
-Reach out to us at [team@lucidic.ai](mailto:team@lucidic.ai) — we’d love to help.
+Reach out to us at [team@lucidic.ai](mailto:team@lucidic.ai) — we'd love to help.
 
 ---

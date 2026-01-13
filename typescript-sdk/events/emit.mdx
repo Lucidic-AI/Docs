@@ -1,0 +1,240 @@
+---
+title: events.emit
+description: Zero-latency background event emission in the Lucidic TypeScript SDK
+---
+
+# events.emit
+
+Emit events in the background with zero latency impact on your application. This is ideal for hot paths and high-frequency event tracking.
+
+---
+
+## Syntax
+
+```typescript
+client.events.emit({
+    name: string,
+    input?: object,
+    output?: object,
+    durationMs?: number,
+    cost?: number,
+    model?: string,
+    metadata?: object
+});
+```
+
+---
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `string` | Yes | Descriptive name for the event |
+| `input` | `object` | No | Input data/parameters for the event |
+| `output` | `object` | No | Output/result from the event |
+| `durationMs` | `number` | No | Duration of the operation in milliseconds |
+| `cost` | `number` | No | Cost of the operation |
+| `model` | `string` | No | Model name (for LLM-related events) |
+| `metadata` | `object` | No | Additional custom metadata |
+
+---
+
+## Returns
+
+Returns immediately. The event is sent to Lucidic in the background without blocking your code. This is a synchronous call that queues the event for background transmission.
+
+---
+
+## Examples
+
+### Basic Usage
+
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+await client.sessions.create({ sessionName: 'High-Performance Task' });
+
+// Zero latency - doesn't block execution
+client.events.emit({
+    name: 'Cache lookup',
+    input: { key: 'user:123' },
+    output: { hit: true, value: { name: 'John' } }
+});
+
+await client.sessions.end();
+```
+
+### Hot Path Tracking
+
+```typescript
+async function handleRequest(request: Request): Promise<Response> {
+    await client.sessions.create({ sessionName: 'Request Handler' });
+
+    // Track without adding latency to the request
+    client.events.emit({
+        name: 'Request received',
+        input: { path: request.url, method: request.method }
+    });
+
+    // Process the request
+    const result = await processRequest(request);
+
+    // Track completion
+    client.events.emit({
+        name: 'Request completed',
+        output: { status: result.status }
+    });
+
+    await client.sessions.end();
+    return result;
+}
+```
+
+### High-Frequency Events
+
+```typescript
+await client.sessions.create({ sessionName: 'Batch Processing' });
+
+for (let i = 0; i < items.length; i++) {
+    // Track each item without slowing down the loop
+    client.events.emit({
+        name: `Process item ${i}`,
+        input: { itemId: items[i].id },
+        output: { processed: true }
+    });
+
+    await processItem(items[i]);
+}
+
+await client.sessions.end();
+```
+
+### Logging User Actions
+
+```typescript
+await client.sessions.create({ sessionName: 'User Session' });
+
+// Log user actions without blocking
+client.events.emit({
+    name: 'User clicked button',
+    input: { buttonId: 'submit', page: 'checkout' },
+    metadata: { userId: user.id }
+});
+
+// Continue processing immediately
+await processCheckout();
+
+await client.sessions.end();
+```
+
+### Performance Monitoring
+
+```typescript
+await client.sessions.create({ sessionName: 'Performance Test' });
+
+const start = Date.now();
+
+// Your operation
+const result = await expensiveOperation();
+
+const duration = Date.now() - start;
+
+// Track performance without adding to duration
+client.events.emit({
+    name: 'Expensive operation completed',
+    durationMs: duration,
+    output: { resultSize: result.length },
+    metadata: { optimizationVersion: 'v2' }
+});
+
+await client.sessions.end();
+```
+
+### API Response Tracking
+
+```typescript
+async function fetchData(endpoint: string): Promise<any> {
+    const start = Date.now();
+
+    const response = await fetch(endpoint);
+    const data = await response.json();
+
+    // Track API call without blocking
+    client.events.emit({
+        name: 'API call',
+        input: { endpoint },
+        output: { status: response.status, dataSize: JSON.stringify(data).length },
+        durationMs: Date.now() - start
+    });
+
+    return data;
+}
+```
+
+---
+
+## How It Works
+
+1. `emit()` queues the event for background transmission
+2. Your code continues immediately without waiting
+3. Events are batched and sent efficiently to Lucidic
+4. If the session ends, pending events are flushed
+
+---
+
+## When to Use `emit` vs `create`
+
+| Use `emit` | Use `create` |
+|------------|--------------|
+| Hot paths where latency matters | When you need the event ID |
+| High-frequency events | Critical events requiring confirmation |
+| Logging and monitoring | When event ordering is critical |
+| Non-critical tracking | Sequential event dependencies |
+
+---
+
+## Best Practices
+
+### 1. Use for High-Volume Events
+
+```typescript
+// Good - won't slow down your loop
+for (const item of largeDataset) {
+    client.events.emit({ name: 'Item processed', input: { id: item.id } });
+    await process(item);
+}
+```
+
+### 2. Track Performance Metrics
+
+```typescript
+// Good - capture metrics without impacting performance
+client.events.emit({
+    name: 'API latency',
+    durationMs: responseTime,
+    metadata: { endpoint: '/api/users' }
+});
+```
+
+### 3. Add Context with Metadata
+
+```typescript
+client.events.emit({
+    name: 'User action',
+    input: { action: 'click' },
+    metadata: {
+        userId: user.id,
+        sessionType: 'authenticated',
+        featureFlag: 'newUi'
+    }
+});
+```
+
+---
+
+## Related
+
+- [events.create](/typescript-sdk/events/create) - Async event creation
+- [Event Management](/typescript-sdk/events/index) - Overview of events

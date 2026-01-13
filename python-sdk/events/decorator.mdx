@@ -1,0 +1,265 @@
+---
+title: '@client.event() Decorator'
+description: Automatically track function calls as events using the decorator pattern
+---
+
+# @client.event() Decorator
+
+The `@client.event()` decorator automatically captures function invocations as events, recording inputs, outputs, duration, and errors.
+
+---
+
+## Syntax
+
+```python
+@client.event(
+    name: str = None,
+    metadata: dict = None
+)
+def your_function(...):
+    ...
+```
+
+---
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `str` | No | Custom name for the event (defaults to function name) |
+| `metadata` | `dict` | No | Additional metadata to attach to the event |
+
+---
+
+## What Gets Captured
+
+When a decorated function is called, the following is automatically captured:
+
+| Captured Data | Description |
+|---------------|-------------|
+| **Function name** | The function's name or custom name |
+| **Arguments** | All input arguments (args and kwargs) |
+| **Return value** | The function's return value |
+| **Duration** | Execution time in milliseconds |
+| **Errors** | Any exceptions with stack traces |
+
+---
+
+## Examples
+
+### Basic Usage
+
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+@client.event()
+def process_document(doc_id: str, content: str) -> dict:
+    """Process a document and extract information."""
+    # Your processing logic
+    return {"entities": ["Apple", "Google"], "summary": "Tech news..."}
+
+with client.sessions.create(session_name="Document Processing"):
+    # This function call is automatically captured as an event
+    result = process_document("doc-123", "Apple and Google announced...")
+```
+
+### With Custom Name
+
+```python
+@client.event(name="Extract entities from text")
+def extract_entities(text: str) -> list:
+    # Entity extraction logic
+    return ["entity1", "entity2"]
+```
+
+### With Metadata
+
+```python
+@client.event(metadata={"category": "ml", "priority": "high"})
+def run_inference(model_input: dict) -> dict:
+    return model.predict(model_input)
+```
+
+### Async Functions
+
+```python
+@client.event()
+async def fetch_data(url: str) -> dict:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
+
+async def main():
+    async with client.sessions.acreate(session_name="Async Task"):
+        data = await fetch_data("https://api.example.com/data")
+```
+
+### Error Handling
+
+Errors are automatically captured with full context:
+
+```python
+@client.event()
+def risky_operation(data: dict) -> dict:
+    if not data:
+        raise ValueError("Data cannot be empty")
+    return process(data)
+
+with client.sessions.create(session_name="Error Handling"):
+    try:
+        result = risky_operation({})
+    except ValueError:
+        # Error is captured in the event with:
+        # - Error type
+        # - Error message
+        # - Stack trace
+        pass
+```
+
+---
+
+## Event Nesting
+
+When decorated functions call each other or make LLM calls, events are automatically nested:
+
+```python
+@client.event()
+def analyze_document(doc: str) -> dict:
+    # LLM call creates a nested event
+    summary = openai.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"Summarize: {doc}"}]
+    )
+
+    # Another decorated function creates another nested event
+    entities = extract_entities(doc)
+
+    return {"summary": summary, "entities": entities}
+
+@client.event()
+def extract_entities(text: str) -> list:
+    response = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": f"Extract entities: {text}"}]
+    )
+    return parse_entities(response)
+
+# Results in:
+# Session
+# └── Event: analyze_document (Function Call)
+#     ├── Event: GPT-4 call (LLM Generation)
+#     └── Event: extract_entities (Function Call)
+#         └── Event: GPT-3.5 call (LLM Generation)
+```
+
+---
+
+## Real-World Example
+
+```python
+from lucidicai import LucidicAI
+from openai import OpenAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
+
+@client.event()
+def search_documents(query: str) -> list:
+    """Search for relevant documents."""
+    return database.search(query, limit=5)
+
+@client.event()
+def generate_response(query: str, context: list) -> str:
+    """Generate a response using LLM."""
+    messages = [
+        {"role": "system", "content": "Answer based on the context provided."},
+        {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
+    ]
+
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=messages
+    )
+
+    return response.choices[0].message.content
+
+@client.event()
+def rag_pipeline(query: str) -> str:
+    """Complete RAG pipeline."""
+    # Search for context
+    documents = search_documents(query)
+
+    # Generate response
+    response = generate_response(query, documents)
+
+    return response
+
+# Usage
+with client.sessions.create(session_name="RAG Query"):
+    answer = rag_pipeline("What is machine learning?")
+    print(answer)
+```
+
+---
+
+## Best Practices
+
+### 1. Decorate Key Functions
+
+Focus on functions that represent meaningful operations:
+
+```python
+# Good - meaningful business logic
+@client.event()
+def process_payment(order_id: str, amount: float) -> dict:
+    ...
+
+# Less useful - too granular
+@client.event()
+def add_numbers(a: int, b: int) -> int:
+    return a + b
+```
+
+### 2. Use Descriptive Names
+
+```python
+# Good - clear what it does
+@client.event(name="Validate user credentials against database")
+def validate_user(username: str, password: str) -> bool:
+    ...
+
+# OK but less descriptive
+@client.event()
+def validate_user(username: str, password: str) -> bool:
+    ...
+```
+
+### 3. Add Relevant Metadata
+
+```python
+@client.event(metadata={
+    "service": "payment",
+    "version": "2.0",
+    "sla_ms": 500
+})
+def process_payment(order: dict) -> dict:
+    ...
+```
+
+---
+
+## Limitations
+
+- **Class methods**: Works with both regular methods and static methods
+- **Generators**: Not supported for generator functions
+- **Return value size**: Large return values are truncated in logs
+
+---
+
+## Related
+
+- [events.create](/python-sdk/events/create) - Manual event creation
+- [events.emit](/python-sdk/events/emit) - Zero-latency event emission
+- [Event Management](/python-sdk/events/index) - Overview of events

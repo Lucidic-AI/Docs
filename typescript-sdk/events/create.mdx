@@ -1,0 +1,185 @@
+---
+title: events.create
+description: Create events asynchronously in the Lucidic TypeScript SDK
+---
+
+# events.create
+
+Create events within the current session. This is an async operation that waits for confirmation from the server.
+
+---
+
+## Syntax
+
+```typescript
+await client.events.create({
+    name: string,
+    input?: object,
+    output?: object,
+    durationMs?: number,
+    cost?: number,
+    model?: string,
+    metadata?: object
+});
+```
+
+---
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `string` | Yes | Descriptive name for the event |
+| `input` | `object` | No | Input data/parameters for the event |
+| `output` | `object` | No | Output/result from the event |
+| `durationMs` | `number` | No | Duration of the operation in milliseconds |
+| `cost` | `number` | No | Cost of the operation |
+| `model` | `string` | No | Model name (for LLM-related events) |
+| `metadata` | `object` | No | Additional custom metadata |
+
+---
+
+## Returns
+
+Returns a Promise that resolves to an event object with the created event's details including `eventId`.
+
+---
+
+## Examples
+
+### Basic Event Creation
+
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+await client.sessions.create({ sessionName: 'API Integration' });
+
+// Create a simple event
+await client.events.create({
+    name: 'Fetch user data',
+    input: { userId: '12345' },
+    output: { name: 'John Doe', email: 'john@example.com' }
+});
+
+await client.sessions.end();
+```
+
+### With Duration and Cost
+
+```typescript
+await client.sessions.create({ sessionName: 'Database Operations' });
+
+const start = Date.now();
+
+// Perform operation
+const result = await database.query('SELECT * FROM users');
+
+const duration = Date.now() - start;
+
+await client.events.create({
+    name: 'Database query',
+    input: { query: 'SELECT * FROM users' },
+    output: { rows: result.length },
+    durationMs: duration,
+    cost: 0.001
+});
+
+await client.sessions.end();
+```
+
+### With Custom Metadata
+
+```typescript
+await client.sessions.create({ sessionName: 'ML Pipeline' });
+
+await client.events.create({
+    name: 'Model inference',
+    input: { text: 'Sample input for classification' },
+    output: { label: 'positive', confidence: 0.95 },
+    model: 'custom-classifier-v2',
+    durationMs: 150,
+    metadata: {
+        batchId: 'batch-123',
+        environment: 'production',
+        modelVersion: '2.1.0'
+    }
+});
+
+await client.sessions.end();
+```
+
+### Multiple Events in Sequence
+
+```typescript
+await client.sessions.create({ sessionName: 'Multi-step Process' });
+
+// Step 1: Fetch data
+await client.events.create({
+    name: 'Fetch input data',
+    input: { source: 'api' },
+    output: { records: 100 }
+});
+
+// Step 2: Process data
+await client.events.create({
+    name: 'Transform data',
+    input: { records: 100 },
+    output: { processed: 98, errors: 2 }
+});
+
+// Step 3: Store results
+await client.events.create({
+    name: 'Save to database',
+    input: { processed: 98 },
+    output: { saved: true }
+});
+
+await client.sessions.end();
+```
+
+### Error Tracking
+
+```typescript
+await client.sessions.create({ sessionName: 'Error Handling' });
+
+try {
+    const result = await riskyOperation();
+
+    await client.events.create({
+        name: 'Risky operation completed',
+        output: { result }
+    });
+} catch (error) {
+    await client.events.create({
+        name: 'Risky operation failed',
+        output: {
+            error: error.message,
+            stack: error.stack
+        },
+        metadata: { severity: 'high' }
+    });
+    throw error;
+}
+
+await client.sessions.end();
+```
+
+---
+
+## When to Use `create` vs `emit`
+
+| Use `create` | Use `emit` |
+|--------------|------------|
+| When you need confirmation | Hot paths where latency matters |
+| Critical events that must be recorded | High-frequency events |
+| When you need the event ID returned | Background/logging events |
+| Sequential event dependencies | Fire-and-forget tracking |
+
+---
+
+## Related
+
+- [events.emit](/typescript-sdk/events/emit) - Zero-latency event emission
+- [Event Management](/typescript-sdk/events/index) - Overview of events

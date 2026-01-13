@@ -14,12 +14,12 @@ A **Session** represents a single run of an AI agent as it attempts to complete 
 A Session is a top-level unit of observability. It begins when an agent starts a task and ends when the task is either completed, failed, or interrupted. 
 Learn to create a session with our [Quick Start guide](/getting-started/quickstart) or see [detailed examples](/python-sdk/examples)
 
-Within each Session UI in Lucidic or what we call [workflow sandbox](/features/workflow-sandbox), you’ll find:
+Within each Session UI in Lucidic or what we call [workflow sandbox](/feature-overview/workflow-sandbox), you'll find:
 
-- A **timeline of Steps** (agent states and transitions)
-- Fine-grained **Events** (e.g. LLM calls, API responses) inside each Step
-- A **workflow graph** visualizing the session’s trajectory
-- A **GIF/video replay** of the agent’s interaction (if available)
+- A **timeline of Events** (LLM calls, function calls, and custom operations)
+- **Nested event hierarchy** showing how operations relate to each other
+- A **workflow graph** visualizing the session's trajectory
+- A **GIF/video replay** of the agent's interaction (if available)
 - Evaluation scores, cost metrics, metadata, and more
 
 <Note type="info">
@@ -30,32 +30,39 @@ Sessions are non-deterministic by nature. Re-running the same task may lead to d
 
 ## Session Structure
 
-### Step and Event Hierarchy
+### Event Hierarchy
 
-A Session is composed of ordered **Steps**, each representing a unique state and action taken by the agent. Each Step contains multiple **Events**, representing granular atomic operations like LLM calls or API hits.
+A Session contains **Events**, which represent individual operations within your agent workflow. Events can be nested to show hierarchical relationships between operations.
 
-```python
+```
 Session
-└── Step
-    ├── Event
-    ├── Event
-    └── ...
+├── Event (LLM Generation) ← auto-created via OpenTelemetry
+├── Event (Function Call) ← @client.event() decorator
+│   └── Event (LLM Generation) ← nested, auto-created
+├── Event (Error Traceback) ← auto-created on exception
+└── Event (Generic) ← client.events.create() / .emit()
 ```
 
+**Event Types:**
+- **LLM Generation** - Automatically captured API calls to LLM providers
+- **Function Call** - Function executions tracked via decorators
+- **Error Traceback** - Exceptions with full stack traces
+- **Generic Event** - Any custom operation you want to track
+
 <Note type="note">
-Steps and Events are documented [here →](/core-concepts/steps) and [here →](/core-concepts/events) respectively.
+Events are documented in detail [here →](/feature-overview/events).
 </Note>
 
 ---
 
 ## Session Dashboard or Workflow Sandbox
 
-Each Session in the [workflow sandbox](/features/workflow-sandbox) includes:
+Each Session in the [workflow sandbox](/feature-overview/workflow-sandbox) includes:
 
-- **Overview metrics**: duration, step count, cost, completion status
+- **Overview metrics**: duration, event count, cost, completion status
 - **Visual replay**: full session video or GIF (if captured)
-- **Interactive workflow graph**: clickable nodes for each step
-- **Step-by-step explorer**: deep dive into state/action/event logs
+- **Interactive workflow graph**: clickable nodes for each event
+- **Event explorer**: deep dive into inputs, outputs, and nested events
 - **Evaluation scores**: human or LLM-generated
 
 
@@ -67,13 +74,21 @@ Each Session in the [workflow sandbox](/features/workflow-sandbox) includes:
 Sessions can be evaluated via multiple systems:
 
 ### 1. **User-Provided Eval Score**
-Passed in at runtime using the Python SDK. Useful for customized or domain-specific scoring.
+Passed in at runtime using the SDK. Useful for customized or domain-specific scoring.
 
 ```python
-lai.end_session(
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+with client.sessions.create(session_name="My Task"):
+    # Your workflow here
+    pass
+
+# Or end with evaluation details
+client.sessions.end(
     is_successful=True,
-    session_eval=4.5,  # Your custom score (numeric value, not string)
-    session_eval_reason="Agent completed primary objectives but took longer than expected"
+    is_successful_reason="Agent completed primary objectives but took longer than expected"
 )
 ```
 
@@ -98,7 +113,7 @@ These rubrics produce both per-criterion and composite scores.
 ### 3. **Default Evaluation**
 Our built-in system outputs:
 - A score (0 or 1) based on task completion
-- A list of “wrong” or suboptimal steps (automatically identified)
+- A list of "wrong" or suboptimal events (automatically identified)
 - Graph highlights of failure points
 
 ---
@@ -110,7 +125,7 @@ Sessions give you rich insight into how your agent operates and where it goes wr
 - **Replay stuck behavior** via video
 - **Identify high-cost operations**
 - **Trace decision-making** back to specific prompts or events
-- **Group failing steps** into unified nodes in the graph
+- **Group failing events** into unified nodes in the graph
 - **Track revisited states** and looping patterns
 
 
@@ -124,9 +139,18 @@ Each Session contains rich metadata including:
 - Agent identity and version
 - Cost
 - Timestamps
-- Link to parent Mass Simulation (if applicable)
+- Experiment ID (if part of an experiment)
 - Replay data and graph reference
 
 Planned: **semantic tagging**, **search**, and **session filtering** based on LLM-labeled themes.
+
+---
+
+## Related Concepts
+
+- [Events](/feature-overview/events) - Individual operations within sessions
+- [Experiments](/feature-overview/experiments) - Grouping sessions for analysis
+- [Rubric Evaluation](/feature-overview/rubrics) - Structured evaluation criteria
+- [Workflow Sandbox](/feature-overview/workflow-sandbox) - Session visualization
 
 ---

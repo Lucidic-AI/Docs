@@ -14,10 +14,9 @@ Lucidic integrates seamlessly with **LangChain** agents and chains — no need t
 When you use `providers=["langchain"]` with Lucidic:
 
 - LangChain LLM calls are **automatically instrumented** using OpenTelemetry
-- **Events are automatically created** for every LLM call - no manual event creation needed
+- **Events are automatically created** for every LLM call
 - No need to manually attach handlers in most cases
-- All LLM usage is captured as **Lucidic Events**, grouped under the correct Step
-- If no step exists when an LLM call occurs, one is automatically created
+- All LLM usage is captured as **Lucidic Events**, grouped within the current Session
 
 This means you get **full observability into your agent's reasoning — with minimal setup.**
 
@@ -26,62 +25,77 @@ This means you get **full observability into your agent's reasoning — with min
 ## Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from langchain_openai import ChatOpenAI
 
-# Just initialize - that's it!
-lai.init(providers=["langchain"])
+# Initialize clients
+client = LucidicAI(api_key="...", providers=["langchain"])
 
 llm = ChatOpenAI(model="gpt-4")
 
-# Steps and events are automatically created
-response = llm.invoke("Hello!")
-
-# Session auto-ends when script exits
+# Use context manager for session lifecycle
+with client.sessions.create(session_name="langchain_demo"):
+    # LLM calls are automatically tracked as events
+    response = llm.invoke("Hello!")
+# Session auto-ends when context exits
 ```
 
 ### Streaming Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from langchain_openai import ChatOpenAI
 
-lai.init(providers=["langchain"])
+client = LucidicAI(api_key="...", providers=["langchain"])
 
 llm = ChatOpenAI(model="gpt-4")
 
-# Streaming responses are also tracked automatically
-for chunk in llm.stream("Tell me a story"):
-    print(chunk.content, end="")
+with client.sessions.create(session_name="streaming_demo"):
+    # Streaming responses are also tracked automatically
+    for chunk in llm.stream("Tell me a story"):
+        print(chunk.content, end="")
 ```
 
-### Explicit Step Management
+### With Function Decorators
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
-lai.init(
-    session_name="langchain_research",
-    providers=["langchain"]  # API key and agent ID from env vars
-)
+client = LucidicAI(api_key="...", providers=["langchain"])
 
 llm = ChatOpenAI(model="gpt-4")
 
-lai.create_step(state="Research", goal="Generate research ideas")
+@client.event()
+def generate_questions(topic: str) -> str:
+    """Generate research questions - tracked as a Function Call event."""
+    response = llm.invoke([
+        SystemMessage(content="You are a research assistant."),
+        HumanMessage(content=f"What are 5 important areas in {topic}?")
+    ])
+    return response.content
 
-# All LLM calls are automatically tracked as events within this step
-response = llm.invoke([
-    SystemMessage(content="You are a research assistant."),
-    HumanMessage(content="What are 5 important areas in climate science?")
-])
+@client.event()
+def analyze_methodology(questions: str) -> str:
+    """Analyze methodology - tracked as a Function Call event."""
+    response = llm.invoke([
+        HumanMessage(content=f"What methodologies are used to study each area? {questions}")
+    ])
+    return response.content
 
-response = llm.invoke([
-    HumanMessage(content="What methodologies are used to study each area?")
-])
+# Run the workflow
+with client.sessions.create(session_name="research_session"):
+    questions = generate_questions("climate science")
+    analysis = analyze_methodology(questions)
+    print(analysis)
 
-lai.end_step()
+# Event hierarchy:
+# Session
+# └── Event: generate_questions (Function Call)
+#     └── Event: GPT-4 call (LLM Generation)
+# └── Event: analyze_methodology (Function Call)
+#     └── Event: GPT-4 call (LLM Generation)
 ```
 
 ---
@@ -104,16 +118,13 @@ For every LangChain LLM call, we automatically capture:
 ## Agent Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_react_agent, AgentExecutor
 from langchain.tools import Tool
 from langchain_core.prompts import PromptTemplate
 
-lai.init(
-    session_name="langchain_agent",
-    providers=["langchain"]
-)
+client = LucidicAI(api_key="...", providers=["langchain"])
 
 # Define tools
 tools = [
@@ -130,12 +141,10 @@ prompt = PromptTemplate.from_template("You are a helpful assistant. {input}")
 agent = create_react_agent(llm, tools, prompt)
 executor = AgentExecutor(agent=agent, tools=tools)
 
-lai.create_step(state="Ready", goal="Solve math problem")
-
-# All LLM calls within the agent are automatically tracked!
-result = executor.invoke({"input": "What is 25 * 4 + 10?"})
-
-lai.end_step()
+with client.sessions.create(session_name="langchain_agent"):
+    # All LLM calls within the agent are automatically tracked!
+    result = executor.invoke({"input": "What is 25 * 4 + 10?"})
+    print(result)
 ```
 
 ### Complex Agent Handler (Optional)
@@ -146,7 +155,7 @@ For some complex agent setups, you may need to manually attach a handler:
 from lucidicai.telemetry.otel_handlers import OTelLangChainHandler
 
 # Get the handler from the SDK
-handler = lai.Client().get_provider("langchain")
+handler = client.get_provider("langchain")
 
 # Manually attach to your agent if needed
 if hasattr(agent, 'callbacks'):
@@ -162,9 +171,13 @@ In most cases, automatic instrumentation will work without manual attachment.
 - Requires LangChain packages installed (`langchain`, `langchain-openai`, etc.)
 - Works with all LangChain LLMs, chains, and agents
 - Automatic instrumentation handles most use cases
-- If no step exists when an LLM call is made, Lucidic automatically creates one
 - Both sync and async operations are supported
 - Tool calls and chain execution are tracked as separate events
 
 ---
 
+## See Also
+
+- [Event Management](/python-sdk/events/index) - Overview of events
+- [Decorators](/python-sdk/decorators) - Automatic function tracking
+- [Examples](/python-sdk/examples) - More usage patterns

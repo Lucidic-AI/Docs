@@ -1,60 +1,90 @@
 ---
 title: 'Decorators'
-description: 'Simplify tracking with Python decorators for automatic step and event management'
+description: 'Track function calls automatically with the @client.event() decorator'
 ---
 
 ## Overview
 
-Lucidic provides Python decorators that make it even easier to track your AI workflows. With decorators, you can automatically wrap functions with step and event tracking without manual `create_step()` and `end_step()` calls.
+Lucidic provides a Python decorator that makes it easy to track function calls as events. With the `@client.event()` decorator, you can automatically capture function inputs, outputs, duration, and errors without manual tracking code.
 
 ## Benefits
 
 - **Cleaner Code**: No need for try-finally blocks or manual cleanup
-- **Automatic Error Handling**: Steps and events are properly ended even if exceptions occur
+- **Automatic Error Handling**: Events capture exceptions with full stack traces
 - **Function Metadata Capture**: Automatically captures function inputs and outputs
 - **Works with Async**: Full support for both sync and async functions
-- **Graceful Degradation**: Functions work normally if Lucidic isn't initialized
+- **Automatic Nesting**: LLM calls inside decorated functions create nested events
 
-## The `@step` Decorator
+## The `@client.event()` Decorator
 
-The `@step` decorator automatically wraps a function with step tracking.
+The `@client.event()` decorator automatically wraps a function with event tracking.
 
 ### Basic Usage
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-@lai.step(
-    state="Processing user input",
-    action="Validate and parse request",
-    goal="Extract intent from user message"
-)
+client = LucidicAI(api_key="...", providers=["openai"])
+
+@client.event()
 def process_user_input(message: str) -> dict:
-    # Your function logic here
+    """Process a user message and extract intent."""
     intent = analyze_message(message)
     return {"intent": intent, "confidence": 0.95}
+
+# Usage
+with client.sessions.create(session_name="Chat Session"):
+    result = process_user_input("Hello, how are you?")
+    # Event automatically captured with inputs and outputs
+```
+
+### With Custom Name
+
+```python
+@client.event(name="Extract entities from document")
+def extract_entities(text: str) -> list:
+    # Entity extraction logic
+    return ["Apple", "Google", "Microsoft"]
+```
+
+### With Metadata
+
+```python
+@client.event(metadata={"category": "ml", "priority": "high"})
+def run_inference(model_input: dict) -> dict:
+    return model.predict(model_input)
 ```
 
 ### Parameters
 
 All parameters are optional:
 
-- `state` - Current state description
-- `action` - Action being performed
-- `goal` - Goal of this step
-- `screenshot_path` - Path to screenshot for this step
-- `eval_score` - Evaluation score (0.0 to 5.0)
-- `eval_description` - Evaluation description
+- `name` - Custom name for the event (defaults to function name)
+- `metadata` - Additional metadata to attach to the event
+
+### What Gets Captured
+
+When a decorated function is called, the following is automatically captured:
+
+| Captured Data | Description |
+|---------------|-------------|
+| **Function name** | The function's name or custom name |
+| **Arguments** | All input arguments (args and kwargs) |
+| **Return value** | The function's return value |
+| **Duration** | Execution time in milliseconds |
+| **Errors** | Any exceptions with stack traces |
 
 ### Error Handling
 
-If an exception occurs, the step is automatically ended with an error indication:
+If an exception occurs, the event captures the error with full context:
 
 ```python
-@lai.step(state="Risky operation")
+@client.event()
 def risky_function():
-    # If this raises an exception, the step will be ended with:
-    # eval_score=0.0 and eval_description="Step failed with error: [error message]"
+    # If this raises an exception, the event will capture:
+    # - Error type
+    # - Error message
+    # - Stack trace
     raise ValueError("Something went wrong")
 ```
 
@@ -63,78 +93,45 @@ def risky_function():
 Decorators work seamlessly with async functions:
 
 ```python
-@lai.step(state="Async API call", action="Fetch data")
+@client.event()
 async def fetch_data(url: str) -> dict:
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.json()
 ```
 
-## The `@event` Decorator
+## Event Nesting
 
-The `@event` decorator creates an event for a function call, automatically capturing inputs and outputs.
-
-### Basic Usage
+When decorated functions contain LLM calls or other decorated functions, events are automatically nested:
 
 ```python
-@lai.event(description="Calculate similarity score")
-def calculate_similarity(text1: str, text2: str) -> float:
-    # Your logic here
-    return 0.85
-```
+@client.event()
+def analyze_document(doc: str) -> dict:
+    # This LLM call creates a nested event
+    summary = openai.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": f"Summarize: {doc}"}]
+    )
 
-### Auto-Generated Descriptions
+    # Another decorated function creates another nested event
+    entities = extract_entities(doc)
 
-If you don't provide a description, it's automatically generated from the function signature:
+    return {"summary": summary, "entities": entities}
 
-```python
-@lai.event()  # No description provided
-def process_data(items: list, threshold: float = 0.5) -> dict:
-    return {"processed": len(items), "threshold": threshold}
+@client.event()
+def extract_entities(text: str) -> list:
+    response = openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": f"Extract entities: {text}"}]
+    )
+    return parse_entities(response)
 
-# This will create an event with description:
-# "process_data(items=[1, 2, 3], threshold=0.5)"
-```
-
-### Parameters
-
-- `description` - Custom description (auto-generated if not provided)
-- `result` - Custom result (auto-generated from return value if not provided)
-- `model` - Model name if this represents a model call
-- `cost_added` - Cost to add for this event
-
-### Capturing Results
-
-The decorator automatically captures function return values:
-
-```python
-@lai.event(description="Database query")
-def get_user(user_id: int) -> dict:
-    # The return value will be automatically captured as the event result
-    return {"id": user_id, "name": "John Doe", "role": "admin"}
-```
-
-## Combining Decorators
-
-You can use both decorators together for comprehensive tracking:
-
-```python
-@lai.step(state="Data pipeline", action="Process batch")
-def process_batch(data: list) -> dict:
-    # This creates a step for the entire batch process
-    
-    results = []
-    for item in data:
-        # This creates an event within the step
-        result = process_item(item)
-        results.append(result)
-    
-    return {"processed": len(results), "results": results}
-
-@lai.event(description="Process individual item")
-def process_item(item: dict) -> dict:
-    # Each call creates an event
-    return transform(item)
+# Results in this hierarchy:
+# Session
+# └── Event: analyze_document (Function Call)
+#     ├── Event: GPT-4 call (LLM Generation)
+#     └── Event: extract_entities (Function Call)
+#         └── Event: GPT-3.5 call (LLM Generation)
 ```
 
 ## Real-World Example
@@ -142,150 +139,116 @@ def process_item(item: dict) -> dict:
 Here's a complete example showing decorators in an AI document processing pipeline:
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from openai import OpenAI
 
-# Initialize
-lai.init(session_name="Document Processing", providers=["openai"])
-client = OpenAI()
+# Initialize clients
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
 
-@lai.step(
-    state="Document processing pipeline",
-    action="Extract and analyze content",
-    goal="Generate structured insights"
-)
-def process_documents(documents: list) -> dict:
-    """Process multiple documents through an AI pipeline."""
-    
-    processed = []
-    for doc in documents:
-        # Each document gets its own step
-        result = analyze_document(doc)
-        processed.append(result)
-    
-    # Generate summary (creates an event)
-    summary = generate_summary(processed)
-    
-    return {
-        "documents_processed": len(documents),
-        "summary": summary,
-        "details": processed
-    }
+@client.event()
+def search_documents(query: str) -> list:
+    """Search for relevant documents."""
+    return database.search(query, limit=5)
 
-@lai.step(state="Analyzing document", action="Extract information")
-def analyze_document(doc: dict) -> dict:
-    """Analyze a single document."""
-    
-    # These create events within the step
-    entities = extract_entities(doc["content"])
-    sentiment = analyze_sentiment(doc["content"])
-    
-    return {
-        "id": doc["id"],
-        "entities": entities,
-        "sentiment": sentiment
-    }
+@client.event()
+def generate_response(query: str, context: list) -> str:
+    """Generate a response using the LLM."""
+    messages = [
+        {"role": "system", "content": "Answer based on the context provided."},
+        {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
+    ]
 
-@lai.event(description="Extract named entities", model="gpt-3.5-turbo")
-def extract_entities(text: str) -> list:
-    """Extract entities using OpenAI."""
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "Extract named entities."},
-            {"role": "user", "content": text}
-        ]
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=messages
     )
-    # LLM call is also tracked automatically
-    return parse_entities(response.choices[0].message.content)
+    # LLM call is nested inside this event
+    return response.choices[0].message.content
 
-@lai.event()  # Auto-generates: "analyze_sentiment(text='...')"
-def analyze_sentiment(text: str) -> str:
-    """Simple sentiment analysis."""
-    # Your sentiment logic here
-    return "positive"
+@client.event()
+def rag_pipeline(query: str) -> str:
+    """Complete RAG pipeline."""
+    documents = search_documents(query)
+    response = generate_response(query, documents)
+    return response
 
 # Run the pipeline
-documents = [
-    {"id": 1, "content": "Apple announced new products..."},
-    {"id": 2, "content": "The market responded positively..."}
-]
+with client.sessions.create(session_name="RAG Query"):
+    answer = rag_pipeline("What is machine learning?")
+    print(answer)
+```
 
-results = process_documents(documents)
-print(results)
+## Combining with Manual Events
 
-# Session ends automatically
+You can use decorators alongside manual event creation for more control:
+
+```python
+@client.event()
+def complex_function():
+    # Decorator handles the function-level event
+
+    # Use emit() for additional tracking without blocking
+    client.events.emit(
+        name="Cache check",
+        input={"key": "user_123"},
+        output={"hit": True}
+    )
+
+    # Perform operations
+    result = perform_operation()
+
+    return result
 ```
 
 ## Best Practices
 
-### 1. Use Meaningful Parameters
+### 1. Decorate Key Business Logic
+
+Focus on functions that represent meaningful operations:
 
 ```python
-# Good - provides context
-@lai.step(
-    state="User authentication",
-    action="Verify credentials",
-    goal="Grant access token"
-)
-def authenticate_user(username: str, password: str):
-    pass
+# Good - meaningful business logic
+@client.event()
+def process_payment(order_id: str, amount: float) -> dict:
+    ...
 
-# Less helpful
-@lai.step()
-def authenticate_user(username: str, password: str):
-    pass
+# Less useful - too granular
+@client.event()
+def add_numbers(a: int, b: int) -> int:
+    return a + b
 ```
 
-### 2. Combine with Manual Tracking
-
-Decorators work well with manual tracking for fine-grained control:
+### 2. Use Descriptive Names
 
 ```python
-@lai.step(state="Complex process")
-def complex_function():
-    # Decorator handles step creation/ending
-    
-    # But you can still create events manually for more control
-    event_id = lai.create_event(description="Critical operation")
-    try:
-        result = critical_operation()
-        lai.update_event(event_id=event_id, result=f"Success: {result}")
-    except Exception as e:
-        lai.end_event(event_id=event_id, result=f"Failed: {e}")
-        raise
+# Good - clear what it does
+@client.event(name="Validate user credentials against database")
+def validate_user(username: str, password: str) -> bool:
+    ...
 ```
 
-### 3. Nested Functions
-
-When using nested decorated functions, each creates its own tracking:
+### 3. Add Relevant Metadata
 
 ```python
-@lai.step(state="Parent process")
-def parent_function():
-    # This step contains multiple child steps
-    for i in range(3):
-        child_function(i)
-
-@lai.step(state="Child process")
-def child_function(index: int):
-    # Each call creates a separate step
-    process_item(index)
-
-@lai.event()
-def process_item(index: int):
-    # Each call creates an event within the child step
-    return f"Processed item {index}"
+@client.event(metadata={
+    "service": "payment",
+    "version": "2.0",
+    "sla_ms": 500
+})
+def process_payment(order: dict) -> dict:
+    ...
 ```
 
 ## Limitations
 
-- **Result Recording**: The `@event` decorator has a known limitation where updating the event within the decorated function may prevent the function result from being recorded properly
-- **Context Isolation**: Each decorated function creates its own context - you cannot update a parent decorator's step/event from within a child function
-- **Parameter Modification**: Decorator parameters are set at definition time and cannot be modified at runtime
+- **Generators**: Not fully supported for generator functions
+- **Return value size**: Large return values may be truncated in logs
+- **Class methods**: Works with both regular methods and static methods
 
-## Next Steps
+## Related
 
-- See [Examples](/python-sdk/examples) for more decorator usage patterns
-- Learn about [Manual Step Management](/core-concepts/steps) for fine-grained control
-- Explore [Event Tracking](/core-concepts/events) for understanding what gets captured
+- [events.create](/python-sdk/events/create) - Manual event creation
+- [events.emit](/python-sdk/events/emit) - Zero-latency event emission
+- [Event Management](/python-sdk/events/index) - Overview of events
+- [Examples](/python-sdk/examples) - More usage patterns
