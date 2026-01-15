@@ -1,0 +1,216 @@
+---
+title: Prompt Database
+description: Manage, version, and fetch prompts dynamically to accelerate agent iteration and experimentation.
+---
+
+# Prompt Database
+
+**Prompt Database** is your centralized, versioned store for managing agent prompts — **without needing to redeploy code or edit files in a repo**.
+
+It allows you to:
+
+- **Create and version prompts** in the UI
+- **Dynamically fetch them at runtime**
+- **Templatize with variables**
+- **Rapidly iterate on prompt design**
+- **Swap/Adjust prompts without touching your codebase**
+
+---
+
+## Why Prompt DB?
+
+Improving an AI agent often means **adjusting its prompts**. But doing that **through your codebase slows everything down.**
+
+With our Prompt DB, you can:
+
+- **Change a prompt in the dashboard** → **rerun** your agent instantly **without redeploying**
+- **Test prompt performance** across sessions
+- **Compare** and **experiment** with **different versions of prompts without redeploying anything**
+
+> _![promptdb](/images/promptdb.png)_
+
+---
+
+## How to Create One
+
+### In the UI
+
+- Click a **project** and then an **agent**
+- On the agent page it will be directly below the agent name
+> _![promptdb](/images/r3.png)_
+- Click **Create New Prompt** button.
+> _![promptdb](/images/pdb2.png)_
+
+- Create a **prompt name** (this is what you will refer to it in your code)
+- Add a **version description** (optional)
+- Copy paste your prompt from your code and change **all your variables** to the format ```` {{variable_name}}````.
+> For example, your prompt in python might look like ``` f"summarize this page: {page_text}"``` then when you **copy it into the Prompt Database** change it to ```` "summarize this page: {{page_text}}"````
+- Click **Save**
+> _![promptdb](/images/pdb3.png)_
+
+> **Note:** **ALWAYS save a prompt** if you make changes to it that you would like to keep.
+
+### Using Prompts with Evolutionary Simulations
+
+The Prompt Database integrates seamlessly with [Evolutionary Simulations](/feature-overview/evolutionary-simulations) for automated prompt optimization:
+
+**How it works:**
+1. Create multiple prompt versions in the Prompt Database
+2. Select them as hyperparameters in Evolutionary Simulations
+3. The system automatically tests all variations
+4. Statistical analysis identifies the best performing prompt
+5. Apply the winning version to production with one click
+
+**Benefits:**
+- Test dozens of prompt variations simultaneously
+- No code changes required for testing
+- Statistical validation of improvements
+- Automatic version management
+- Easy rollback if needed
+
+See [Evolutionary Simulations](/feature-overview/evolutionary-simulations) for details on automated prompt optimization.
+
+### In Code
+
+**Wherever you want to use the prompt**, you can pull it from our **Prompt Database**:
+
+<Tabs>
+  <Tab title="Python">
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...")
+
+prompt = client.prompts.get(
+    prompt_name="summarize_page",
+    label="production",  # optional, defaults to "production"
+    variables={"page_text": "Stanford University is a top..."},  # optional
+    cache_ttl=300  # optional (in seconds) defaults to 300
+)
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...' });
+
+const prompt = await client.prompts.get({
+    promptName: 'summarize_page',
+    label: 'production',
+    variables: { pageText: 'Stanford University is a top...' },
+    cacheTtl: 300
+});
+```
+  </Tab>
+</Tabs>
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `prompt_name` | `str` | The name of the prompt to fetch. |
+| `label` | `str` (optional) | The label of the prompt to fetch. Defaults to `production`. |
+| `variables` | `dict` (optional) | A dictionary of string key/values to interpolate into the prompt. |
+| `cache_ttl` | `int` (optional) | The time-to-live for the prompt in seconds. Defaults to 300 seconds (0 = no cache, -1 = cache forever, n = cache for n seconds). |
+
+> If your prompt references `{{variable_name}}` but you don't provide a value, you'll get a warning. If you provide variables that aren't used in the prompt, you'll get an error.
+
+
+## Labels
+
+Labels attach to a single prompt version and **allow flexible, dynamic fetches**. They're a powerful feature that enables prompt management without code changes.
+
+### What Labels Do
+
+- **Version Identification**: Labels point to specific prompt versions without needing IDs
+- **Runtime Flexibility**: Switch versions without code changes
+- **Environment Management**: Separate development, test, and production prompts
+- **A/B Testing**: Direct different users to different versions
+- **Rollback Support**: Quickly revert to previous versions by moving a label if a new version isn't performing well
+
+### Available Labels
+
+| Label | Behavior |
+|-------|----------|
+| `latest` | Always points to the most recent version |
+| `production` | The "live" version used by default |
+| `development` | Convenience label for testing changes before production |
+| `test` | Convenience label for testing changes before production |
+| Custom | Any user-defined label for testing or segmentation |
+
+### How Labels Work
+
+- **Only one version can hold a given label at a time**
+- If **you move a label to a new version**, the **old version will no longer have that label**
+- When you create a new prompt version, the `latest` label automatically moves to it
+- Moving the `production` label is a manual action (to ensure stability)
+- Custom labels (like `beta`, `experiment-a`, `region-specific`) can be created by you for specific use cases
+
+### How to use labels
+1. Click **labels** next to the version of the prompt you want to use
+> _<img src="/images/pdb4.png" alt="promptdb" width="400"/>_
+2. Click the **new label(s)** you would like to move to the version
+> _<img src="/images/pdb5.png" alt="promptdb" width="400"/>_
+3. Click **Save Changes**
+
+---
+
+## Variables
+
+Variables allow you to create **dynamic, reusable prompts** by inserting **runtime values** into your prompt templates.
+
+### How Variables Work
+
+1. **Define variables** in your prompt using double curly braces: `{{variable_name}}`
+2. **Pass variable values** into the variables field in your code
+3. Lucidic **automatically substitutes** the variable values into your prompt before sending it to the LLM
+
+### Formatting Variables
+
+When adding prompts to the **Prompt DB**, you need to convert your code's variable syntax to Lucidic's template syntax:
+
+| In Your Code | In Prompt DB |
+|--------------|---------------|
+| `f"summarize this: {text}"` | `"summarize this: {{text}}"` |
+| `"analyze data: " + data_str` | `"analyze data: {{data_str}}"` |
+| `template.format(query=user_query)` | `"...your query: {{query}}"` |
+
+### Code Example
+
+In the **Prompt DB** UI, you would define the prompt as:
+
+> `Generate {{number}} ideas about {{topic}}`
+
+In your code, you would call it like this:
+
+```python
+prompt = client.prompts.get(
+    prompt_name="idea_generator",
+    variables={
+        "number": "5",
+        "topic": "artificial intelligence"
+    }
+)
+```
+
+**Result:**
+
+> Generate 5 ideas about artificial intelligence
+
+### Best Practices
+
+- Use **descriptive variable names** that indicate their purpose
+- Consider setting default values for optional variables in your code
+- Test your prompts with different variable values to ensure they work as expected
+
+## Versioning and Iteration
+
+When you update a prompt in the UI:
+
+- A new **Prompt Version** is created
+- The `latest` label is moved to the new version
+- You can optionally move the `production` label to the new version
+- You cannot edit an old version of a prompt — if you save it, it will just create a new version
+
+Because agents fetch prompts dynamically, the next run of your agent will use the updated prompt automatically — no deploy needed.
+
+---

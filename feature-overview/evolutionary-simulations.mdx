@@ -1,0 +1,337 @@
+---
+title: Evolutionary Simulations
+description: Automatically optimize your AI agents through intelligent hyperparameter evolution, discovering the best configurations for prompts, models, and workflows.
+---
+
+# Evolutionary Simulations
+
+**Evolutionary Simulations**, or agent auto-improvement, uses intelligent optimization algorithms to automatically discover the best configurations for your AI agents by testing variations of prompts, models, tools, and other hyperparameters.
+
+Instead of manual trial and error, let the system **systematically explore and evolve** your agent configurations to maximize performance while minimizing costs.
+
+---
+
+## Why Use Evolutionary Simulations?
+
+**Finding optimal agent configurations is complex** — with countless combinations of prompts, models, and parameters, manual optimization is time-consuming and often misses the best solutions.
+
+Evolutionary Simulations helps you:
+
+* Automatically discover optimal prompt variations
+* Find the best model-cost-performance balance
+* Optimize tool usage and agent workflows
+* Reduce operational costs while improving quality
+* Validate improvements with statistical rigor
+* Scale optimization across multiple parameters simultaneously
+
+### Use Cases
+
+* **Prompt Engineering**: Evolve prompts for better accuracy and relevance
+* **Model Selection**: Compare providers and versions systematically
+* **Cost Optimization**: Find configurations that reduce spending without sacrificing quality
+* **Performance Tuning**: Optimize for speed, accuracy, or specific metrics
+* **A/B Testing at Scale**: Test multiple variations simultaneously with statistical validation
+
+---
+
+## How It Works
+
+### Evolutionary Algorithm
+
+Evolutionary Simulations employs an intelligent optimization process:
+
+1. **Baseline Establishment**: Measures current performance metrics
+2. **Hypothesis Generation**: Creates improvement theories based on patterns
+3. **Variation Creation**: Generates promising configuration variations
+4. **Parallel Testing**: Runs multiple experiments simultaneously
+5. **Statistical Analysis**: Validates improvements with rigorous statistical tests
+6. **Evolution**: Best performers become parents for next generation
+7. **Convergence**: Stops when optimal configuration is found or criteria met
+
+---
+
+## Creating an Evolutionary Simulation
+
+### Access Auto-Improve
+
+Navigate to your agent in the dashboard and click the **"Auto-Improve"** or **"Evolutionary Simulations"** tab.
+
+<Frame>
+  <img src="/images/evolutionary-main.png" alt="Evo Sims List" />
+</Frame>
+
+### Define Improvement Hypothesis
+
+Start by articulating what you want to improve:
+
+<Frame>
+  <img src="/images/evolutionary-hypothesis.png" alt="Improvement hypothesis input with generated plan" />
+</Frame>
+
+**Good Examples**:
+- "Reduce response time by optimizing prompt length while maintaining accuracy"
+- "Improve customer satisfaction scores by refining tone and response structure"
+- "Minimize API costs by finding optimal model-prompt combinations"
+
+### Configure Hyperparameters
+
+Add and select which parameters to optimize using the Parameter Blocks.
+
+**Available Hyperparameter Types**:
+
+**Prompts**
+- Select multiple prompt versions to test
+- Create variations with different instructions
+- Test different formatting and structure
+
+**Models**
+- Compare different providers (OpenAI, Anthropic, etc.)
+- Test model versions (GPT-4.1-Mini, GPT-5.1, Claude Opus 4.5)
+- Evaluate cost vs performance tradeoffs
+
+**Tool Calls**
+- Enable/disable specific tools
+- Adjust tool parameters
+- Test tool combinations
+
+**Custom Parameters**
+- Define any JSON-configurable parameter
+- Test arbitrary configuration values
+- Create complex parameter spaces
+
+**Context & Memory**
+
+Control what contextual data is available to your agent during optimization testing.
+
+<Frame>
+  <img src="/images/evolutionary-context-memory.png" alt="Context and Memory configuration showing categorized data sources" />
+</Frame>
+
+- Organize data sources into logical categories
+- Toggle individual data sources on/off within each category
+- Test how different context availability affects agent performance
+- Categories can include customer data, conversation history, policy information, and domain-specific knowledge bases
+
+**Examples**
+
+Provide input/output pairs as few-shot examples to guide agent behavior.
+
+<Frame>
+  <img src="/images/evolutionary-examples.png" alt="Examples configuration showing input/output pairs organized by scenario" />
+</Frame>
+
+- Organize examples by scenario type relevant to your domain
+- Each example includes a description and is tagged as "Input/Output pair"
+- Enable/disable specific examples to test behavior variations
+- Test how different example combinations affect agent responses
+
+### Select Datasets
+
+Choose test datasets for consistent evaluation:
+
+<Frame>
+  <img src="/images/evolutionary-datasets.png" alt="Dataset selector showing available test datasets" />
+</Frame>
+
+**Dataset Requirements**:
+- Minimum 20 samples for statistical validity
+- Include edge cases and typical scenarios
+- Balance different input types
+- Define clear success criteria
+
+### Set Statistical Parameters
+
+Configure statistical rigor for results validation:
+
+<Frame>
+  <img src="/images/evolutionary-statistics.png" alt="Statistical parameters configuration panel" />
+</Frame>
+
+**P-Value Threshold**
+- Default: 0.05 (95% confidence)
+- Lower values = higher confidence required
+
+**Train/Test Split**
+- Default: 80/20
+- Adjust based on dataset size
+
+### Define Stopping Criteria
+
+Set when the optimization should stop:
+
+<Frame>
+  <img src="/images/evolutionary-stopping.png" alt="Stopping criteria cards with various termination conditions" />
+</Frame>
+
+**Available Criteria**:
+* **Cost Limit**: Stop at spending threshold
+* **Session Runs**: Maximum test executions
+* **Configurations Tested**: Number of variations tried
+* **Time Limit**: Maximum optimization duration
+* **Accuracy Threshold**: Stop when target metric achieved
+
+---
+
+## Understanding Results
+
+### Optimization Analytics
+
+Track overall progress and resource usage across your optimization run.
+
+<Frame>
+  <img src="/images/evolutionary-results-graph.png" alt="Configuration Optimization Analytics showing metrics over iterations" />
+</Frame>
+
+**Summary Metrics**:
+- **Total Cost**: Cumulative spend across all test runs
+- **Training Time**: Total optimization duration
+- **Iterations**: Number of optimization cycles completed
+- **Models Tested**: Count of different models evaluated
+- **Configurations Tested**: Total unique configurations tried
+- **Adjustments Made**: Number of hyperparameter changes
+
+**Iteration Progress Graph**:
+- Visualize how your custom metrics evolve across iterations
+- Track multiple metrics simultaneously on a single chart
+- Identify when optimization converges or plateaus
+- Toggle between "Overall" summary and "Details" views
+
+---
+
+### Best Configuration
+
+The system identifies the optimal configuration based on your defined criteria.
+
+<Frame>
+  <img src="/images/evolutionary-best-config.png" alt="Best Configuration results showing metrics, insights, and next steps" />
+</Frame>
+
+**Key Metrics**:
+- Iteration number where best config was found
+- Model used in the winning configuration
+- Overall score and your custom metric values
+- Direct comparison against baseline performance
+
+**Insights**
+
+AI-generated learnings discovered during the optimization process:
+
+- Pattern analysis across successful and failed configurations
+- Identified issues that consistently caused problems
+- Recommendations for prompt structure and content
+- Observations about model behavior and limitations
+
+> **Pro tip:** Insights are based on analyzing all sessions in the optimization — they surface patterns you might not notice manually.
+
+**Next Steps**
+
+Actionable recommendations for improvements beyond agent configuration:
+
+- Suggested experiments to address remaining gaps
+- Identified edge cases that need attention
+- Structural improvements for tools or data sources
+- Checkbox interface for tracking follow-up tasks
+
+---
+
+### Configuration Overview
+
+Browse and compare all tested configurations in a sortable table.
+
+<Frame>
+  <img src="/images/evolutionary-config-overview.png" alt="Configuration Overview table with searchable configurations and metrics" />
+</Frame>
+
+**Table Features**:
+- **Search**: Filter configurations by name or properties
+- **Sort**: Click column headers to sort by any metric
+- **Color Coding**: Green values indicate good performance, red indicates areas needing improvement
+- **Baseline Row**: Always visible for easy comparison against your starting point
+
+**Selecting for Comparison**:
+- Use checkboxes to select 2-3 configurations
+- Click "Select 2 or 3 Configurations" button to open detailed comparison view
+
+---
+
+### Hyperparameter Comparison
+
+Compare selected configurations side-by-side to understand what changed.
+
+<Frame>
+  <img src="/images/evolutionary-comparison-detail.png" alt="Hyperparameter Comparison showing side-by-side configuration differences" />
+</Frame>
+
+**Comparison Features**:
+- **Header Metrics**: Quick performance comparison (score, key metrics)
+- **Model Comparison**: See which model each configuration used
+- **Prompt Differences**: Side-by-side view of prompt sections with diff indicators
+- **Change Indicators**: Shows additions and removals (e.g., +15 -6) highlighting what changed
+
+**How to Use**:
+1. From Configuration Overview, select 2-3 configurations using checkboxes
+2. Click the comparison button to open this view
+3. Analyze differences to understand what drove performance changes
+4. Use insights to inform future optimization strategies
+
+---
+
+## Implementing Winners
+
+### Deploying Optimal Configuration
+
+Once optimization completes, deploy the winning configuration:
+
+1. **Export Configuration**
+   ```json
+   {
+     "prompt_id": "optimized_prompt_v5",
+     "model": "gpt-5-nano",
+     "temperature": 0.7,
+     "performance_gain": "+23%",
+     "cost_reduction": "-45%"
+   }
+   ```
+
+2. **Monitor Performance**
+   - Track metrics in production
+   - Validate improvements hold
+   - Set up alerts for regression
+
+### Creating Variants
+
+Save successful configurations as new variants:
+
+**Prompt Variants**:
+- Save optimized prompts to Prompt Database
+- Version with descriptive labels
+- Document improvements achieved
+
+---
+
+## Integration with Other Features
+
+### With Datasets
+
+Use existing test datasets for consistent evaluation. See [Datasets](/feature-overview/datasets).
+
+### With Experiments
+
+Results create [Experiments](/feature-overview/experiments) automatically for detailed analysis.
+
+### With Rubrics
+
+Apply [Rubrics](/feature-overview/rubrics) as optimization targets for multi-criteria optimization.
+
+### With Production Monitoring
+
+Validate improvements in [Production](/feature-overview/production-monitoring) after deployment.
+
+---
+
+## Related Features
+
+- [Datasets](/feature-overview/datasets) - Create test sets for optimization
+- [Experiments](/feature-overview/experiments) - Detailed configuration analysis
+- [Prompt Database](/feature-overview/prompt-db) - Manage prompt variants
+- [Production Monitoring](/feature-overview/production-monitoring) - Validate improvements

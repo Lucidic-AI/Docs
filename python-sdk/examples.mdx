@@ -5,118 +5,213 @@ description: 'Complete examples showing manual control and advanced features'
 
 ## Overview
 
-This page contains detailed examples showing how to use Lucidic's Python SDK with full control over sessions, steps, and events. While the [2-line setup](/getting-started/quickstart) handles everything automatically, these examples demonstrate manual control for complex workflows.
+This page contains detailed examples showing how to use Lucidic's Python SDK with full control over sessions and events. While the [quick start](/getting-started/quickstart) handles everything automatically, these examples demonstrate manual control for complex workflows.
 
-## Basic Session with Manual Steps
-
-```python
-import lucidicai as lai
-
-# Initialize with session configuration
-lai.init(
-    session_name="wiki_search",
-    agent_id="agent-123",
-    providers=["openai"],
-    task="Search for Stanford University",
-    rubrics=["default"]
-)
-
-# Create a step
-lai.create_step(state="Home", goal="Search for Stanford")
-
-# Your agent logic here
-# ...
-
-# Create events for non-LLM operations
-lai.create_event(description="Navigate to search")
-# Navigation code here
-lai.end_event(result="Reached search page")
-
-# LLM calls are auto-tracked if providers are set
-# But you can still create events manually if needed
-lai.create_event(description="Custom OpenAI analysis")
-# Your LLM call
-lai.end_event(result="Analysis complete")
-
-# End the step with evaluation
-lai.end_step(
-    action="Used search", 
-    eval_score=5, 
-    eval_description="Successfully found Stanford University"
-)
-
-# End session with evaluation
-lai.end_session(is_successful=True, session_eval_reason="Task completed successfully")
-```
-
-## Step Updates During Execution
+## Basic Session with Events
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+from openai import OpenAI
 
-lai.init(
-    session_name="document_processor",
-    providers=["openai", "anthropic"]
-)
+# Initialize clients
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
 
-# Create initial step
-lai.create_step(
-    state="Document uploaded",
-    action="Processing document",
-    goal="Extract key information"
-)
+# Use context manager for session lifecycle
+with client.sessions.create(session_name="wiki_search", task="Search for Stanford University"):
+    # LLM calls are automatically tracked as events
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Tell me about Stanford University"}]
+    )
 
-# Update step as processing progresses
-lai.update_step(
-    state="Parsing complete",
-    action="Extracting entities"
-)
+    # Create manual events for non-LLM operations
+    client.events.emit(
+        name="Navigate to search",
+        input={"action": "navigation"},
+        output={"result": "Reached search page"}
+    )
 
-# Add screenshot mid-step
-lai.update_step(
-    screenshot_path="/path/to/progress.png"
-)
+    # Another LLM call (auto-tracked)
+    summary = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Summarize the findings"}]
+    )
 
-# Final update before ending
-lai.update_step(
-    state="Entities extracted",
-    eval_score=4,
-    eval_description="Extracted 95% of entities correctly"
-)
-
-lai.end_step()
+# Session auto-ends when context exits
 ```
 
 ## Working with Events
 
-### Manual Event Creation
+### Zero-Latency Event Emission
+
+Use `emit()` for hot paths where latency matters:
 
 ```python
-lai.create_event(
-    description="Database query",
-    metadata={"query": "SELECT * FROM users WHERE active = true"}
-)
-# Execute your database query
-result = db.execute(query)
-lai.end_event(
-    result=f"Found {len(result)} active users",
-    cost_added=0.001  # Track custom costs
-)
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+with client.sessions.create(session_name="High Performance Task"):
+    # Zero-latency - doesn't block execution
+    client.events.emit(
+        name="Cache lookup",
+        input={"key": "user_123"},
+        output={"hit": True, "value": {"name": "John"}}
+    )
+
+    # Continue immediately while event is sent in background
+    process_user_data()
 ```
 
-### Events with Screenshots
+### Synchronous Event Creation
+
+Use `create()` when you need confirmation or the event ID:
 
 ```python
-lai.create_event(
-    description="UI interaction",
-    screenshots=["/path/to/before.png"]
-)
-# Perform UI action
-click_button("Submit")
-lai.end_event(
-    result="Form submitted successfully",
-    screenshots=["/path/to/after.png"]  # Screenshots are appended
-)
+with client.sessions.create(session_name="Document Processing"):
+    # Synchronous - waits for confirmation
+    event = client.events.create(
+        name="Database query",
+        input={"query": "SELECT * FROM users WHERE active = true"},
+        output={"count": 150},
+        duration_ms=45
+    )
+
+    print(f"Event created with ID: {event.event_id}")
+```
+
+### Async Event Creation
+
+For async workflows:
+
+```python
+import asyncio
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+async def process_documents():
+    async with client.sessions.acreate(session_name="Async Processing"):
+        # Async event creation
+        event = await client.events.acreate(
+            name="Async document fetch",
+            input={"doc_id": "doc_123"},
+            output={"status": "fetched"}
+        )
+
+        # Process document
+        await process_doc()
+
+asyncio.run(process_documents())
+```
+
+## Using Decorators
+
+Decorators provide a clean way to track function calls as events:
+
+### Basic Decorator Usage
+
+```python
+from lucidicai import LucidicAI
+from openai import OpenAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
+
+@client.event()
+def validate_request(request: dict) -> bool:
+    """Validation logic - automatically tracked as an event."""
+    return "user_id" in request and "message" in request
+
+@client.event()
+def process_request(request: dict) -> dict:
+    """Processing logic - automatically tracked as an event."""
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": request["message"]}]
+    )
+    return {"status": "success", "response": response.choices[0].message.content}
+
+# Usage
+with client.sessions.create(session_name="Request Handler"):
+    request = {"user_id": "123", "message": "Hello!"}
+
+    if validate_request(request):
+        result = process_request(request)
+        print(result)
+
+# Event hierarchy:
+# Session
+# ├── Event: validate_request (Function Call)
+# └── Event: process_request (Function Call)
+#     └── Event: GPT-4 call (LLM Generation)
+```
+
+### Decorators with Async Functions
+
+```python
+@client.event()
+async def fetch_data(url: str) -> dict:
+    """Async function - automatically tracked."""
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
+
+@client.event()
+async def async_workflow(urls: list) -> dict:
+    """Orchestrates multiple async fetches."""
+    results = []
+    for url in urls:
+        data = await fetch_data(url)
+        results.append(data)
+    return {"fetched": len(results), "data": results}
+```
+
+### Nested Decorated Functions
+
+```python
+@client.event()
+def parent_workflow(items: list) -> dict:
+    """Parent function that orchestrates child functions."""
+    results = []
+
+    for item in items:
+        result = process_item(item)
+        results.append(result)
+
+    summary = summarize_results(results)
+    return {"processed": len(results), "summary": summary}
+
+@client.event()
+def process_item(item: dict) -> dict:
+    """Child function for each item."""
+    validated = validate_item(item)
+    transformed = transform_item(validated)
+    return transformed
+
+@client.event()
+def validate_item(item: dict) -> dict:
+    return item
+
+@client.event()
+def transform_item(item: dict) -> dict:
+    return {"transformed": item}
+
+@client.event()
+def summarize_results(results: list) -> str:
+    return f"Processed {len(results)} items successfully"
+
+# Results in nested event hierarchy:
+# Session
+# └── Event: parent_workflow
+#     ├── Event: process_item
+#     │   ├── Event: validate_item
+#     │   └── Event: transform_item
+#     ├── Event: process_item
+#     │   ├── Event: validate_item
+#     │   └── Event: transform_item
+#     └── Event: summarize_results
 ```
 
 ## Authentication Examples
@@ -128,116 +223,152 @@ lai.end_event(
 # LUCIDIC_API_KEY=your-api-key
 # LUCIDIC_AGENT_ID=your-agent-id
 
-import lucidicai as lai
-lai.init(providers=["openai"])  # Credentials loaded automatically
+from lucidicai import LucidicAI
+
+client = LucidicAI(providers=["openai"])  # Credentials loaded automatically
+
+with client.sessions.create(session_name="My Session"):
+    # Your workflow
+    pass
 ```
 
 ### Direct Parameters
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-lai.init(
-    api_key="your-api-key",   
-    agent_id="your-agent-id",         
-    providers=["openai"],
-    session_name="My Session"
+client = LucidicAI(
+    api_key="your-api-key",
+    agent_id="your-agent-id",
+    providers=["openai"]
 )
+
+with client.sessions.create(session_name="My Session"):
+    # Your workflow
+    pass
 ```
 
 ### Using dotenv
 
 ```python
 from dotenv import load_dotenv
-import lucidicai as lai
+from lucidicai import LucidicAI
 
 load_dotenv()  # Load from .env file
-lai.init(providers=["anthropic"])
+
+client = LucidicAI(providers=["anthropic"])
+
+with client.sessions.create(session_name="My Session"):
+    # Your workflow
+    pass
 ```
 
 ## Using Prompt Database
 
 ```python
-import lucidicai as lai
-
-lai.init(providers=["openai"])
-
-# Pull prompt from Prompt DB
-prompt = lai.get_prompt(
-    prompt_name="summarize_webpage",
-    variables={
-        "page_text": "Stanford University is a private research university...",
-        "max_length": "100 words"
-    },
-    label="production",  # Use production version
-    cache_ttl=60  # Cache for 60 seconds
-)
-
-# Use the prompt in your LLM call
+from lucidicai import LucidicAI
 from openai import OpenAI
-client = OpenAI()
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": prompt}]
-)
+
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
+
+with client.sessions.create(session_name="Prompt DB Example"):
+    # Pull prompt from Prompt DB
+    prompt = client.prompts.get(
+        prompt_name="summarize_webpage",
+        variables={
+            "page_text": "Stanford University is a private research university...",
+            "max_length": "100 words"
+        },
+        label="production",  # Use production version
+        cache_ttl=60  # Cache for 60 seconds
+    )
+
+    # Use the prompt in your LLM call
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}]
+    )
 ```
 
-## Custom Evaluation Rubrics
+## Experiment Usage
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-# Initialize with custom rubrics
-lai.init(
-    session_name="customer_support",
-    providers=["openai"],
-    rubrics=["default", "customer_satisfaction", "response_time"]
-)
+client = LucidicAI(api_key="...", providers=["openai"])
 
-# Your agent workflow...
+# Experiments must be created in the dashboard first
+# The experiment ID can be found in the URL after creation
+EXPERIMENT_ID = "exp-123abc-456def"
 
-# Custom evaluation function
-def evaluate_customer_interaction(transcript, response_time):
-    satisfaction_score = analyze_sentiment(transcript)
-    time_score = 5 if response_time < 30 else 3
-    return (satisfaction_score + time_score) / 2
+# Add sessions to the experiment
+with client.sessions.create(
+    session_name="Performance Test 1",
+    experiment_id=EXPERIMENT_ID,
+    task="Test checkout flow performance"
+):
+    # Your agent workflow here
+    process_checkout()
 
-# End session with custom evaluation
-score, reason = evaluate_customer_interaction(
-    conversation_transcript, 
-    total_response_time
-)
-
-lai.end_session(
-    is_successful=score >= 4,
-    session_eval=score,
-    session_eval_reason=reason
-)
+# Session automatically ends with the context manager
 ```
 
-## Continuing Existing Sessions
+## Dataset Testing
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-# Continue a previous session
-lai.init(
-    session_id="existing-session-uuid",
-    providers=["openai"]
+client = LucidicAI(api_key="...", providers=["openai"])
+
+# When running dataset tests, link sessions to dataset items
+dataset_items = client.datasets.get_items(dataset_id="test_suite_v1")
+
+for item in dataset_items:
+    with client.sessions.create(
+        session_name=f"Test: {item['name']}",
+        dataset_item_id=item['id']
+    ):
+        # Run your agent with the test input
+        result = my_agent.process(item['input'])
+
+        # Validate against expected output
+        success = result == item['expected_output']
+
+        # Update session with success status
+        client.sessions.update(is_successful=success)
+```
+
+## Production Monitoring
+
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(
+    api_key="...",
+    providers=["openai", "anthropic"],
+    production_monitoring=True  # Optimized for production
 )
 
-# Add more steps to the existing session
-lai.create_step(state="Resuming task", goal="Complete remaining items")
-# ... your logic ...
-lai.end_step()
+def mask_pii(text):
+    # Custom logic to mask sensitive information
+    return text.replace("SSN:", "XXX-XX-")
 
-lai.end_session()
+with client.sessions.create(
+    session_name="Production Agent",
+    masking_function=mask_pii,
+    tags=["production", "v2.0", "customer-service"]
+):
+    # Your production workflow
+    process_user_request()
+
+# Session automatically ends and data is sent efficiently
 ```
 
 ## Error Handling
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from lucidicai.errors import (
     APIKeyVerificationError,
     InvalidOperationError,
@@ -245,264 +376,156 @@ from lucidicai.errors import (
 )
 
 try:
-    lai.init(session_name="My Session", providers=["openai"])
-    
-    try:
-        lai.create_step(state="Processing")
-        # Your agent logic that might fail
-        process_data()
-    finally:
-        # Ensure step is ended even if error occurs
-        lai.end_step(eval_score=0, eval_description="Failed during processing")
-        
+    client = LucidicAI(api_key="...", providers=["openai"])
+
+    with client.sessions.create(session_name="My Session"):
+        try:
+            # Your agent logic that might fail
+            process_data()
+        except Exception as e:
+            # Emit error event
+            client.events.emit(
+                name="Processing error",
+                input={"operation": "process_data"},
+                output={"error": str(e)},
+                metadata={"error_type": type(e).__name__}
+            )
+            raise
+
 except APIKeyVerificationError:
     print("Invalid API credentials. Check your keys.")
 except InvalidOperationError as e:
     print(f"Operation error: {e}")
-finally:
-    # Session auto-ends, but you can end explicitly
-    if lai.is_session_active():
-        lai.end_session(is_successful=False)
 ```
 
-## Mass Simulation Example
+## Complete RAG Pipeline
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
+from openai import OpenAI
 
-# Create a mass simulation
-mass_sim_id = lai.create_mass_sim(
-    name="Wikipedia Search Variations",
-    runs=10,
-    parallel=True
-)
+# Initialize clients
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
 
-# Run multiple sessions with the same mass_sim_id
-for i in range(10):
-    lai.init(
-        session_name=f"Wiki Search Run {i}",
-        providers=["openai"],
-        mass_sim_id=mass_sim_id,
-        task="Search for Stanford University"
+@client.event()
+def search_documents(query: str) -> list:
+    """Search for relevant documents."""
+    return database.search(query, limit=5)
+
+@client.event()
+def generate_response(query: str, context: list) -> str:
+    """Generate a response using the LLM."""
+    messages = [
+        {"role": "system", "content": "Answer based on the context provided."},
+        {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
+    ]
+
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=messages
     )
-    
-    # Your agent logic with variations
-    run_agent_with_variation(i)
-    
-    lai.end_session()
-```
+    # LLM call is nested inside this event
+    return response.choices[0].message.content
 
-## Production Monitoring
-
-```python
-import lucidicai as lai
-
-# Enable production monitoring mode
-lai.init(
-    providers=["openai", "anthropic"],
-    production_monitoring=True,  # Optimized for production
-    auto_end=True  # Ensure cleanup on exit
-)
-
-# Your production workflow
-process_user_request()
-
-# Session automatically ends and data is sent efficiently
-```
-
-## Using Decorators
-
-Decorators provide a cleaner way to track steps and events:
-
-### Basic Decorator Usage
-
-```python
-import lucidicai as lai
-
-lai.init(providers=["openai"])
-
-# Automatic step tracking
-@lai.step(
-    state="Processing request",
-    action="Validate and handle user input",
-    goal="Generate response"
-)
-def handle_user_request(request: dict) -> dict:
-    # Validate input
-    if not validate_request(request):
-        raise ValueError("Invalid request")
-    
-    # Process request (this creates an event automatically)
-    response = process_request(request)
-    
+@client.event()
+def rag_pipeline(query: str) -> str:
+    """Complete RAG pipeline."""
+    documents = search_documents(query)
+    response = generate_response(query, documents)
     return response
 
-# Automatic event tracking
-@lai.event(description="Validate user request")
-def validate_request(request: dict) -> bool:
-    # Validation logic
-    return "user_id" in request and "message" in request
+# Run the pipeline
+with client.sessions.create(session_name="RAG Query"):
+    answer = rag_pipeline("What is machine learning?")
+    print(answer)
 
-@lai.event()  # Auto-generates description from function signature
-def process_request(request: dict) -> dict:
-    # Your processing logic
-    return {"status": "success", "data": request}
+# Event hierarchy:
+# Session
+# └── Event: rag_pipeline (Function Call)
+#     ├── Event: search_documents (Function Call)
+#     └── Event: generate_response (Function Call)
+#         └── Event: GPT-4 call (LLM Generation)
 ```
 
-### Decorators with Async Functions
+## Multi-Step Research Assistant
 
 ```python
-@lai.step(state="Async workflow", action="Fetch and process data")
-async def async_workflow(urls: list) -> dict:
-    results = []
-    
-    for url in urls:
-        # Each call creates an event
-        data = await fetch_data(url)
-        results.append(data)
-    
-    return {"fetched": len(results), "data": results}
-
-@lai.event(description="Fetch data from URL")
-async def fetch_data(url: str) -> dict:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            return await response.json()
-```
-
-### Nested Decorators
-
-```python
-@lai.step(state="Parent process", action="Orchestrate workflow")
-def parent_workflow(items: list) -> dict:
-    """Parent step that contains child steps."""
-    results = []
-    
-    for item in items:
-        # Each call creates a new step
-        result = process_item_with_step(item)
-        results.append(result)
-    
-    # This creates an event within the parent step
-    summary = summarize_results(results)
-    
-    return {"processed": len(results), "summary": summary}
-
-@lai.step(state="Processing item", action="Transform data")
-def process_item_with_step(item: dict) -> dict:
-    """Child step for each item."""
-    # These create events within this step
-    validated = validate_item(item)
-    transformed = transform_item(validated)
-    return transformed
-
-@lai.event(description="Validate item")
-def validate_item(item: dict) -> dict:
-    # Validation logic
-    return item
-
-@lai.event()
-def transform_item(item: dict) -> dict:
-    # Transformation logic
-    return {"transformed": item}
-
-@lai.event(description="Generate summary")
-def summarize_results(results: list) -> str:
-    return f"Processed {len(results)} items successfully"
-```
-
-## Complete Multi-Step Workflow
-
-```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from openai import OpenAI
-import time
 
 # Initialize
-lai.init(
-    session_name="research_assistant",
-    providers=["openai"],
-    task="Research and summarize recent AI developments"
-)
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
 
-client = OpenAI()
+@client.event(name="Search arXiv papers")
+def search_papers(query: str, limit: int = 5) -> list:
+    """Search arXiv for papers."""
+    return search_arxiv(query, limit=limit)
 
-# Step 1: Search for topics
-lai.create_step(
-    state="Starting research",
-    goal="Find recent AI papers",
-    action="Searching arXiv"
-)
-
-papers = search_arxiv("artificial intelligence", limit=5)
-lai.update_step(state=f"Found {len(papers)} papers")
-
-lai.end_step(eval_score=5, eval_description="Found relevant papers")
-
-# Step 2: Analyze each paper
-for i, paper in enumerate(papers):
-    lai.create_step(
-        state=f"Analyzing paper {i+1}/{len(papers)}",
-        goal="Extract key insights",
-        action="Reading abstract"
-    )
-    
-    # LLM call (auto-tracked)
-    response = client.chat.completions.create(
+@client.event(name="Analyze paper")
+def analyze_paper(paper: dict) -> dict:
+    """Analyze a single paper using LLM."""
+    response = openai_client.chat.completions.create(
         model="gpt-4",
         messages=[{
-            "role": "user", 
-            "content": f"Summarize this paper: {paper.abstract}"
+            "role": "user",
+            "content": f"Summarize this paper: {paper['abstract']}"
         }]
     )
-    
-    summary = response.choices[0].message.content
-    
-    lai.end_step(
-        state=f"Paper {i+1} analyzed",
-        eval_score=4,
-        eval_description="Good summary extracted"
+    return {
+        "title": paper["title"],
+        "summary": response.choices[0].message.content
+    }
+
+@client.event(name="Generate final report")
+def create_report(analyses: list) -> str:
+    """Create a comprehensive report from all analyses."""
+    response = openai_client.chat.completions.create(
+        model="gpt-4",
+        messages=[{
+            "role": "user",
+            "content": f"Create a comprehensive report from these summaries: {analyses}"
+        }]
     )
-    
-    time.sleep(1)  # Rate limiting
+    return response.choices[0].message.content
 
-# Step 3: Create final report
-lai.create_step(
-    state="Creating final report",
-    goal="Synthesize all findings",
-    action="Generating comprehensive summary"
-)
+# Run the research workflow
+with client.sessions.create(
+    session_name="research_assistant",
+    task="Research and summarize recent AI developments"
+):
+    # Phase 1: Search
+    papers = search_papers("artificial intelligence", limit=5)
 
-# Another LLM call (auto-tracked)
-final_response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{
-        "role": "user",
-        "content": "Create a comprehensive report from these summaries..."
-    }]
-)
+    # Emit progress event
+    client.events.emit(
+        name="Search complete",
+        output={"papers_found": len(papers)}
+    )
 
-report = final_response.choices[0].message.content
+    # Phase 2: Analyze each paper
+    analyses = []
+    for paper in papers:
+        analysis = analyze_paper(paper)
+        analyses.append(analysis)
 
-lai.end_step(
-    eval_score=5,
-    eval_description="Comprehensive report generated"
-)
+    # Phase 3: Generate report
+    report = create_report(analyses)
 
-# End session
-lai.end_session(
-    is_successful=True,
-    session_eval=5,
-    session_eval_reason="Successfully researched and summarized 5 papers"
-)
+    # Update session with success
+    client.sessions.update(
+        is_successful=True,
+        is_successful_reason=f"Successfully analyzed {len(papers)} papers"
+    )
 
-print(f"Report generated: {report[:200]}...")
+    print(f"Report generated: {report[:200]}...")
 ```
 
 ## Next Steps
 
 - Learn about [Session Management](/python-sdk/init)
-- Explore [Step Management](/core-concepts/steps)
-- Understand [Event Tracking](/core-concepts/events)
-- Set up [Custom Rubrics](/features/rubrics)
-- Use the [Prompt Database](/features/prompt-db)
+- Explore [Event Management](/python-sdk/events/index)
+- Understand [Decorators](/python-sdk/decorators)
+- Set up [Custom Rubrics](/feature-overview/rubrics)
+- Use the [Prompt Database](/feature-overview/prompt-db)

@@ -11,32 +11,47 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Feature Overview",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "getting-started/introduction",
+              "getting-started/dashboard",
+              "feature-overview/evolutionary-simulations"
+            ]
+          },
+          {
+            "group": "EvoSim Utilities",
+            "pages": [
+              "feature-overview/evolutionary-simulations-api",
+              "feature-overview/workflow-sandbox",
+              "feature-overview/experiments",
+              "feature-overview/rubrics",
+              "feature-overview/datasets",
+              "feature-overview/prompt-db",
+              "feature-overview/time-travel",
+              "feature-overview/production-monitoring"
+            ]
+          },
+          {
+            "group": "Observability Concepts",
+            "pages": [
+              "feature-overview/observability-overview",
+              "feature-overview/sessions",
+              "feature-overview/events"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Python SDK",
         "groups": [
           {
             "group": "Get Started",
             "pages": [
-              "getting-started/introduction",
-              "getting-started/dashboard",
               "getting-started/quickstart",
-              "getting-started/masssim",
               "getting-started/experiments"
-            ]
-          },
-
-          {
-            "group": "Features",
-            "pages": [
-              "features/workflow-sandbox",
-              "features/rubrics",
-              "features/production-monitoring",
-              "features/datasets",
-              "features/evolutionary-simulations",
-              "features/prompt-db",
-              "features/time-travel",
-              "features/mass-simulation-overview",
-              "features/workflow-trajectory",
-              "features/experiments-overview"
             ]
           },
           {
@@ -47,16 +62,6 @@
               "integrations/pydantic-ai",
               "integrations/langchain",
               "integrations/litellm"
-            ]
-          }, 
-          {
-            "group": "Core Concepts",
-            "pages": [
-              "core-concepts/sessions",
-              "core-concepts/steps",
-              "core-concepts/events",
-              "core-concepts/mass-simulations",
-              "core-concepts/experiments"
             ]
           },
           {
@@ -72,19 +77,12 @@
                 ]
               },
               {
-                "group": "Step Management",
-                "pages": [
-                  "python-sdk/create_step",
-                  "python-sdk/update_step",
-                  "python-sdk/end_step"
-                ]
-              },
-              {
                 "group": "Event Management",
                 "pages": [
-                  "python-sdk/create_event",
-                  "python-sdk/update_event",
-                  "python-sdk/end_event"
+                  "python-sdk/events/index",
+                  "python-sdk/events/create",
+                  "python-sdk/events/emit",
+                  "python-sdk/events/decorator"
                 ]
               },
               {
@@ -105,7 +103,6 @@
                 "group": "Advanced Features",
                 "pages": [
                   "python-sdk/get_prompt",
-                  "python-sdk/create_mass_sim",
                   "python-sdk/datasets",
                   "python-sdk/working-with-experiments"
                 ]
@@ -144,25 +141,17 @@
                 ]
               },
               {
-                "group": "Step Management",
-                "pages": [
-                  "typescript-sdk/create-step",
-                  "typescript-sdk/update-step",
-                  "typescript-sdk/end-step"
-                ]
-              },
-              {
                 "group": "Event Management",
                 "pages": [
-                  "typescript-sdk/create-event",
-                  "typescript-sdk/update-event"
+                  "typescript-sdk/events/index",
+                  "typescript-sdk/events/create",
+                  "typescript-sdk/events/emit"
                 ]
               },
               {
                 "group": "Advanced Features",
                 "pages": [
                   "typescript-sdk/get-prompt",
-                  "typescript-sdk/run-mass-simulation",
                   "typescript-sdk/datasets",
                   "typescript-sdk/working-with-experiments"
                 ]

@@ -1,0 +1,242 @@
+---
+title: Datasets
+description: Create and manage test datasets to systematically validate your AI agents with consistent, reproducible test cases.
+---
+
+# Datasets
+
+**Datasets** provide a structured way to create, manage, and run test cases for your AI agents, enabling systematic validation and regression testing.
+
+Instead of ad-hoc testing, datasets give you **repeatable, versioned test suites** that ensure your agents work correctly across diverse scenarios.
+
+---
+
+## Why Use Datasets?
+
+**Consistent testing is crucial** for reliable AI agents.
+
+Datasets help you:
+
+* Build comprehensive test suites with expected outputs
+* Run regression tests after changes
+* Compare performance across model versions
+* Share test cases across your team
+* Validate edge cases and failure modes
+* Ensure consistent quality before production
+
+### Use Cases
+
+* **Regression Testing**: Ensure updates don't break existing functionality
+* **Quality Assurance**: Validate agents meet requirements
+* **Benchmark Creation**: Establish performance baselines
+* **Edge Case Testing**: Test unusual or problematic inputs
+* **Compliance Validation**: Verify policy adherence
+
+---
+
+## Creating Datasets
+
+### In the Dashboard
+
+Navigate to your agent in the dashboard and click the **"Datasets"** tab.
+
+<Frame>
+  <img src="/images/datasets-list.png" alt="Datasets overview showing list of test datasets with metadata" />
+</Frame>
+
+Click **"Create Dataset"** to open the creation dialog:
+
+<Frame>
+  <img src="/images/dataset-create.png" alt="Dataset creation dialog with configuration options" />
+</Frame>
+
+#### Configuration Options
+
+**Basic Information**:
+- **Name** (Required): Descriptive identifier (e.g., "Customer Support Edge Cases")
+- **Description**: Detailed explanation of the dataset's purpose
+- **Tags**: Labels for organization and filtering
+
+**Test Configuration**:
+- **Default Rubrics**: Evaluation criteria to apply to all test runs
+- **Success Criteria**: Define what constitutes a passing test
+- **Timeout Settings**: Maximum execution time per test
+
+### Dataset Items
+
+Each dataset item represents a single test case:
+
+**Required Fields**:
+- **Name**: Test case identifier (e.g., "Refund request with expired product")
+- **Input**: The data/prompt to send to your agent
+
+**Optional Fields**:
+- **Expected Output**: What the agent should produce
+- **Description**: Context about this test case
+- **Metadata**: Additional data for test execution
+- **Tags**: Categorize test cases within the dataset
+
+---
+
+## Running Datasets
+
+### Programmatic Execution
+
+<Tabs>
+  <Tab title="Python">
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+# Get dataset items
+dataset_items = client.datasets.get_items(dataset_id="validation_suite")
+
+results = []
+for item in dataset_items:
+    # Run each test case as a session
+    with client.sessions.create(
+        session_name=f"Dataset Test: {item['name']}",
+        dataset_item_id=item['id'],
+        rubrics=["Default Evaluation"]
+    ):
+        # Run your agent with the input
+        response = run_agent(item['input'])
+
+        # Validate against expected output
+        success = True
+        if item.get('expected_output'):
+            success = validate_output(response, item['expected_output'])
+
+        client.sessions.end(is_successful=success)
+
+    results.append({
+        "item": item['name'],
+        "success": success
+    })
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+// Get dataset items
+const datasetItems = await client.datasets.getItems({ datasetId: 'validation_suite' });
+
+const results = [];
+for (const item of datasetItems) {
+    await client.sessions.create({
+        sessionName: `Dataset Test: ${item.name}`,
+        datasetItemId: item.id,
+        rubrics: ['Default Evaluation']
+    });
+
+    // Run your agent
+    const response = await runAgent(item.input);
+
+    // Validate
+    const success = item.expectedOutput
+        ? validateOutput(response, item.expectedOutput)
+        : true;
+
+    await client.sessions.end({ isSuccessful: success });
+
+    results.push({ item: item.name, success });
+}
+```
+  </Tab>
+</Tabs>
+
+### Integration with Experiments
+
+Datasets work seamlessly with experiments for A/B testing:
+
+```python
+# Run dataset with different model versions
+for model in ["gpt-4.1-mini", "gpt-5.2", "claude-4-5-sonnet"]:
+    for item in dataset_items:
+        with client.sessions.create(
+            session_name=f"Test: {item['name']}",
+            experiment_id="model_comparison",
+            dataset_item_id=item['id'],
+            tags=[f"model:{model}"]
+        ):
+            # Run test with specific model
+            run_test_with_model(item, model)
+```
+
+---
+
+## Analyzing Results
+
+### Test Run Overview
+
+After running a dataset, view the results dashboard:
+
+**Summary Metrics**:
+- **Pass Rate**: Percentage of successful test cases
+- **Average Duration**: Mean execution time
+- **Cost per Test**: Token/API costs
+- **Failure Categories**: Common failure patterns
+
+### Individual Test Results
+
+Click on any test case to see:
+- Full execution trace as session
+- Input provided vs output generated
+- Evaluation scores from rubrics
+- Error messages if failed
+- Token usage and costs
+
+---
+
+## Best Practices
+
+### Dataset Design
+
+**Comprehensive Coverage**
+- Include happy path scenarios
+- Add edge cases and error conditions
+- Test boundary values
+- Cover different user personas
+
+**Clear Naming**
+```
+Good: "refund_request_expired_product_premium_user"
+Bad: "test_1" or "refund_test"
+```
+
+### Expected Outputs
+
+**Be Specific When Needed**
+```json
+{
+  "expected_output": {
+    "calculation": 42,
+    "status": "success"
+  }
+}
+```
+
+**Be Flexible When Appropriate**
+```json
+{
+  "expected_output": {
+    "criteria": {
+      "tone": "professional",
+      "includes_greeting": true,
+      "word_count_range": [50, 150]
+    }
+  }
+}
+```
+
+---
+
+## Related Features
+
+- [Experiments](/feature-overview/experiments) - Run datasets in experiments
+- [Rubrics](/feature-overview/rubrics) - Evaluation criteria for test runs
+- [Production Monitoring](/feature-overview/production-monitoring) - Monitor real-world performance

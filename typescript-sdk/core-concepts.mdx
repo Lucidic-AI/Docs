@@ -1,11 +1,11 @@
 ---
 title: Core Concepts
-description: Understanding Sessions, Steps, and Events in the TypeScript SDK
+description: Understanding Sessions and Events in the TypeScript SDK
 ---
 
 # Core Concepts
 
-The Lucidic AI TypeScript SDK uses the same hierarchical structure as the Python SDK to track your AI workflows.
+The Lucidic AI TypeScript SDK uses a hierarchical structure to track your AI workflows, with Sessions containing Events.
 
 ---
 
@@ -13,14 +13,11 @@ The Lucidic AI TypeScript SDK uses the same hierarchical structure as the Python
 
 ```
 Session
-├── Step 1
-│   ├── Event 1 (LLM call)
-│   └── Event 2 (LLM call)
-├── Step 2
-│   ├── Event 3 (LLM call)
-│   └── Event 4 (LLM call)
-└── Step 3
-    └── Event 5 (LLM call)
+├── Event (LLM Generation) ← auto-created via OpenTelemetry
+├── Event (Function Call) ← manual or custom tracking
+│   └── Event (LLM Generation) ← nested, auto-created
+├── Event (Error Traceback) ← auto-created on exception
+└── Event (Generic) ← client.events.create() / .emit()
 ```
 
 ---
@@ -32,30 +29,41 @@ A **Session** represents a complete AI workflow or conversation. It's the top-le
 ### Creating Sessions
 
 ```typescript
-// Option 1: Auto-create during init (ESM)
-import OpenAI from 'openai';
-await lai.init({
-  sessionName: 'Customer Support Chat',
-  task: 'Help user reset password',
-  instrumentModules: { OpenAI }
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+// Option 1: Context manager with callback (recommended)
+await client.sessions.create({
+    sessionName: 'Customer Support Chat',
+    task: 'Help user reset password'
+}, async () => {
+    // Your workflow here
+    // Session auto-ends when callback completes
 });
 
-// Option 2: Continue an existing session by ID (ESM)
-import OpenAI from 'openai';
-await lai.init({ sessionId: 'existing-session-id', instrumentModules: { OpenAI } });
+// Option 2: Manual management
+const session = await client.sessions.create({
+    sessionName: 'Manual Session'
+});
+try {
+    // Your workflow
+} finally {
+    await client.sessions.end();
+}
 ```
 
 ### Session Properties
 
 ```typescript
-interface InitParams {
-  sessionName?: string;    // Human-readable name
-  sessionId?: string;      // Continue existing session
-  task?: string;           // What the session aims to achieve
-  massSimId?: string;      // Optional mass simulation id
-  experimentId?: string;   // Optional experiment id
-  rubrics?: string[];      // optional rubrics to run
-  tags?: string[];         // optional tags
+interface SessionParams {
+    sessionName?: string;     // Human-readable name
+    sessionId?: string;       // Continue existing session
+    task?: string;            // What the session aims to achieve
+    experimentId?: string;    // Optional experiment id
+    datasetItemId?: string;   // Optional dataset item id
+    rubrics?: string[];       // Optional rubrics to run
+    tags?: string[];          // Optional tags
 }
 ```
 
@@ -63,92 +71,61 @@ interface InitParams {
 
 ```typescript
 // Update session
-await lai.updateSession({
-  task: 'Updated task description',
-  tags: ['priority:high', 'category:support'],
-  isSuccessful: true,
-  isSuccessfulReason: 'Successfully resolved issue'
+await client.sessions.update({
+    task: 'Updated task description',
+    tags: ['priority:high', 'category:support'],
+    isSuccessful: true,
+    isSuccessfulReason: 'Successfully resolved issue'
 });
 
 // End session
-await lai.endSession({ isSuccessful: true, isSuccessfulReason: 'Task completed successfully' });
-
-// Sessions are managed internally; use session context helpers when needed
-```
-
----
-
-## Steps
-
-**Steps** represent logical units of work within a session.
-
-### Creating Steps
-
-```typescript
-const step = await lai.createStep();
-```
-
-### Step Properties
-
-```typescript
-interface StepConfig {
-  state?: string;          // Current state/context
-  action?: string;         // What the agent is doing
-  goal?: string;           // What the agent aims to achieve
-  evalScore?: number;      // Performance score (0-100)
-  evalDescription?: string; // Explanation of score
-}
-```
-
-### Managing Steps
-
-```typescript
-// Update current step
-await lai.updateStep({ stepId: step.stepId, evalScore: 85, evalDescription: 'Partially complete' });
-
-// End current step
-await lai.endStep({ evalScore: 95, evalDescription: 'Success' });
-
-// Steps are identified via IDs returned from createStep
-```
-
-### Automatic Step Creation
-
-If you make an LLM call without an active step, one is created automatically:
-
-```typescript
-// No step created yet
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [{ role: 'user', content: 'Hello!' }]
+await client.sessions.end({
+    isSuccessful: true,
+    isSuccessfulReason: 'Task completed successfully'
 });
-// Lucidic auto-creates a step for this call
 ```
 
 ---
 
 ## Events
 
-**Events** represent individual operations within steps - typically LLM API calls.
+**Events** represent individual operations within sessions. There are four types of events:
+
+### Event Types
+
+| Type | Description | Creation Method |
+|------|-------------|-----------------|
+| **LLM Generation** | API calls to LLM providers | Automatic via OpenTelemetry |
+| **Function Call** | Custom function executions | Manual tracking |
+| **Error Traceback** | Exceptions and errors | Automatic on exception |
+| **Generic Event** | Any custom operation | `client.events.create()` or `.emit()` |
 
 ### Automatic Event Creation
 
 When using instrumented providers, events are created automatically:
 
 ```typescript
-// This OpenAI call automatically creates an event
-const response = await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [{ role: 'user', content: 'Explain quantum computing' }]
-});
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
 
-// Event captures:
-// - Input messages
-// - Model used
-// - Response content
-// - Token usage
-// - Cost
-// - Timing
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+const openai = new OpenAI();
+
+await client.sessions.create({ sessionName: 'Auto-tracking Demo' }, async () => {
+    // This OpenAI call automatically creates an event
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Explain quantum computing' }]
+    });
+
+    // Event captures:
+    // - Input messages
+    // - Model used
+    // - Response content
+    // - Token usage
+    // - Cost
+    // - Timing
+});
 ```
 
 ### Manual Event Creation
@@ -156,32 +133,83 @@ const response = await openai.chat.completions.create({
 For custom tracking or unsupported providers:
 
 ```typescript
-const event = await lai.createEvent({
-  description: 'Custom LLM call',
-  result: 'Model response here',
-  model: 'custom-model-v1',
-  costAdded: 0.05
-});
+await client.sessions.create({ sessionName: 'Manual Events' }, async () => {
+    // Synchronous creation (waits for confirmation)
+    const event = await client.events.create({
+        name: 'Database query',
+        input: { query: 'SELECT * FROM users' },
+        output: { count: 150 },
+        durationMs: 45
+    });
 
-// Update event
-await lai.updateEvent(
-  event.eventId,
-  'Updated response',
-  true,   // isFinished
-  0.02,   // additional cost
-  'custom-model-v2'
-);
+    console.log(`Event created: ${event.eventId}`);
+});
+```
+
+### Zero-Latency Event Emission
+
+For hot paths where latency matters:
+
+```typescript
+await client.sessions.create({ sessionName: 'High Performance' }, async () => {
+    // Zero-latency - doesn't block execution
+    client.events.emit({
+        name: 'Cache lookup',
+        input: { key: 'user_123' },
+        output: { hit: true }
+    });
+
+    // Continue immediately while event is sent in background
+    await processRequest();
+});
 ```
 
 ### Event Properties
 
 ```typescript
-interface EventConfig {
-  description?: string;    // Event description/input
-  result?: string;         // Output/response
-  model?: string;          // Model name
-  costAdded?: number;      // Cost in USD
+interface EventParams {
+    name: string;           // Event name/description
+    input?: object;         // Input data
+    output?: object;        // Output/result
+    durationMs?: number;    // Duration in milliseconds
+    cost?: number;          // Cost in USD
+    model?: string;         // Model name (for LLM events)
+    metadata?: object;      // Additional custom data
 }
+```
+
+---
+
+## Event Nesting
+
+Events can be nested within each other to represent hierarchical operations:
+
+```typescript
+await client.sessions.create({ sessionName: 'Nested Events' }, async () => {
+    // Parent event
+    const parentEvent = await client.events.create({
+        name: 'Document processing pipeline'
+    });
+
+    // Child events (LLM calls) are automatically nested
+    const summary = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Summarize this document...' }]
+    });
+
+    // Manual child event
+    client.events.emit({
+        name: 'Save to database',
+        input: { docId: '123' },
+        output: { saved: true }
+    });
+});
+
+// Results in this hierarchy:
+// Session
+// └── Event: Document processing pipeline
+//     ├── Event: GPT-4 call (LLM Generation)
+//     └── Event: Save to database (Generic)
 ```
 
 ---
@@ -191,64 +219,105 @@ interface EventConfig {
 The TypeScript SDK includes several automatic features:
 
 ### 1. Auto Session Ending
-Sessions automatically end when the process exits:
+Sessions automatically end when using context managers:
 
 ```typescript
-await lai.init({ providers: ['openai'] });
-// Do work...
-// No need to call endSession() - happens automatically
+await client.sessions.create({ sessionName: 'Auto-end Demo' }, async () => {
+    // Do work...
+}); // Session auto-ends here
 ```
 
-### 2. Auto Step Ending
-Active steps are automatically ended when the session ends.
-
-### 3. Auto Event Creation
+### 2. Auto Event Creation
 LLM calls from instrumented providers create events automatically:
 
 ```typescript
 // Just make the call - event is created automatically
 await openai.chat.completions.create({
-  model: 'gpt-4',
-  messages: [{ role: 'user', content: 'Hello!' }]
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: 'Hello!' }]
 });
 ```
+
+### 3. Auto Cost Calculation
+Costs are calculated based on model and token counts.
+
+### 4. Auto Error Tracking
+Exceptions are automatically captured as error events.
 
 ---
 
 ## Best Practices
 
-### 1. Prefer withLucidic for Self-Contained Workflows
-Use `withLucidic` for one-shot tasks that should end when work finishes. See [Session Context](/typescript-sdk/session-context).
+### 1. Use Context Managers
 
-### 2. Consistent Evaluation
 ```typescript
-// Define clear scoring criteria
-const score = calculateScore(results);
-await lai.endStep(
-  score,
-  score >= 90 ? 'Excellent performance' :
-  score >= 70 ? 'Good performance' :
-  'Needs improvement'
-);
+// Good - automatic cleanup
+await client.sessions.create({ sessionName: 'My Task' }, async () => {
+    await doWork();
+});
+
+// Manual - requires explicit cleanup
+const session = await client.sessions.create({ sessionName: 'My Task' });
+try {
+    await doWork();
+} finally {
+    await client.sessions.end();
+}
 ```
 
-### 3. Error Handling
+### 2. Use emit() for High-Frequency Events
+
 ```typescript
-try {
-  await lai.createStep();
-  // Do work...
-  await lai.endStep({ evalScore: 100, evalDescription: 'Success' });
-} catch (error) {
-  await lai.endStep({ evalScore: 0, evalDescription: `Error: ${error.message}` });
-  throw error;
+// Good - won't slow down your loop
+for (const item of largeDataset) {
+    client.events.emit({
+        name: 'Item processed',
+        input: { id: item.id }
+    });
+    await process(item);
 }
+```
+
+### 3. Add Meaningful Event Names
+
+```typescript
+// Good - descriptive
+client.events.emit({
+    name: 'Validate user credentials against database',
+    input: { userId: '123' }
+});
+
+// Less useful - generic
+client.events.emit({
+    name: 'Validation',
+    input: { userId: '123' }
+});
+```
+
+### 4. Error Handling
+
+```typescript
+await client.sessions.create({ sessionName: 'Error Handling' }, async () => {
+    try {
+        await riskyOperation();
+    } catch (error) {
+        // Error is auto-tracked, but you can add context
+        client.events.emit({
+            name: 'Operation failed',
+            input: { operation: 'riskyOperation' },
+            output: { error: error.message },
+            metadata: { errorType: error.constructor.name }
+        });
+        throw error;
+    }
+});
 ```
 
 ---
 
 ## Next Steps
 
-- [Provider Integrations](/typescript-sdk/integrations) - Setup for OpenAI, Anthropic, and others
+- [Provider Integrations](/typescript-sdk/integrations/openai) - Setup for OpenAI, Anthropic, and others
 - [Advanced Features](/typescript-sdk/advanced-features) - Multimodal, masking, and more
 - [API Reference](/typescript-sdk/index) - Complete function documentation
 

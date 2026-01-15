@@ -1,0 +1,178 @@
+---
+title: events.create / events.acreate
+description: Create events synchronously or asynchronously in the Lucidic Python SDK
+---
+
+# events.create / events.acreate
+
+Create events within the current session. Use `create()` for synchronous code and `acreate()` for async code.
+
+---
+
+## Syntax
+
+```python
+# Synchronous
+client.events.create(
+    name: str,
+    input: dict = None,
+    output: dict = None,
+    duration_ms: int = None,
+    cost: float = None,
+    model: str = None,
+    metadata: dict = None
+)
+
+# Asynchronous
+await client.events.acreate(
+    name: str,
+    input: dict = None,
+    output: dict = None,
+    duration_ms: int = None,
+    cost: float = None,
+    model: str = None,
+    metadata: dict = None
+)
+```
+
+---
+
+## Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `str` | Yes | Descriptive name for the event |
+| `input` | `dict` | No | Input data/parameters for the event |
+| `output` | `dict` | No | Output/result from the event |
+| `duration_ms` | `int` | No | Duration of the operation in milliseconds |
+| `cost` | `float` | No | Cost of the operation |
+| `model` | `str` | No | Model name (for LLM-related events) |
+| `metadata` | `dict` | No | Additional custom metadata |
+
+---
+
+## Returns
+
+Returns an event object with the created event's details including `event_id`.
+
+---
+
+## Examples
+
+### Basic Event Creation
+
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+with client.sessions.create(session_name="API Integration"):
+    # Create a simple event
+    client.events.create(
+        name="Fetch user data",
+        input={"user_id": "12345"},
+        output={"name": "John Doe", "email": "john@example.com"}
+    )
+```
+
+### With Duration and Cost
+
+```python
+import time
+
+with client.sessions.create(session_name="Database Operations"):
+    start = time.time()
+
+    # Perform operation
+    result = database.query("SELECT * FROM users")
+
+    duration = int((time.time() - start) * 1000)
+
+    client.events.create(
+        name="Database query",
+        input={"query": "SELECT * FROM users"},
+        output={"rows": len(result)},
+        duration_ms=duration,
+        cost=0.001  # If there's an associated cost
+    )
+```
+
+### Async Event Creation
+
+```python
+import asyncio
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+async def process_data():
+    async with client.sessions.acreate(session_name="Async Processing"):
+        # Create event asynchronously
+        await client.events.acreate(
+            name="Async API call",
+            input={"endpoint": "/api/data"},
+            output={"status": 200, "data": [...]}
+        )
+```
+
+### With Custom Metadata
+
+```python
+with client.sessions.create(session_name="ML Pipeline"):
+    client.events.create(
+        name="Model inference",
+        input={"text": "Sample input for classification"},
+        output={"label": "positive", "confidence": 0.95},
+        model="custom-classifier-v2",
+        duration_ms=150,
+        metadata={
+            "batch_id": "batch-123",
+            "environment": "production",
+            "model_version": "2.1.0"
+        }
+    )
+```
+
+### Multiple Events in Sequence
+
+```python
+with client.sessions.create(session_name="Multi-step Process"):
+    # Step 1: Fetch data
+    client.events.create(
+        name="Fetch input data",
+        input={"source": "api"},
+        output={"records": 100}
+    )
+
+    # Step 2: Process data
+    client.events.create(
+        name="Transform data",
+        input={"records": 100},
+        output={"processed": 98, "errors": 2}
+    )
+
+    # Step 3: Store results
+    client.events.create(
+        name="Save to database",
+        input={"processed": 98},
+        output={"saved": True}
+    )
+```
+
+---
+
+## When to Use `create` vs `emit`
+
+| Use `create` / `acreate` | Use `emit` |
+|--------------------------|------------|
+| When you need confirmation | Hot paths where latency matters |
+| Critical events that must be recorded | High-frequency events |
+| When you need the event ID returned | Background/logging events |
+
+---
+
+## Related
+
+- [events.emit](/python-sdk/events/emit) - Zero-latency event emission
+- [@client.event()](/python-sdk/events/decorator) - Decorator for function tracking
+- [Event Management](/python-sdk/events/index) - Overview of events

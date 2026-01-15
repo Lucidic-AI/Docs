@@ -1,0 +1,287 @@
+---
+title: Events
+description: Understand Events as the core tracking unit in Lucidic – representing LLM calls, function invocations, errors, and custom operations.
+---
+
+# Events
+
+An **Event** is the core unit of tracking in Lucidic. Events represent atomic operations within your agent's execution — like LLM calls, function invocations, error tracebacks, or custom operations — that occur within a [Session](/feature-overview/sessions).
+
+Events can be **nested** within each other, creating a hierarchical trace of your agent's execution.
+
+---
+
+## Event Types
+
+Lucidic automatically captures and categorizes events into four types:
+
+### 1. LLM Generation Events (Automatic)
+
+LLM calls are automatically captured when you use an instrumented provider (OpenAI, Anthropic, etc.). These events include:
+
+- **Input messages**: The full prompt sent to the model
+- **Output response**: The model's complete response
+- **Thinking blocks**: For models that expose reasoning (e.g., Claude)
+- **Token usage**: Input, output, and total tokens
+- **Cost**: Calculated cost of the call
+- **Model metadata**: Model name, temperature, etc.
+- **Duration**: Time taken for the call
+
+<Tabs>
+  <Tab title="Python">
+```python
+from lucidicai import LucidicAI
+from openai import OpenAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+openai_client = OpenAI()
+
+with client.sessions.create(session_name="Chat Session"):
+    # This LLM call is automatically captured as an event
+    response = openai_client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+const openai = new OpenAI();
+
+await client.sessions.create({ sessionName: 'Chat Session' });
+
+// This LLM call is automatically captured as an event
+const response = await openai.chat.completions.create({
+    model: 'gpt-4.1-mini',
+    messages: [{ role: 'user', content: 'Hello!' }]
+});
+
+await client.sessions.end();
+```
+  </Tab>
+</Tabs>
+
+### 2. Function Call Events (Decorator)
+
+Use the `@client.event()` decorator to capture function invocations as events. This automatically records:
+
+- **Function arguments**: Input parameters
+- **Return value**: Output of the function
+- **Duration**: Execution time
+- **Errors**: Any exceptions thrown
+
+<Tabs>
+  <Tab title="Python">
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+@client.event()
+def process_document(doc_id: str, content: str) -> dict:
+    """Process a document and extract information."""
+    # Your processing logic
+    return {"entities": [...], "summary": "..."}
+
+with client.sessions.create(session_name="Document Processing"):
+    # This function call is captured as an event
+    result = process_document("doc-123", "Some content...")
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+// TypeScript decorator support coming soon
+// For now, use manual event creation
+await client.events.create({
+    type: 'function_call',
+    name: 'processDocument',
+    input: { docId: 'doc-123', content: 'Some content...' }
+});
+```
+  </Tab>
+</Tabs>
+
+**Nesting**: When an LLM call is made inside a decorated function, the LLM event is automatically nested within the function call event.
+
+### 3. Error Traceback Events (Automatic)
+
+When an uncaught exception occurs, Lucidic automatically creates an error event before the process exits. This includes:
+
+- **Error type**: The exception class
+- **Error message**: The exception message
+- **Stack trace**: Full traceback for debugging
+- **Context**: Where in the execution the error occurred
+
+```python
+with client.sessions.create(session_name="Risky Operation"):
+    try:
+        risky_function()
+    except Exception as e:
+        # Error event is automatically captured
+        raise
+```
+
+### 4. Generic Events (Manual)
+
+Create custom events for any operation you want to track:
+
+<Tabs>
+  <Tab title="Python">
+```python
+# Synchronous creation
+client.events.create(
+    name="API Call",
+    input={"endpoint": "/users", "method": "GET"},
+    output={"status": 200, "data": [...]},
+    duration_ms=150
+)
+
+# Async creation
+await client.events.acreate(
+    name="Database Query",
+    input={"query": "SELECT * FROM users"},
+    output={"rows": 100}
+)
+
+# Zero-latency background emit (no blocking)
+client.events.emit(
+    name="Cache Hit",
+    input={"key": "user:123"},
+    output={"found": True}
+)
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+// Create event
+await client.events.create({
+    name: 'API Call',
+    input: { endpoint: '/users', method: 'GET' },
+    output: { status: 200, data: [...] },
+    durationMs: 150
+});
+
+// Zero-latency background emit
+client.events.emit({
+    name: 'Cache Hit',
+    input: { key: 'user:123' },
+    output: { found: true }
+});
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Event Hierarchy
+
+Events can be nested to represent the hierarchical structure of your agent's execution:
+
+```
+Session
+├── Event: process_batch (Function Call)
+│   ├── Event: analyze_item (Function Call)
+│   │   └── Event: GPT-4.1-Mini call (LLM Generation)
+│   ├── Event: analyze_item (Function Call)
+│   │   └── Event: GPT-4.1-Mini call (LLM Generation)
+│   └── Event: summarize_results (Function Call)
+│       └── Event: Claude call (LLM Generation)
+└── Event: Error (Error Traceback)
+```
+
+This hierarchy is automatically maintained when using decorated functions and instrumented LLM providers.
+
+---
+
+## Event Properties
+
+Each event can include:
+
+| Property | Description |
+|----------|-------------|
+| `name` | Descriptive name of the event |
+| `type` | Event type (llm_generation, function_call, error, generic) |
+| `input` | Input data/parameters |
+| `output` | Output/result data |
+| `duration_ms` | Duration in milliseconds |
+| `cost` | Cost of the operation (auto-calculated for LLM calls) |
+| `model` | Model name (for LLM events) |
+| `tokens` | Token usage (for LLM events) |
+| `error` | Error details (for error events) |
+| `metadata` | Custom metadata |
+
+---
+
+## Why Events Matter
+
+Events help you:
+
+- **Debug issues** by tracing exact execution paths
+- **Understand decisions** by viewing LLM inputs/outputs
+- **Measure performance** with duration tracking
+- **Track costs** at granular levels
+- **Identify bottlenecks** in your agent's workflow
+- **Analyze failures** with full error context
+
+---
+
+## Viewing Events
+
+Events are displayed in the [Workflow Sandbox](/feature-overview/workflow-sandbox) trace view:
+
+- **Timeline**: Sequential view of all events
+- **Hierarchy**: Nested structure showing parent-child relationships
+- **Details**: Full input/output for each event
+- **Metrics**: Duration, cost, and token usage
+
+---
+
+## Best Practices
+
+### 1. Use Decorators for Key Functions
+
+Decorate important functions to capture their execution:
+
+```python
+@client.event()
+def search_documents(query: str) -> list:
+    ...
+
+@client.event()
+def generate_response(context: str) -> str:
+    ...
+```
+
+### 2. Use `.emit()` for High-Frequency Events
+
+For events that shouldn't block execution:
+
+```python
+# Won't add latency to your hot path
+client.events.emit(name="cache_check", input={"key": key})
+```
+
+### 3. Add Meaningful Names
+
+Use descriptive names that explain what the event represents:
+
+```python
+# Good
+client.events.create(name="Fetch user preferences from database")
+
+# Less helpful
+client.events.create(name="db_call")
+```
+
+---
+
+## Related
+
+- [Sessions](/feature-overview/sessions) - The container for events
+- [Workflow Sandbox](/feature-overview/workflow-sandbox) - View and debug events
+- [Python SDK Events](/python-sdk/events/index) - Detailed API reference
+- [TypeScript SDK Events](/typescript-sdk/events/index) - Detailed API reference

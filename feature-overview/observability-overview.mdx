@@ -1,0 +1,133 @@
+---
+title: Observability Overview
+description: Understand how Lucidic's observability layer captures, traces, and analyzes your AI agent behavior.
+---
+
+# Observability Overview
+
+Lucidic provides **comprehensive observability** for your AI agents, automatically capturing every LLM call, function invocation, and decision point. This visibility is the foundation that powers our [Evolutionary Simulations](/feature-overview/evolutionary-simulations) and debugging capabilities.
+
+---
+
+## Why Observability Matters
+
+Running an agent once doesn't tell you how it behaves.
+
+- Agents are **non-deterministic** — the same input can produce different outputs
+- They're made of **chained actions**, not just outputs
+- A single successful session can hide dozens of edge cases
+
+To build agents you can trust, you need to see what they're doing — and why. Observability provides the data foundation for:
+
+- **Debugging** failures and unexpected behavior
+- **Optimizing** performance with real usage data
+- **Validating** improvements through controlled experiments
+- **Monitoring** production agents in real time
+
+---
+
+## What Gets Captured
+
+Lucidic automatically tracks:
+
+- **[Sessions](/feature-overview/sessions)** — Complete runs of your agent from start to finish
+- **[Events](/feature-overview/events)** — Individual operations (LLM calls, function calls, errors)
+- **Costs** — Token usage and spending per call
+- **Timing** — Duration of each operation
+- **Inputs/Outputs** — Full visibility into what your agent sees and produces
+
+---
+
+## Automatic Instrumentation
+
+Lucidic is designed to be as **non-intrusive** as possible. With just a few lines of code, you get:
+
+- **Auto Event Creation**: LLM calls from supported providers (OpenAI, Anthropic, LangChain, PydanticAI) are automatically captured
+- **Auto Session Ending**: Sessions automatically end when your script exits via an `atexit` handler
+- **Auto Cost Tracking**: Token usage and costs are calculated automatically for each LLM call
+- **Auto Error Handling**: Failed operations are tracked without breaking your workflow
+
+### How It Works
+
+When you initialize Lucidic with a provider:
+
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+with client.sessions.create(session_name="My Session"):
+    # all OpenAI calls are automatically tracked as events
+    response = openai.chat.completions.create(...)
+```
+
+The SDK:
+1. **Instruments the provider** using OpenTelemetry under the hood
+2. **Intercepts all API calls** to track inputs, outputs, tokens, and timing
+3. **Creates events automatically** as your code runs
+4. **Handles cleanup gracefully** even if your script crashes
+
+This means you can add Lucidic to existing codebases with minimal refactoring.
+
+---
+
+## Supported Providers
+
+<Tabs>
+  <Tab title="Python">
+    | Provider | Auto-Instrumentation | Notes |
+    |----------|---------------------|-------|
+    | OpenAI | ✅ Full support | Streaming and non-streaming |
+    | Anthropic | ✅ Full support | Streaming and non-streaming |
+    | LangChain | ✅ Supported | Via OpenTelemetry |
+    | PydanticAI | ✅ Supported | Python only |
+    | LiteLLM | ✅ Supported | Universal proxy |
+  </Tab>
+  <Tab title="TypeScript">
+    | Provider | Auto-Instrumentation | Notes |
+    |----------|---------------------|-------|
+    | OpenAI | ✅ Full support | Streaming and non-streaming |
+    | Anthropic | ✅ Supported | Streaming limitation |
+    | Vercel AI | ✅ Supported | Edge-compatible |
+  </Tab>
+</Tabs>
+
+---
+
+## Viewing Traces
+
+Once instrumented, your agent sessions appear in the [Workflow Sandbox](/feature-overview/workflow-sandbox):
+
+- **Timeline view** — See events in chronological order
+- **Hierarchy view** — Understand nested event relationships
+- **Detail panels** — Inspect full inputs and outputs
+- **Video replay** — Watch agent actions (when captured)
+
+---
+
+## Using Observability Data
+
+Observability data powers several platform features:
+
+### Evolutionary Simulations
+Session traces feed into [Evolutionary Simulations](/feature-overview/evolutionary-simulations), providing the performance data needed to evaluate configuration variations.
+
+### Experiments
+Group related sessions into [Experiments](/feature-overview/experiments) for statistical analysis and comparison.
+
+### Rubric Evaluations
+Apply [Rubrics](/feature-overview/rubrics) to scored sessions for structured, multi-criteria evaluation.
+
+### Time Travel Debugging
+Use [Time Travel](/feature-overview/time-travel) to replay and modify specific points in a session.
+
+---
+
+## Next Steps
+
+- [Sessions](/feature-overview/sessions) — Deep dive into session structure
+- [Events](/feature-overview/events) — Understand event types and hierarchy
+- [Workflow Sandbox](/feature-overview/workflow-sandbox) — Explore the debugging interface
+- [Quick Start](/getting-started/quickstart) — Add observability to your agent
+
+---

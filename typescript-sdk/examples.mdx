@@ -10,288 +10,267 @@ This page contains detailed examples showing how to use Lucidic's TypeScript SDK
 ## Basic Session Management
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
 
 async function basicExample() {
-  // ESM: import provider and pass module reference for instrumentation
-  import OpenAI from 'openai';
-  await lai.init({
-    sessionName: "Document Processor",
-    instrumentModules: { OpenAI },
-    task: "Process and summarize documents"
-  });
-  const openai = new OpenAI();
+    const openai = new OpenAI();
 
-  // Create a step
-  await lai.createStep();
+    // Use context manager for session lifecycle
+    await client.sessions.create({
+        sessionName: 'Document Processor',
+        task: 'Process and summarize documents'
+    }, async () => {
+        // Read document
+        const document = await readDocument();
 
-  // Your logic here
-  const document = await readDocument();
+        // LLM calls are auto-tracked as events
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4',
+            messages: [
+                { role: 'system', content: 'Summarize the document' },
+                { role: 'user', content: document }
+            ]
+        });
 
-  // LLM calls are auto-tracked
-  const response = await openai.chat.completions.create({
-    model: "gpt-4",
-    messages: [
-      { role: "system", content: "Summarize the document" },
-      { role: "user", content: document }
-    ]
-  });
-
-  // End step with evaluation
-  await lai.endStep({
-    evalScore: 95,
-    evalDescription: "Successfully summarized"
-  });
-
-  // End session
-  await lai.endSession({ isSuccessful: true, isSuccessfulReason: "Document processed successfully" });
+        // Emit custom event
+        client.events.emit({
+            name: 'Document processed',
+            output: { summary: response.choices[0].message.content }
+        });
+    });
+    // Session auto-ends when callback completes
 }
 ```
 
 ## Error Handling Patterns
 
 ```typescript
-import * as lai from 'lucidicai';
-import { APIError } from 'lucidicai';
+import { LucidicAI, APIError } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
 
 async function robustWorkflow() {
-  try {
-    const { Anthropic } = await import('@anthropic-ai/sdk');
-    await lai.init({ sessionName: "Fault-tolerant workflow", instrumentModules: { anthropic: Anthropic } });
-    const anthropic = new Anthropic();
-
     try {
-      await lai.createStep();
+        await client.sessions.create({
+            sessionName: 'Fault-tolerant workflow'
+        }, async () => {
+            try {
+                // Risky operation
+                const result = await riskyOperation();
 
-      // Risky operation
-      const result = await riskyOperation();
+                // Track success
+                client.events.emit({
+                    name: 'Operation completed',
+                    output: { success: true, result }
+                });
 
-      await lai.endStep({
-        evalScore: 100,
-        evalDescription: "Success"
-      });
+            } catch (error) {
+                // Track failure
+                client.events.emit({
+                    name: 'Operation failed',
+                    output: { error: error.message },
+                    metadata: { errorType: error.constructor.name }
+                });
+                throw error;
+            }
+        });
 
     } catch (error) {
-      // Step failed - mark it
-      await lai.endStep({
-        evalScore: 0,
-        evalDescription: `Failed: ${error.message}`
-      });
-      throw error;
+        if (error instanceof APIError) {
+            console.error('API error:', error.message);
+        }
     }
-
-  } catch (error) {
-    if (error instanceof APIError) {
-      console.error("API error:", error.message);
-    }
-    
-    // Ensure session ends even on error
-    try {
-      await lai.endSession({ isSuccessful: false, isSuccessfulReason: `Error: ${error.message}` });
-    } catch (endError) {
-      console.error("Failed to end session:", endError);
-    }
-  }
 }
 ```
 
 ## Working with Events
 
 ```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
 async function eventTrackingExample() {
-  await lai.init({ sessionName: "Event tracking demo" });
+    await client.sessions.create({
+        sessionName: 'Event tracking demo'
+    }, async () => {
+        // Zero-latency event for hot paths
+        client.events.emit({
+            name: 'Database query',
+            input: { query: 'SELECT * FROM users' },
+            output: { count: 150 },
+            durationMs: 45
+        });
 
-  await lai.createStep();
+        // Synchronous event when you need the ID
+        const event = await client.events.create({
+            name: 'External API call',
+            input: { endpoint: '/api/weather' }
+        });
 
-  // Create manual event for non-LLM operation
-  const dbEvent = await lai.createEvent({
-    description: "Database query",
-    model: "postgresql"
-  });
+        const weather = await fetchWeatherData();
 
-  // Perform database operation
-  const users = await db.query("SELECT * FROM users");
-
-  // Update event with results
-  await lai.updateEvent({
-    eventId: dbEvent.eventId,
-    result: `Found ${users.length} users`,
-    costAdded: 0.001
-  });
-
-  // Create event for external API
-  const apiEvent = await lai.createEvent({
-    description: "Weather API call"
-  });
-
-  const weather = await fetchWeatherData();
-
-  await lai.updateEvent({
-    eventId: apiEvent.eventId,
-    result: JSON.stringify(weather),
-    costAdded: 0.0001
-  });
-
-  await lai.endStep();
-  await lai.endSession();
+        // Can reference the event ID if needed
+        console.log(`Created event: ${event.eventId}`);
+    });
 }
 ```
 
 ## Long-Running Workflows
 
 ```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
 async function longRunningPipeline(documentBatch: string[]) {
-  // Phase 1: Initialize and preprocess
-  const sessionId = await lai.init({
-    sessionName: "Document batch processing",
-    task: `Process ${documentBatch.length} documents`
-  });
+    // Phase 1: Initialize and preprocess
+    let sessionId: string;
 
-  await lai.createStep();
+    await client.sessions.create({
+        sessionName: 'Document batch processing',
+        task: `Process ${documentBatch.length} documents`
+    }, async (session) => {
+        sessionId = session.sessionId;
 
-  const validDocs = await preprocessDocuments(documentBatch);
-  
-  await lai.endStep({
-    evalScore: 100,
-    evalDescription: `${validDocs.length} documents ready`
-  });
+        const validDocs = await preprocessDocuments(documentBatch);
 
-  // Save progress
-  await saveCheckpoint({ sessionId, validDocs });
-  await lai.endSession();
+        client.events.emit({
+            name: 'Preprocessing complete',
+            output: { validCount: validDocs.length }
+        });
 
-  // Phase 2: Process each document (could be separate job)
-  await lai.init({ sessionId });
+        // Save progress
+        await saveCheckpoint({ sessionId, validDocs });
+    });
 
-  for (const [index, doc] of validDocs.entries()) {
-    await lai.createStep();
+    // Phase 2: Continue in same session
+    await client.sessions.create({
+        sessionId  // Continue existing session
+    }, async () => {
+        const checkpoint = await loadCheckpoint(sessionId);
 
-    try {
-      await processDocument(doc);
-      await lai.endStep({ evalScore: 100 });
-    } catch (error) {
-      await lai.endStep({
-        evalScore: 0,
-        evalDescription: error.message
-      });
-    }
-  }
+        for (const [index, doc] of checkpoint.validDocs.entries()) {
+            try {
+                await processDocument(doc);
 
-  await lai.endSession({ isSuccessful: true, isSuccessfulReason: "Batch processing completed" });
+                client.events.emit({
+                    name: `Document ${index + 1} processed`,
+                    output: { success: true }
+                });
+            } catch (error) {
+                client.events.emit({
+                    name: `Document ${index + 1} failed`,
+                    output: { error: error.message }
+                });
+            }
+        }
+
+        // Update session with final status
+        await client.sessions.update({
+            isSuccessful: true,
+            isSuccessfulReason: 'Batch processing completed'
+        });
+    });
 }
 ```
 
 ## Multimodal Tracking
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
+import { readFile } from 'fs/promises';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
 
 async function multimodalExample() {
-  await lai.init({
-    sessionName: "Image analysis workflow",
-    providers: ["openai"]
-  });
+    const openai = new OpenAI();
 
-  const OpenAI = (await import('openai')).default;
-  const openai = new OpenAI();
+    await client.sessions.create({
+        sessionName: 'Image analysis workflow'
+    }, async () => {
+        // Read and encode image
+        const imageBuffer = await readFile('chart.png');
+        const imageUrl = 'data:image/png;base64,' + imageBuffer.toString('base64');
 
-  // Use storage context for multimodal capture
-  // Image data URLs in prompts are auto-extracted and linked; no extra context manager needed
-  // (If you need to scope sessions across async roots, see Session Context docs.)
-    await lai.createStep();
+        // Track the analysis event
+        client.events.emit({
+            name: 'Visual analysis started',
+            input: { imageType: 'chart' }
+        });
 
-    // Upload image
-    const imageBuffer = await readFile('chart.png');
-    // Convert your image to a data URL (or read base64) and pass it in the OpenAI call or event screenshots
-    const imageUrl = 'data:image/png;base64,' + (await imageBuffer.toString('base64'));
+        // Use vision model - LLM call auto-tracked
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4-vision-preview',
+            messages: [{
+                role: 'user',
+                content: [
+                    { type: 'text', text: 'Describe this chart' },
+                    { type: 'image_url', image_url: { url: imageUrl } }
+                ]
+            }]
+        });
 
-    // Create event with screenshot
-    await lai.createEvent({
-      description: "Visual analysis",
-      screenshots: [imageUrl]
+        client.events.emit({
+            name: 'Visual analysis complete',
+            output: { description: response.choices[0].message.content }
+        });
     });
-
-    // Use vision model
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Describe this chart" },
-            { type: "image_url", image_url: { url: imageUrl } }
-          ]
-        }
-      ]
-    });
-
-    await lai.endStep({
-      evalScore: 100,
-      evalDescription: "Successfully analyzed image"
-    });
-  });
-
-  await lai.endSession();
 }
 ```
 
-## Mass Simulation
+## A/B Testing with Experiments
 
 ```typescript
-async function runMassSimulation() {
-  await lai.init();
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
 
-  // Define variations to test
-  const prompts = [
-    "Be concise",
-    "Be detailed", 
-    "Be technical"
-  ];
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
 
-  const models = ["gpt-3.5-turbo", "gpt-4"];
+async function runExperiment() {
+    const openai = new OpenAI();
 
-  // Run simulation
-  await lai.runMassSimulation({
-    sessionBaseName: "Prompt comparison",
-    numSessions: prompts.length * models.length,
-    sessionFunction: async () => {
-      for (const prompt of prompts) {
+    // Define variations to test
+    const prompts = [
+        'Be concise',
+        'Be detailed',
+        'Be technical'
+    ];
+
+    const models = ['gpt-5.2', 'gpt-4'];
+
+    // Experiment ID from dashboard
+    const EXPERIMENT_ID = 'exp-123abc';
+
+    for (const prompt of prompts) {
         for (const model of models) {
-          await runSingleTest(prompt, model);
+            await client.sessions.create({
+                sessionName: `${model} - ${prompt}`,
+                experimentId: EXPERIMENT_ID,
+                tags: ['experiment', model, prompt]
+            }, async () => {
+                const response = await openai.chat.completions.create({
+                    model,
+                    messages: [
+                        { role: 'system', content: prompt },
+                        { role: 'user', content: 'Explain quantum computing' }
+                    ]
+                });
+
+                // Evaluate and update session
+                const score = evaluateResponse(response.choices[0].message.content);
+
+                await client.sessions.update({
+                    isSuccessful: score >= 80,
+                    isSuccessfulReason: `Score: ${score}`
+                });
+            });
         }
-      }
     }
-  });
-}
-
-async function runSingleTest(systemPrompt: string, model: string) {
-  await lai.init({
-    sessionName: `${model} - ${systemPrompt}`,
-    tags: ["simulation", model, systemPrompt]
-  });
-
-  await lai.createStep();
-
-  const OpenAI = (await import('openai')).default;
-  const openai = new OpenAI();
-
-  const response = await openai.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: "Explain quantum computing" }
-    ]
-  });
-
-  // Evaluate based on criteria
-  const score = evaluateResponse(response.choices[0].message.content);
-
-  await lai.endStep({
-    evalScore: score,
-    evalDescription: `${systemPrompt} scoring`
-  });
-
-  await lai.endSession({ isSuccessful: true });
 }
 ```
 
@@ -304,73 +283,188 @@ async function runSingleTest(systemPrompt: string, model: string) {
 // LUCIDIC_API_KEY=your-api-key
 // LUCIDIC_AGENT_ID=your-agent-id
 
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
 
-await lai.init({
-  sessionName: "My Session",
-  providers: ["openai"]
+const client = new LucidicAI({ providers: ['openai'] });
+
+await client.sessions.create({
+    sessionName: 'My Session'
+}, async () => {
+    // Your workflow
 });
 ```
 
 ### Using dotenv
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-await lai.init({
-  sessionName: "My Session",
-  providers: ["anthropic"]
+const client = new LucidicAI({ providers: ['anthropic'] });
+
+await client.sessions.create({
+    sessionName: 'My Session'
+}, async () => {
+    // Your workflow
 });
 ```
 
 ### Direct Configuration
 
 ```typescript
-await lai.init({
-  apiKey: "your-api-key",
-  agentId: "your-agent-id",
-  sessionName: "My Session",
-  providers: ["openai"]
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({
+    apiKey: 'your-api-key',
+    agentId: 'your-agent-id',
+    providers: ['openai']
+});
+
+await client.sessions.create({
+    sessionName: 'My Session'
+}, async () => {
+    // Your workflow
 });
 ```
 
 ## Production Best Practices
 
 ```typescript
-async function productionWorkflow() {
-  // Custom masking function
-  const maskSSN = (text: string) => {
+import { LucidicAI } from 'lucidicai';
+
+// Custom masking function
+const maskSSN = (text: string) => {
     return text.replace(/\b\d{3}-\d{2}-\d{4}\b/g, 'XXX-XX-XXXX');
-  };
+};
 
-  await lai.init({
-    sessionName: "Production agent",
-    providers: ["openai", "anthropic"],
-    maskingFunction: maskSSN,
-    autoEnd: true,  // Ensure cleanup on crashes
-    debug: false    // Disable debug logs
-  });
+const client = new LucidicAI({
+    apiKey: '...',
+    providers: ['openai', 'anthropic'],
+    productionMonitoring: true  // Enable production mode
+});
 
-  // Set production tags
-  await lai.updateSession(
-    undefined,  // Don't change task
-    {
-      environment: "production",
-      version: "1.2.3",
-      region: "us-west-2"
+async function productionWorkflow() {
+    await client.sessions.create({
+        sessionName: 'Production agent',
+        maskingFunction: maskSSN,
+        tags: ['production', 'v1.2.3', 'us-west-2']
+    }, async () => {
+        try {
+            await processUserRequest();
+
+            await client.sessions.update({
+                isSuccessful: true,
+                isSuccessfulReason: 'Request processed successfully'
+            });
+        } catch (error) {
+            // Error is auto-tracked
+            await client.sessions.update({
+                isSuccessful: false,
+                isSuccessfulReason: `Error: ${error.message}`
+            });
+            throw error;
+        }
+    });
+}
+```
+
+## Dataset Testing
+
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+async function runDatasetTests() {
+    const datasetItems = await client.datasets.getItems('test_suite_v1');
+
+    for (const item of datasetItems) {
+        await client.sessions.create({
+            sessionName: `Test: ${item.name}`,
+            datasetItemId: item.id
+        }, async () => {
+            // Run agent with test input
+            const result = await myAgent.process(item.input);
+
+            // Validate against expected output
+            const success = JSON.stringify(result) === JSON.stringify(item.expectedOutput);
+
+            await client.sessions.update({
+                isSuccessful: success,
+                isSuccessfulReason: success
+                    ? 'Output matched expected'
+                    : 'Output did not match expected'
+            });
+        });
     }
-  );
+}
+```
 
-  // Your production logic with proper error handling
-  try {
-    await processUserRequest();
-  } finally {
-    // Ensure session ends even if error occurs
-    await lai.endSession();
-  }
+## Prompt Management
+
+```typescript
+import { LucidicAI } from 'lucidicai';
+import OpenAI from 'openai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+async function promptManagementExample() {
+    const openai = new OpenAI();
+
+    await client.sessions.create({
+        sessionName: 'Prompt management demo'
+    }, async () => {
+        // Fetch prompt from Lucidic (cached by default)
+        const systemPrompt = await client.prompts.get({
+            promptName: 'customer-support-prompt',
+            cacheTtl: 300  // Cache for 5 minutes
+        });
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userMessage }
+            ]
+        });
+
+        // Response is auto-tracked
+    });
+}
+```
+
+## Parallel Processing
+
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+async function parallelProcessing() {
+    await client.sessions.create({
+        sessionName: 'Parallel operations'
+    }, async () => {
+        // Run multiple operations in parallel
+        const [analysis, summary, translation] = await Promise.all([
+            analyzeText(content),
+            summarizeText(content),
+            translateText(content)
+        ]);
+
+        // Each LLM call is tracked as a separate event
+        // All nested under the same session
+
+        client.events.emit({
+            name: 'Parallel processing complete',
+            output: {
+                analysisLength: analysis.length,
+                summaryLength: summary.length,
+                translationLength: translation.length
+            }
+        });
+    });
 }
 ```
 

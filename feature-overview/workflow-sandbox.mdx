@@ -1,0 +1,82 @@
+---
+title: Viewing Sessions (Workflow Sandbox)
+description: Dive into a full breakdown of one agent run — replay, inspect, evaluate, and debug every decision.
+---
+
+# Workflow Sandbox
+
+The **Workflow Sandbox** is your deep-dive view into a single agent run — also known as a [Session](/feature-overview/sessions). Learn to create a session with our [Quick Start guide](/getting-started/quickstart).
+
+This is where observability meets usability: you can **replay the session**, **inspect every event**, **explore the execution trace**, and **evaluate performance** using rubrics — all in one place.
+
+> To get here Click **Project -> Agent -> any session in the session history**.
+
+---
+
+## Trace View
+
+The Trace View shows a comprehensive timeline of your agent run. It includes all events in sequential order with their hierarchy.
+
+It shows:
+ - Basic Information: **Status, Model, Start Time, Duration, Cost**
+ - **Prettified vs Raw Request/Response** (click the wand/text icon in the top right of Input/Output to toggle)
+ - **Screenshots** and multimodal data
+
+> **Pro tip:** **SPEED UP** iteration and debugging time by avoiding rerunning the same failed run with [Time Travels](/feature-overview/time-travel). They enable you to freeze time and rerun the event in isolation to see if your error/success is reliable.
+
+> _![traceview](/images/workflowsandbox1.png)_
+
+## Session Evaluations
+
+On this tab, you'll find any evaluations ran on this session. Read more about evaluation rubrics [here](/feature-overview/rubrics).
+
+- Each criterion is scored and explained
+- Custom rubrics can be attached per Agent when running a session
+- You can pass in your own evals at runtime to be shown here too
+
+> _![rubric](/images/ws2.png)_
+
+---
+
+## Prompt DB
+
+You can open the [Prompt DB](/feature-overview/prompt-db) directly by clicking on the tab:
+
+- Quickly view which prompt was used
+- Test changes or view version history
+- Add tags to quickly iterate on prompts
+
+---
+
+## Session Replay: Event Trace Graph
+
+You'll see a **Session-specific graph** visualizing the execution trace of your session.
+
+- **Nodes:** events and operations
+- **Edges:** execution flow
+- **Grouped:** similar operations are clustered
+
+> **Pro tip:** Events that caused errors will be highlighted in red! Hover over the error icon in the top right of the node to quickly see a failure explanation.
+
+> **Note:** If you want to turn off error highlighting, click the alarm icon in the bottom left toolbar of the graph.
+
+> _![trajectory](/images/ws6.png)_
+
+> _![trajectory](/images/ws3.png)_
+
+> **Pro tip:** Clicking an **Event** opens a full breakdown of that **Event** below the graph!
+
+---
+
+## Use Cases
+
+The Workflow Sandbox is where you:
+
+- **Debug** a failed run
+- **Investigate** edge cases
+- **Replay** odd behavior
+- **Evaluate** agent consistency
+- **Identify** root causes of errors
+- **Understand** how a prompt or model change affected logic
+
+---

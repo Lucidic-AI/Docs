@@ -33,8 +33,7 @@ Experiments are created and managed through the Lucidic Dashboard. Your SDKs can
 Agent
 └── Experiment (created in dashboard)
     ├── Sessions (added via dashboard or SDK)
-    │   ├── Steps
-    │   └── Events
+    │   └── Events (nested hierarchy)
     ├── Rubrics (evaluation criteria)
     └── Failure Groups (auto-generated patterns)
 ```
@@ -60,18 +59,30 @@ Once created, you can add sessions to experiments in two ways:
 **Via SDK:**
 ```python
 # Python
-lai.init(
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+with client.sessions.create(
     session_name="Test Run",
     experiment_id="exp-uuid-from-dashboard"
-)
+):
+    # Your workflow
+    pass
 ```
 
 ```typescript
 // TypeScript
-await lai.init({
-    sessionName: "Test Run",
-    experimentId: "exp-uuid-from-dashboard"
-})
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+await client.sessions.create({
+    sessionName: 'Test Run',
+    experimentId: 'exp-uuid-from-dashboard'
+}, async () => {
+    // Your workflow
+});
 ```
 
 ---
@@ -123,6 +134,10 @@ Experiments excel at comparison scenarios:
 Test different configurations to find optimal settings:
 
 ```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
 # Create two experiments in dashboard first
 EXPERIMENT_A = "exp-uuid-variant-a"  # From dashboard
 EXPERIMENT_B = "exp-uuid-variant-b"  # From dashboard
@@ -130,20 +145,18 @@ EXPERIMENT_B = "exp-uuid-variant-b"  # From dashboard
 # Run tests with each variant
 for test_case in test_cases:
     # Variant A
-    lai.init(
+    with client.sessions.create(
         session_name=f"Test {test_case.id} - A",
         experiment_id=EXPERIMENT_A
-    )
-    run_with_config_a(test_case)
-    lai.end_session()
-    
+    ):
+        run_with_config_a(test_case)
+
     # Variant B
-    lai.init(
-        session_name=f"Test {test_case.id} - B", 
+    with client.sessions.create(
+        session_name=f"Test {test_case.id} - B",
         experiment_id=EXPERIMENT_B
-    )
-    run_with_config_b(test_case)
-    lai.end_session()
+    ):
+        run_with_config_b(test_case)
 ```
 
 ### Regression Testing
@@ -151,6 +164,10 @@ for test_case in test_cases:
 Ensure new changes maintain performance:
 
 ```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
 # Baseline experiment created in dashboard
 BASELINE_EXPERIMENT = "exp-baseline-v1"
 
@@ -159,12 +176,11 @@ NEW_VERSION_EXPERIMENT = "exp-candidate-v2"
 
 # Run same test suite on both
 for test in regression_suite:
-    lai.init(
+    with client.sessions.create(
         session_name=test.name,
         experiment_id=NEW_VERSION_EXPERIMENT
-    )
-    run_test(test)
-    lai.end_session()
+    ):
+        run_test(test)
 ```
 
 ### Load Testing
@@ -172,19 +188,22 @@ for test in regression_suite:
 Analyze behavior under stress:
 
 ```python
+from lucidicai import LucidicAI
+import concurrent.futures
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
 # Create load test experiment in dashboard
 LOAD_TEST_EXPERIMENT = "exp-load-test-1000"
 
 # Run many concurrent sessions
-import concurrent.futures
-
 def run_session(i):
-    lai.init(
+    with client.sessions.create(
         session_name=f"Load Test {i}",
         experiment_id=LOAD_TEST_EXPERIMENT
-    )
-    # Your agent workflow
-    lai.end_session()
+    ):
+        # Your agent workflow
+        pass
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
     futures = [executor.submit(run_session, i) for i in range(1000)]
@@ -195,6 +214,10 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
 Establish and track performance baselines:
 
 ```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
 # Monthly performance experiments (created in dashboard)
 experiments = {
     "January": "exp-perf-jan-2024",
@@ -205,13 +228,12 @@ experiments = {
 # Run consistent test suite each month
 current_month_exp = experiments["March"]
 for benchmark in performance_benchmarks:
-    lai.init(
+    with client.sessions.create(
         session_name=benchmark.name,
         experiment_id=current_month_exp,
         tags=["benchmark", "monthly"]
-    )
-    run_benchmark(benchmark)
-    lai.end_session()
+    ):
+        run_benchmark(benchmark)
 ```
 
 ---
@@ -253,9 +275,8 @@ for benchmark in performance_benchmarks:
 ## Related Concepts
 
 - [Sessions](/core-concepts/sessions) - Individual agent execution runs
-- [Mass Simulations](/core-concepts/mass-simulations) - Running agents at scale
+- [Events](/feature-overview/events) - Operations within sessions
 - [Evaluations & Rubrics](/core-concepts/evaluations-rubrics) - Scoring mechanisms
-- [Steps](/core-concepts/steps) - Execution units within sessions
 
 ---
 

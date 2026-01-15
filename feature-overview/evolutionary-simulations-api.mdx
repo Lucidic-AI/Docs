@@ -1,0 +1,709 @@
+---
+title: 'Evolutionary Simulations API'
+description: 'REST API reference for creating and managing evolutionary simulations'
+---
+
+# Evolutionary Simulations API
+
+This document describes the REST API endpoints for programmatically creating, running, and analyzing evolutionary simulations.
+
+---
+
+## Base URL
+
+```
+https://backend.lucidic.ai/v1
+```
+
+---
+
+## Authentication
+
+All API requests require authentication using a Bearer token in the Authorization header.
+
+```bash
+Authorization: Bearer <LUCIDIC_API_KEY>
+```
+
+You can obtain your API key from the [Lucidic Dashboard](https://dashboard.lucidic.ai) under API Keys.
+
+---
+
+## Endpoints
+
+### Create Simulation
+
+Creates a new evolutionary simulation with the specified configuration.
+
+```
+POST /evosims
+```
+
+**Request Body**
+
+```json
+{
+  "name": "Optimize Customer Support Agent",
+  "hypothesis": "Improve resolution accuracy while reducing response time",
+  "agent_id": "agent_abc123",
+  "dataset_ids": ["dataset_test_suite_v1"],
+  "rubric_ids": ["rubric_accuracy", "rubric_helpfulness"],
+  "hyperparameters": {
+    "prompts": [
+      {"prompt_id": "prompt_v1", "enabled": true},
+      {"prompt_id": "prompt_v2", "enabled": true}
+    ],
+    "models": [
+      {"provider": "openai", "model": "gpt-4.1-mini", "enabled": true},
+      {"provider": "anthropic", "model": "claude-4-5-sonnet", "enabled": true}
+    ],
+    "context": [
+      {"category_id": "customer_data", "items": ["crm_record", "loyalty_tier"]},
+      {"category_id": "conversation_history", "items": ["full_transcript"]}
+    ],
+    "examples": [
+      {"category_id": "refunds", "items": ["nonrefundable_request", "duplicate_booking"]}
+    ],
+    "custom": [
+      {"key": "temperature", "values": [0.3, 0.5, 0.7]}
+    ]
+  },
+  "stopping_criteria": {
+    "max_cost": 1000,
+    "max_iterations": 50,
+    "max_configurations": 500,
+    "max_duration_minutes": 1440,
+    "target_score": 95
+  },
+  "statistical_params": {
+    "p_value_threshold": 0.05,
+    "train_test_split": 0.8
+  }
+}
+```
+
+**Request Fields**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Display name for the simulation |
+| `hypothesis` | string | Yes | Description of the improvement goal |
+| `agent_id` | string | Yes | ID of the agent to optimize |
+| `dataset_ids` | array | Yes | IDs of datasets to use for testing |
+| `rubric_ids` | array | No | IDs of rubrics for evaluation |
+| `hyperparameters` | object | No | Hyperparameters to optimize |
+| `stopping_criteria` | object | No | Conditions to stop optimization |
+| `statistical_params` | object | No | Statistical validation parameters |
+
+**Response**
+
+```json
+{
+  "id": "evosim_xyz789",
+  "name": "Optimize Customer Support Agent",
+  "status": "pending",
+  "agent_id": "agent_abc123",
+  "hypothesis": "Improve resolution accuracy while reducing response time",
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T10:30:00Z"
+}
+```
+
+**Example**
+
+```bash
+curl -X POST https://backend.lucidic.ai/v1/evosims \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Optimize Customer Support Agent",
+    "hypothesis": "Improve resolution accuracy",
+    "agent_id": "agent_abc123",
+    "dataset_ids": ["dataset_test_suite_v1"],
+    "stopping_criteria": {
+      "max_iterations": 50,
+      "max_cost": 500
+    }
+  }'
+```
+
+---
+
+### Get Simulation
+
+Retrieves details of an existing evolutionary simulation.
+
+```
+GET /evosims/{evosim_id}
+```
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `evosim_id` | string | The unique identifier of the simulation |
+
+**Response**
+
+```json
+{
+  "id": "evosim_xyz789",
+  "name": "Optimize Customer Support Agent",
+  "status": "running",
+  "agent_id": "agent_abc123",
+  "hypothesis": "Improve resolution accuracy while reducing response time",
+  "hyperparameters": {...},
+  "stopping_criteria": {...},
+  "statistical_params": {...},
+  "created_at": "2024-01-15T10:30:00Z",
+  "updated_at": "2024-01-15T14:45:00Z",
+  "started_at": "2024-01-15T10:35:00Z"
+}
+```
+
+**Example**
+
+```bash
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789 \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY"
+```
+
+---
+
+### Run Simulation
+
+Starts or resumes an evolutionary simulation.
+
+```
+POST /evosims/{evosim_id}/run
+```
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `evosim_id` | string | The unique identifier of the simulation |
+
+**Response**
+
+```json
+{
+  "id": "evosim_xyz789",
+  "status": "running",
+  "started_at": "2024-01-15T10:35:00Z",
+  "message": "Simulation started successfully"
+}
+```
+
+**Example**
+
+```bash
+curl -X POST https://backend.lucidic.ai/v1/evosims/evosim_xyz789/run \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY"
+```
+
+---
+
+### Stop Simulation
+
+Stops a running evolutionary simulation.
+
+```
+POST /evosims/{evosim_id}/stop
+```
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `evosim_id` | string | The unique identifier of the simulation |
+
+**Response**
+
+```json
+{
+  "id": "evosim_xyz789",
+  "status": "stopped",
+  "stopped_at": "2024-01-15T18:22:00Z",
+  "message": "Simulation stopped successfully"
+}
+```
+
+**Example**
+
+```bash
+curl -X POST https://backend.lucidic.ai/v1/evosims/evosim_xyz789/stop \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY"
+```
+
+---
+
+### Get Status
+
+Returns the current status of an evolutionary simulation.
+
+```
+GET /evosims/{evosim_id}/status
+```
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `evosim_id` | string | The unique identifier of the simulation |
+
+**Response**
+
+```json
+{
+  "id": "evosim_xyz789",
+  "status": "running",
+  "progress": {
+    "current_iteration": 32,
+    "total_iterations": 50,
+    "percent_complete": 64
+  },
+  "started_at": "2024-01-15T10:35:00Z",
+  "estimated_completion": "2024-01-15T22:00:00Z"
+}
+```
+
+**Status Values**
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Simulation created but not started |
+| `running` | Simulation is actively running |
+| `completed` | Simulation finished successfully |
+| `stopped` | Simulation was manually stopped |
+| `failed` | Simulation encountered an error |
+
+**Example**
+
+```bash
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/status \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY"
+```
+
+---
+
+### Get Results
+
+Returns analytics and metrics from the optimization run.
+
+```
+GET /evosims/{evosim_id}/results
+```
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `evosim_id` | string | The unique identifier of the simulation |
+
+**Response**
+
+```json
+{
+  "id": "evosim_xyz789",
+  "status": "completed",
+  "summary": {
+    "total_cost": 876.82,
+    "training_time_minutes": 985,
+    "iterations_completed": 50,
+    "models_tested": 4,
+    "configurations_tested": 466,
+    "adjustments_made": 3760
+  },
+  "best_config_id": "config_iteration_49",
+  "metrics_history": [
+    {
+      "iteration": 1,
+      "timestamp": "2024-01-15T10:40:00Z",
+      "metrics": {
+        "overall_score": 38.20,
+        "custom_metric_1": 34.1,
+        "custom_metric_2": 68.7
+      }
+    },
+    {
+      "iteration": 50,
+      "timestamp": "2024-01-16T02:55:00Z",
+      "metrics": {
+        "overall_score": 89.80,
+        "custom_metric_1": 81.5,
+        "custom_metric_2": 24.5
+      }
+    }
+  ]
+}
+```
+
+**Example**
+
+```bash
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/results \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY"
+```
+
+---
+
+### Get Best Configuration
+
+Returns the winning configuration from the optimization.
+
+```
+GET /evosims/{evosim_id}/best-config
+```
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `evosim_id` | string | The unique identifier of the simulation |
+
+**Response**
+
+```json
+{
+  "id": "config_iteration_49",
+  "evosim_id": "evosim_xyz789",
+  "iteration": 49,
+  "model": {
+    "provider": "anthropic",
+    "model": "claude-3-5-sonnet"
+  },
+  "overall_score": 89.80,
+  "metrics": {
+    "custom_metric_1": 81.5,
+    "custom_metric_2": 24.5,
+    "custom_metric_3": 28.16,
+    "avg_turns": 6
+  },
+  "hyperparameters": {
+    "prompt_id": "prompt_v2_optimized",
+    "temperature": 0.5,
+    "context_enabled": ["crm_record", "loyalty_tier", "full_transcript"],
+    "examples_enabled": ["nonrefundable_request"]
+  },
+  "comparison_to_baseline": {
+    "overall_score_delta": 51.6,
+    "percent_improvement": 135.1
+  }
+}
+```
+
+**Example**
+
+```bash
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/best-config \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY"
+```
+
+---
+
+### Get Insights
+
+Returns AI-generated insights discovered during optimization.
+
+```
+GET /evosims/{evosim_id}/insights
+```
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `evosim_id` | string | The unique identifier of the simulation |
+
+**Response**
+
+```json
+{
+  "id": "evosim_xyz789",
+  "insights": [
+    {
+      "id": "insight_001",
+      "title": "Hierarchy for Conflicting Claims Necessary",
+      "description": "Configurations that established clear priority ordering for conflicting information sources showed 23% better accuracy.",
+      "severity": "high",
+      "category": "prompt_structure",
+      "experiments_count": 3,
+      "sessions_count": 31,
+      "affected_iterations": [12, 15, 18, 23, 27]
+    },
+    {
+      "id": "insight_002",
+      "title": "Tool Descriptions Were Extremely Fragile",
+      "description": "Minor wording changes in tool descriptions caused significant performance variations. Standardized descriptions improved consistency.",
+      "severity": "high",
+      "category": "tool_usage",
+      "experiments_count": 2,
+      "sessions_count": 24,
+      "affected_iterations": [8, 14, 19]
+    },
+    {
+      "id": "insight_003",
+      "title": "Context Over-Injection Caused Conflicting Signals",
+      "description": "Providing too much context led to confusion. Selective context improved performance by 15%.",
+      "severity": "medium",
+      "category": "context_management",
+      "experiments_count": 4,
+      "sessions_count": 45,
+      "affected_iterations": [5, 11, 16, 22, 30]
+    }
+  ],
+  "generated_at": "2024-01-16T03:00:00Z"
+}
+```
+
+**Example**
+
+```bash
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/insights \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY"
+```
+
+---
+
+### Get Next Steps
+
+Returns actionable recommendations for improvements beyond the current optimization.
+
+```
+GET /evosims/{evosim_id}/next-steps
+```
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `evosim_id` | string | The unique identifier of the simulation |
+
+**Response**
+
+```json
+{
+  "id": "evosim_xyz789",
+  "next_steps": [
+    {
+      "id": "nextstep_001",
+      "title": "Edge-Case Itineraries",
+      "description": "Edge-casing is currently disabled. Enable and test with complex multi-leg itineraries.",
+      "category": "edge_case",
+      "priority": "high",
+      "sessions_count": 13,
+      "completed": false
+    },
+    {
+      "id": "nextstep_002",
+      "title": "Missing Tool Capability for Same-Day Changes",
+      "description": "Structural gap identified: no tool exists for handling same-day flight modifications.",
+      "category": "structural_gap",
+      "priority": "high",
+      "sessions_count": 8,
+      "completed": false
+    },
+    {
+      "id": "nextstep_003",
+      "title": "Loyalty + Fare Rule Interaction Failures",
+      "description": "Compound logic gap when loyalty status interacts with fare rules. Needs dedicated handling.",
+      "category": "compound_logic",
+      "priority": "medium",
+      "sessions_count": 11,
+      "completed": false
+    }
+  ],
+  "generated_at": "2024-01-16T03:00:00Z"
+}
+```
+
+**Example**
+
+```bash
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/next-steps \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY"
+```
+
+---
+
+### Compare Configurations
+
+Compares two or three configurations side-by-side.
+
+```
+POST /evosims/{evosim_id}/compare
+```
+
+**Path Parameters**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `evosim_id` | string | The unique identifier of the simulation |
+
+**Request Body**
+
+```json
+{
+  "config_ids": ["config_baseline", "config_iteration_49"]
+}
+```
+
+**Request Fields**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `config_ids` | array | Yes | Array of 2-3 configuration IDs to compare |
+
+**Response**
+
+```json
+{
+  "evosim_id": "evosim_xyz789",
+  "configurations": [
+    {
+      "id": "config_baseline",
+      "name": "Baseline",
+      "iteration": 0,
+      "model": {
+        "provider": "openai",
+        "model": "gpt-4.1-mini"
+      },
+      "metrics": {
+        "overall_score": 38.20,
+        "custom_metric_1": 34.1,
+        "custom_metric_2": 68.7,
+        "avg_turns": 14.74
+      },
+      "hyperparameters": {
+        "prompt_sections": {
+          "section_a": "You are the Airline Virtual Service Assistant...",
+          "section_b": "Scope of Support: You are able to assist...",
+          "section_c": "You should use all available information..."
+        }
+      }
+    },
+    {
+      "id": "config_iteration_49",
+      "name": "Iteration 49",
+      "iteration": 49,
+      "model": {
+        "provider": "anthropic",
+        "model": "claude-3-5-sonnet"
+      },
+      "metrics": {
+        "overall_score": 89.80,
+        "custom_metric_1": 81.5,
+        "custom_metric_2": 24.5,
+        "avg_turns": 6.33
+      },
+      "hyperparameters": {
+        "prompt_sections": {
+          "section_a": "Role: You are X Airlines' AI Customer Support Assistant...",
+          "section_b": "What You Can Support: You assist passengers with itinerary-related...",
+          "section_c": "Truth Hierarchy (Use in This Order): 1. Tool outputs..."
+        }
+      },
+      "diff_from_baseline": {
+        "section_a": {"additions": 15, "deletions": 6},
+        "section_b": {"additions": 17, "deletions": 6},
+        "section_c": {"additions": 15, "deletions": 4}
+      }
+    }
+  ]
+}
+```
+
+**Example**
+
+```bash
+curl -X POST https://backend.lucidic.ai/v1/evosims/evosim_xyz789/compare \
+  -H "Authorization: Bearer $LUCIDIC_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "config_ids": ["config_baseline", "config_iteration_49"]
+  }'
+```
+
+---
+
+## Error Responses
+
+All endpoints may return the following error responses:
+
+### 400 Bad Request
+
+```json
+{
+  "error": {
+    "type": "invalid_request_error",
+    "message": "Invalid hyperparameters configuration",
+    "param": "hyperparameters.prompts",
+    "code": "invalid_param"
+  }
+}
+```
+
+### 401 Unauthorized
+
+```json
+{
+  "error": {
+    "type": "authentication_error",
+    "message": "Invalid API key provided",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+### 404 Not Found
+
+```json
+{
+  "error": {
+    "type": "not_found_error",
+    "message": "Evolutionary simulation not found",
+    "param": "evosim_id",
+    "code": "resource_not_found"
+  }
+}
+```
+
+### 429 Rate Limited
+
+```json
+{
+  "error": {
+    "type": "rate_limit_error",
+    "message": "Rate limit exceeded. Please retry after 60 seconds.",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": {
+    "type": "api_error",
+    "message": "An unexpected error occurred",
+    "code": "internal_error"
+  }
+}
+```
+
+---
+
+## Rate Limits
+
+| Endpoint | Rate Limit |
+|----------|------------|
+| POST /evosims | 10 requests/minute |
+| GET endpoints | 60 requests/minute |
+| POST /run, /stop | 10 requests/minute |
+| POST /compare | 30 requests/minute |
+
+---
+
+> **Note:** These API endpoints are accessed through the Lucidic SDKs, which handle authentication and request formatting automatically.

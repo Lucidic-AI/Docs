@@ -1,5 +1,5 @@
 ---
-title: set_active_session
+title: sessions.set_active
 description: Manually set the active session id for the current context
 ---
 
@@ -10,7 +10,7 @@ Manually sets the active session id for the current thread/async context. Prefer
 ## Syntax
 
 ```python
-lai.set_active_session(session_id: Optional[str]) -> None
+client.sessions.set_active(session_id: Optional[str]) -> None
 ```
 
 ## Parameters
@@ -20,17 +20,19 @@ lai.set_active_session(session_id: Optional[str]) -> None
 ## Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-sid = lai.init(session_name="manual", providers=["openai"], auto_end=True)
-lai.set_active_session(sid)
+client = LucidicAI(api_key="...", providers=["openai"])
+
+session_id = client.sessions.create(session_name="manual", auto_end=False)
+client.sessions.set_active(session_id)
 # ... work ...
-lai.clear_active_session()
-lai.end_session()
+client.sessions.clear_active()
+client.sessions.end()
 ```
 
 ## See Also
 
-- [`clear_active_session`](/python-sdk/context/clear_active_session)
-- [`session`](/python-sdk/context/session)
+- [`sessions.clear_active`](/python-sdk/context/clear_active_session)
+- [`sessions.create`](/python-sdk/context/session)
 

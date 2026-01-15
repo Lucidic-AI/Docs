@@ -11,24 +11,25 @@ Lucidic makes it easy to **automatically track PydanticAI agent completions** as
 
 ## How It Works
 
-When you set:
+When you initialize with:
 
 ```python
-lai.init(..., providers=["pydantic_ai"])
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["pydantic_ai"])
 ```
 
 Lucidic will:
 
 - **Instrument** PydanticAI's model classes using OpenTelemetry
-- **Automatically create events** for each agent call - no manual event creation needed
-- Attach the call to the currently active Step (or auto-create one if none exists)
+- **Automatically create events** for each agent call
+- Track events within the currently active **Session**
 - Support all PydanticAI model types (OpenAI, Anthropic, Gemini, Groq, etc.)
 
 This means:
 
-- You don't need to call `create_event()` or `end_event()` manually
 - You get full observability into prompts, model, cost, result, and more — out of the box
-- Even if you forget to create a step, Lucidic handles it automatically
+- No manual event creation needed
 
 ---
 
@@ -49,7 +50,7 @@ Each PydanticAI call is tracked with:
 PydanticAI agent calls are a core part of most AI workflows — but without visibility, it's impossible to debug or optimize:
 
 - Which call caused the failure?
-- Which step was it part of?
+- Which session was it part of?
 - How much did it cost?
 - What was the actual response?
 
@@ -60,78 +61,86 @@ This integration gives you full transparency, with **zero boilerplate**.
 ## Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from pydantic_ai import Agent
 import asyncio
 
-# Just initialize - that's it!
-lai.init(providers=["pydantic_ai"])
+# Initialize clients
+client = LucidicAI(api_key="...", providers=["pydantic_ai"])
 
 agent = Agent()  # Uses default model
 
-# Steps and events are automatically created
 async def run():
-    response = await agent.run("Hello!")
-    return response
+    with client.sessions.create(session_name="pydantic_ai_demo"):
+        # LLM calls are automatically tracked as events
+        response = await agent.run("Hello!")
+        return response
 
 asyncio.run(run())
-
-# Session auto-ends when script exits
+# Session auto-ends when context exits
 ```
 
 ### Streaming Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from pydantic_ai import Agent
 import asyncio
 
-lai.init(providers=["pydantic_ai"])
+client = LucidicAI(api_key="...", providers=["pydantic_ai"])
 
 agent = Agent()
 
 async def stream_example():
-    # Streaming responses are also tracked automatically
-    async with agent.run_stream("Tell me a story") as response:
-        async for text in response.stream():
-            print(text, end="")
+    with client.sessions.create(session_name="streaming_demo"):
+        # Streaming responses are also tracked automatically
+        async with agent.run_stream("Tell me a story") as response:
+            async for text in response.stream():
+                print(text, end="")
 
 asyncio.run(stream_example())
 ```
 
-### Explicit Step Management
+### With Custom Model
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 from pydantic_ai import Agent
 from pydantic_ai.models.anthropic import AnthropicModel
 import asyncio
 
-lai.init(
-    session_name="pydantic_ai_research",
-    providers=["pydantic_ai"]  # API key and agent ID from env vars
-)
+client = LucidicAI(api_key="...", providers=["pydantic_ai"])
 
 model = AnthropicModel("claude-3-5-sonnet-20241022")
 agent = Agent(model=model, system_prompt="You are a research assistant.")
 
-lai.create_step(state="Research", goal="Generate research ideas")
+@client.event()
+async def generate_ideas(topic: str) -> str:
+    """Generate research ideas - tracked as a Function Call event."""
+    response = await agent.run(f"What are 5 research ideas about {topic}?")
+    return response.data
 
-# All agent calls are automatically tracked as events within this step
+@client.event()
+async def analyze_methodology(ideas: str) -> str:
+    """Analyze methodology - tracked as a Function Call event."""
+    response = await agent.run(f"What methodologies could be used for each idea? {ideas}")
+    return response.data
+
 async def research():
-    response1 = await agent.run(
-        "What are 5 research ideas about climate change?"
-    )
-    
-    response2 = await agent.run(
-        "What methodologies could be used for each idea?"
-    )
-    
-    return response1, response2
+    with client.sessions.create(session_name="research_session"):
+        ideas = await generate_ideas("climate change")
+        analysis = await analyze_methodology(ideas)
+        return analysis
 
-responses = asyncio.run(research())
+result = asyncio.run(research())
+print(result)
 
-lai.end_step()
+# Event hierarchy:
+# Session
+# └── Event: generate_ideas (Function Call)
+#     └── Event: Claude call (LLM Generation)
+# └── Event: analyze_methodology (Function Call)
+#     └── Event: Claude call (LLM Generation)
 ```
 
 ---
@@ -140,8 +149,14 @@ lai.end_step()
 
 - All PydanticAI model types are instrumented (OpenAI, Anthropic, Gemini, Groq, etc.)
 - Both sync and async agent runs are supported
-- If no step exists when an agent call is made, Lucidic automatically creates one
+- Events are automatically nested within decorated functions
 - Streaming responses are tracked automatically
-- You can always add custom events using `create_event()` for additional context
+- You can always add custom events using `client.events.emit()` for additional context
 
 ---
+
+## See Also
+
+- [Event Management](/python-sdk/events/index) - Overview of events
+- [Decorators](/python-sdk/decorators) - Automatic function tracking
+- [Examples](/python-sdk/examples) - More usage patterns

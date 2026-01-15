@@ -1,16 +1,16 @@
 ---
-title: run_in_session
+title: sessions.run_in
 description: Run a function inside an existing session context
 ---
 
 ## Overview
 
-`run_in_session` binds the given session id, executes your function, and preserves the session (does not end it).
+`sessions.run_in()` binds the given session id, executes your function, and preserves the session (does not end it).
 
 ## Syntax
 
 ```python
-result = lai.run_in_session(
+result = client.sessions.run_in(
   session_id: str,
   fn: Callable[..., T],
   *args,
@@ -31,18 +31,20 @@ Returns whatever `fn` returns.
 ## Example
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-sid = lai.init(session_name="external", providers=["openai"], auto_end=False)
+client = LucidicAI(api_key="...", providers=["openai"])
+
+session_id = client.sessions.create(session_name="external", auto_end=False)
 
 def do_work(x: int) -> int:
     return x + 10
 
-result = lai.run_in_session(sid, do_work, x=7)
+result = client.sessions.run_in(session_id, do_work, x=7)
 ```
 
 ## See Also
 
-- [`run_session`](/python-sdk/context/run_session)
-- [`bind_session`](/python-sdk/context/bind_session)
+- [`sessions.run`](/python-sdk/context/run_session)
+- [`sessions.bind`](/python-sdk/context/bind_session)
 

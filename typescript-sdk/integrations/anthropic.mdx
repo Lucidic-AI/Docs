@@ -23,18 +23,27 @@ When you initialize with `instrumentModules: { anthropic: Anthropic }`:
 ## Setup
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
 import { Anthropic } from '@anthropic-ai/sdk';
 
 // Initialize with manual instrumentation (ESM-friendly)
-await lai.init({
-  sessionName: 'Claude Demo',
-  instrumentModules: { anthropic: Anthropic }
+const client = new LucidicAI({
+    apiKey: '...',
+    instrumentModules: { anthropic: Anthropic }
 });
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic();
 
-// All calls are now automatically tracked!
+// Use context manager for session lifecycle
+await client.sessions.create({ sessionName: 'Claude Demo' }, async () => {
+    // All calls are now automatically tracked!
+    const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: 'Hello Claude!' }]
+    });
+});
+// Session auto-ends when callback completes
 ```
 
 ---
@@ -60,26 +69,28 @@ Due to a limitation in the `@traceloop/instrumentation-anthropic` library, strea
 **Workaround for streaming:**
 
 ```typescript
-const stream = await anthropic.messages.create({
-  model: 'claude-3-haiku-20240307',
-  messages: [{ role: 'user', content: 'Tell me a story' }],
-  stream: true,
-  max_tokens: 1000
-});
+await client.sessions.create({ sessionName: 'Streaming' }, async () => {
+    const stream = await anthropic.messages.create({
+        model: 'claude-3-haiku-20240307',
+        messages: [{ role: 'user', content: 'Tell me a story' }],
+        stream: true,
+        max_tokens: 1000
+    });
 
-let fullContent = '';
-for await (const event of stream) {
-  if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-    fullContent += event.delta.text;
-    process.stdout.write(event.delta.text);
-  }
-}
+    let fullContent = '';
+    for await (const event of stream) {
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+            fullContent += event.delta.text;
+            process.stdout.write(event.delta.text);
+        }
+    }
 
-// Manually create event with full content
-await lai.createEvent({
-  description: 'Claude streaming response',
-  result: fullContent,
-  model: 'claude-3-haiku-20240307'
+    // Manually create event with full content
+    await client.events.create({
+        name: 'Claude streaming response',
+        output: { content: fullContent },
+        model: 'claude-3-haiku-20240307'
+    });
 });
 ```
 
@@ -90,82 +101,90 @@ await lai.createEvent({
 ### Basic Message
 
 ```typescript
-const response = await anthropic.messages.create({
-  model: 'claude-3-5-sonnet-20241022',
-  max_tokens: 1000,
-  messages: [{
-    role: 'user',
-    content: 'What are the key principles of good software design?'
-  }]
-});
+await client.sessions.create({ sessionName: 'Basic' }, async () => {
+    const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1000,
+        messages: [{
+            role: 'user',
+            content: 'What are the key principles of good software design?'
+        }]
+    });
 
-// Automatically tracked with:
-// - Model: claude-3-5-sonnet-20241022
-// - Token usage
-// - Cost calculation
-// - Full response
+    // Automatically tracked with:
+    // - Model: claude-3-5-sonnet-20241022
+    // - Token usage
+    // - Cost calculation
+    // - Full response
+});
 ```
 
 ### With System Prompt
 
 ```typescript
-const response = await anthropic.messages.create({
-  model: 'claude-3-opus-20240229',
-  system: 'You are an expert TypeScript developer.',
-  max_tokens: 2000,
-  messages: [{
-    role: 'user',
-    content: 'How do I implement dependency injection in TypeScript?'
-  }]
-});
+await client.sessions.create({ sessionName: 'System Prompt' }, async () => {
+    const response = await anthropic.messages.create({
+        model: 'claude-3-opus-20240229',
+        system: 'You are an expert TypeScript developer.',
+        max_tokens: 2000,
+        messages: [{
+            role: 'user',
+            content: 'How do I implement dependency injection in TypeScript?'
+        }]
+    });
 
-// System prompt is captured in the event
+    // System prompt is captured in the event
+});
 ```
 
 ### Vision Requests
 
 ```typescript
-const response = await anthropic.messages.create({
-  model: 'claude-3-5-sonnet-20241022',
-  max_tokens: 1024,
-  messages: [{
-    role: 'user',
-    content: [
-      {
-        type: 'text',
-        text: 'What is in this image?'
-      },
-      {
-        type: 'image',
-        source: {
-          type: 'base64',
-          media_type: 'image/jpeg',
-          data: '/9j/4AAQSkZJRg...'
-        }
-      }
-    ]
-  }]
-});
+await client.sessions.create({ sessionName: 'Vision' }, async () => {
+    const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1024,
+        messages: [{
+            role: 'user',
+            content: [
+                {
+                    type: 'text',
+                    text: 'What is in this image?'
+                },
+                {
+                    type: 'image',
+                    source: {
+                        type: 'base64',
+                        media_type: 'image/jpeg',
+                        data: '/9j/4AAQSkZJRg...'
+                    }
+                }
+            ]
+        }]
+    });
 
-// Images are automatically tracked
+    // Images are automatically tracked
+});
 ```
 
 ### Multi-turn Conversation
 
 ```typescript
-const messages = [
-  { role: 'user', content: 'What is TypeScript?' },
-  { role: 'assistant', content: 'TypeScript is a typed superset of JavaScript...' },
-  { role: 'user', content: 'What are its main benefits?' }
-];
+await client.sessions.create({ sessionName: 'Conversation' }, async () => {
+    const messages = [
+        { role: 'user', content: 'What is TypeScript?' },
+        { role: 'assistant', content: 'TypeScript is a typed superset of JavaScript...' },
+        { role: 'user', content: 'What are its main benefits?' }
+    ];
 
-const response = await anthropic.messages.create({
-  model: 'claude-3-5-sonnet-20241022',
-  max_tokens: 1500,
-  messages: messages
+    const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1500,
+        messages: messages
+    });
+
+    // Full conversation context is tracked
 });
-
-// Full conversation context is tracked
 ```
 
 ---
@@ -173,16 +192,19 @@ const response = await anthropic.messages.create({
 ## Minimal Example
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
 import { Anthropic } from '@anthropic-ai/sdk';
 
-// Just these 3 lines for full tracking!
-await lai.init({ instrumentModules: { anthropic: Anthropic } });
+// Just these lines for full tracking!
+const client = new LucidicAI({ instrumentModules: { anthropic: Anthropic } });
 const anthropic = new Anthropic();
-const response = await anthropic.messages.create({
-  model: 'claude-3-5-sonnet-20241022',
-  messages: [{ role: 'user', content: 'Hello Claude!' }],
-  max_tokens: 100
+
+await client.sessions.create({ sessionName: 'Minimal' }, async () => {
+    const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        messages: [{ role: 'user', content: 'Hello Claude!' }],
+        max_tokens: 100
+    });
 });
 
 // That's it! Check your dashboard for the tracked event
@@ -210,58 +232,70 @@ Costs are automatically calculated and attached to each event.
 ### Temperature and Other Parameters
 
 ```typescript
-const response = await anthropic.messages.create({
-  model: 'claude-3-5-sonnet-20241022',
-  max_tokens: 2000,
-  temperature: 0.7,
-  top_p: 0.9,
-  messages: [{
-    role: 'user',
-    content: 'Write a creative story about AI'
-  }]
-});
+await client.sessions.create({ sessionName: 'Creative' }, async () => {
+    const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 2000,
+        temperature: 0.7,
+        top_p: 0.9,
+        messages: [{
+            role: 'user',
+            content: 'Write a creative story about AI'
+        }]
+    });
 
-// All parameters are tracked
+    // All parameters are tracked
+});
 ```
 
 ### Error Handling
 
 ```typescript
-try {
-  const response = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
-    max_tokens: 100000, // Too high
-    messages: [{ role: 'user', content: 'Hello!' }]
-  });
-} catch (error) {
-  // Errors are tracked as events
-  if (error.status === 400) {
-    console.error('Invalid request:', error.message);
-  }
-}
+await client.sessions.create({ sessionName: 'Error Handling' }, async () => {
+    try {
+        const response = await anthropic.messages.create({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 100000, // Too high
+            messages: [{ role: 'user', content: 'Hello!' }]
+        });
+    } catch (error) {
+        // Errors are tracked as events
+        if (error.status === 400) {
+            console.error('Invalid request:', error.message);
+        }
+    }
+});
 ```
 
-### Using with Steps
+### Document Analysis Workflow
 
 ```typescript
-// Create a step for complex workflows
-await lai.createStep({
-  state: 'Document analysis',
-  action: 'Extracting key information',
-  goal: 'Summarize technical document'
-});
+await client.sessions.create({
+    sessionName: 'Document Analysis',
+    task: 'Summarize technical document'
+}, async () => {
+    // Track the analysis
+    client.events.emit({
+        name: 'Starting document analysis',
+        input: { documentLength: longDocument.length }
+    });
 
-const response = await anthropic.messages.create({
-  model: 'claude-3-5-sonnet-20241022',
-  system: 'You are a technical document analyzer.',
-  max_tokens: 3000,
-  messages: [{
-    role: 'user',
-    content: longDocument
-  }]
-});
+    const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        system: 'You are a technical document analyzer.',
+        max_tokens: 3000,
+        messages: [{
+            role: 'user',
+            content: longDocument
+        }]
+    });
 
-await lai.endStep({ evalScore: 95, evalDescription: 'Successfully extracted key points' });
+    // Update session with success
+    await client.sessions.update({
+        isSuccessful: true,
+        isSuccessfulReason: 'Successfully extracted key points'
+    });
+});
 ```
 
 ---
@@ -270,7 +304,7 @@ await lai.endStep({ evalScore: 95, evalDescription: 'Successfully extracted key 
 
 ### Events Not Appearing
 
-1. **Check import order** - Anthropic must be imported AFTER `lai.init()`
+1. **Check import order** - Anthropic must be imported AFTER creating the LucidicAI client
 2. **Verify initialization** - Ensure `instrumentModules` included the Anthropic module
 
 ### Streaming Content Missing
@@ -283,10 +317,12 @@ For fine-tuned or custom models:
 
 ```typescript
 // The SDK will attempt to match the base model for pricing
-const response = await anthropic.messages.create({
-  model: 'claude-3-5-sonnet-20241022-custom',
-  messages: [{ role: 'user', content: 'Test' }],
-  max_tokens: 100
+await client.sessions.create({ sessionName: 'Custom Model' }, async () => {
+    const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022-custom',
+        messages: [{ role: 'user', content: 'Test' }],
+        max_tokens: 100
+    });
 });
 ```
 

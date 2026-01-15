@@ -50,51 +50,53 @@ You’ll need an API key to authenticate your SDK.
 
 ---
 
-## 5. Plug Into Python
+## 5. Plug Into Your Code
 
-Once you’ve got:
+Once you've got:
 
 - **API Key**
 - **Agent ID**
 
-You’re ready to run sessions from code.
+You're ready to run sessions from code.
 
-Paste them into:
+### Python
 
 ```python
-lai.init(
+from lucidicai import LucidicAI
+
+client = LucidicAI(
     api_key="your-api-key",
-    agent_id="your-agent-id"
+    agent_id="your-agent-id",
+    providers=["openai"]
 )
+
+with client.sessions.create(session_name="My Session"):
+    # Your workflow here
+    pass
 ```
 
-Or set them as environment variables:
+### TypeScript
+
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({
+    apiKey: 'your-api-key',
+    agentId: 'your-agent-id',
+    providers: ['openai']
+});
+
+await client.sessions.create({ sessionName: 'My Session' }, async () => {
+    // Your workflow here
+});
+```
+
+Or set credentials as environment variables:
 
 ```bash
 export LUCIDIC_API_KEY="your-api-key"
 export LUCIDIC_AGENT_ID="your-agent-id"
 ```
-
----
-
-## 6. (Optional) Create a Mass Simulation
-
-If you want to run many sessions as part of a single evaluation:
-
-- Go to the **"Mass Sims"** tab inside your Agent
-
-- Click **"New Mass Simulation"** on the top right of the table
-- Copy the **Mass Sim ID** into your SDK:
-
-```python
-# assuming environment variables are set
-lai.init(
-    mass_sim_id="abc123"
-)
-```
-
-This will link that run to your high-level simulation — perfect for testing prompt changes, model swaps, or behavior analysis at scale.
-To learn more about mass simulations, see [Mass Simulations](/features/mass-simulations). To learn more about creation of mass simulations, see [Creating a Mass Simulation](/getting-started/masssim).
 
 ---
 

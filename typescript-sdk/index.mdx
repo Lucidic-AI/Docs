@@ -5,7 +5,7 @@ description: 'Complete reference for all Lucidic TypeScript SDK functions'
 
 ## Overview
 
-The Lucidic TypeScript SDK provides a comprehensive set of functions to track, monitor, and analyze AI agent workflows. These functions handle session management, step tracking, event logging, and integration with various LLM providers.
+The Lucidic TypeScript SDK provides a comprehensive set of functions to track, monitor, and analyze AI agent workflows. These functions handle session management, event tracking, and integration with various LLM providers.
 
 ## Installation
 
@@ -16,33 +16,37 @@ npm install lucidicai
 ## Quick Start
 
 ```typescript
-import * as lai from 'lucidicai';
+import { LucidicAI } from 'lucidicai';
 import OpenAI from 'openai';
 
-// Initialize a session (manual instrumentation recommended for ESM)
-await lai.init({
-  sessionName: "My AI Agent",
-  instrumentModules: { OpenAI }
+// Initialize client with provider
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+// Use context manager for session lifecycle
+await client.sessions.create({ sessionName: 'My AI Agent' }, async () => {
+    const openai = new OpenAI();
+
+    // LLM calls are automatically tracked as events
+    const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: 'Hello!' }]
+    });
+
+    // Manual events for custom operations
+    client.events.emit({
+        name: 'Custom operation',
+        input: { key: 'value' },
+        output: { result: 'success' }
+    });
 });
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-// Create a step  
-await lai.createStep();
-
-// Your AI operations are automatically tracked
-// ...
-
-// End the step and session when appropriate
-await lai.endStep();
-await lai.endSession();
+// Session auto-ends when callback completes
 ```
 
 ## Session Management
 
 <CardGroup cols={2}>
-  <Card title="init" icon="play" href="/typescript-sdk/init">
-    Initialize the SDK and optionally create a session
+  <Card title="init / sessions.create" icon="play" href="/typescript-sdk/init">
+    Initialize the SDK and create sessions
   </Card>
   <Card title="Session Context" icon="layer-group" href="/typescript-sdk/session-context">
     Async-safe session context for concurrent backends
@@ -55,28 +59,17 @@ await lai.endSession();
   </Card>
 </CardGroup>
 
-## Step Management
-
-<CardGroup cols={2}>
-  <Card title="createStep" icon="plus" href="/typescript-sdk/create-step">
-    Create a new step in the workflow
-  </Card>
-  <Card title="updateStep" icon="pen" href="/typescript-sdk/update-step">
-    Update an existing step
-  </Card>
-  <Card title="endStep" icon="check" href="/typescript-sdk/end-step">
-    End the current step
-  </Card>
-</CardGroup>
-
 ## Event Management
 
 <CardGroup cols={2}>
-  <Card title="createEvent" icon="bolt" href="/typescript-sdk/create-event">
-    Create a new event within a step
+  <Card title="events.create" icon="plus" href="/typescript-sdk/events/create">
+    Create events synchronously or asynchronously
   </Card>
-  <Card title="updateEvent" icon="pen" href="/typescript-sdk/update-event">
-    Update an existing event
+  <Card title="events.emit" icon="bolt" href="/typescript-sdk/events/emit">
+    Zero-latency background event emission
+  </Card>
+  <Card title="Event Overview" icon="list" href="/typescript-sdk/events/index">
+    Overview of event management
   </Card>
 </CardGroup>
 
@@ -86,70 +79,77 @@ await lai.endSession();
   <Card title="getPrompt" icon="message" href="/typescript-sdk/get-prompt">
     Retrieve prompts from the platform
   </Card>
+  <Card title="Datasets" icon="database" href="/typescript-sdk/datasets">
+    Work with test datasets
+  </Card>
+  <Card title="Experiments" icon="flask" href="/typescript-sdk/working-with-experiments">
+    Work with experiments
+  </Card>
 </CardGroup>
 
 ## Function Categories
 
 ### Session Lifecycle
 
-1. **Initialization**: Use `init()` to initialize SDK and optionally start a session
-2. **Continuation**: To resume an existing session, call `init({ sessionId })`
-3. **Updates**: Modify session data with `updateSession()`
-4. **Completion**: End with `endSession()` including success status
-
-### Step Management
-
-1. **Creation**: Use `createStep()` to begin tracking a unit of work
-2. **Updates**: Update step data with `updateStep()`
-3. **Completion**: Finish with `endStep()` including evaluation
-4. **Self-contained tasks**: Prefer `withLucidic` for workflows that should end automatically (see [Session Context](/typescript-sdk/session-context))
+1. **Initialization**: Create a `LucidicAI` client and use `client.sessions.create()` to start sessions
+2. **Continuation**: To resume an existing session, pass `sessionId` to `sessions.create()`
+3. **Updates**: Modify session data with `client.sessions.update()`
+4. **Completion**: Sessions auto-end with context managers, or call `client.sessions.end()` explicitly
 
 ### Event Tracking
 
 1. **Automatic**: LLM calls through instrumented providers create events automatically
-2. **Manual**: Use `createEvent()` for custom events
-3. **Updates**: Modify events with `updateEvent()`
+2. **Manual Sync**: Use `client.events.create()` for custom events
+3. **Zero-Latency**: Use `client.events.emit()` for hot paths
 
 ### Utilities
 
-1. **Prompts**: Centralized prompt management with `getPrompt()`
-2. **Context**: Async-safe session scoping via `withSession`, `withLucidic`, `setActiveSession`, `clearActiveSession`
+1. **Prompts**: Centralized prompt management with `client.prompts.get()`
+2. **Context**: Async-safe session scoping via context managers
 
 ## Provider Support
 
-The SDK instruments providers via `instrumentModules` in `init()`:
+The SDK instruments providers when specified in the `providers` array:
 
-- **OpenAI** - `instrumentModules: { OpenAI }`
-- **Anthropic** - `instrumentModules: { anthropic: Anthropic }`
-- **LangChain** - `instrumentModules: { langchain: LangChain }`
+- **OpenAI** - `providers: ['openai']`
+- **Anthropic** - `providers: ['anthropic']`
+- **Vercel AI SDK** - `providers: ['vercel-ai']`
 
-## Key Differences from Python SDK
+For ESM/Next.js, you can also pass module references via `instrumentModules`:
 
-1. **Async by Default**: All functions return Promises and must be awaited
-2. **Import Order**: Providers must be imported AFTER `init()` for instrumentation
-3. **Named Parameters**: Functions use object parameters for better TypeScript support
-4. **No Decorators**: Function-based API only (decorators exist but not recommended)
+```typescript
+import OpenAI from 'openai';
+import { Anthropic } from '@anthropic-ai/sdk';
+
+const client = new LucidicAI({
+    apiKey: '...',
+    instrumentModules: { OpenAI, anthropic: Anthropic }
+});
+```
 
 ## Best Practices
 
-1. **Prefer withLucidic for self-sufficient workflows**: It handles init → context → end automatically
-2. **Always Initialize First**: Call `await lai.init()` before any other operations
-3. **Import Order Matters**: Import LLM providers AFTER initialization
-4. **Use Named Parameters**: TypeScript's object syntax provides better IDE support
-5. **Handle Promises**: Always await async operations or handle Promise chains
-6. **Type Safety**: Leverage TypeScript's type system for better development experience
+1. **Prefer Context Managers**: Use `client.sessions.create()` with a callback for automatic cleanup
+2. **Use `.emit()` for Hot Paths**: Zero-latency tracking for high-frequency events
+3. **Always Initialize First**: Create the client before any SDK operations
+4. **Handle Promises**: Always await async operations
+5. **Type Safety**: Leverage TypeScript's type system for better development experience
 
 ## Error Handling
 
 ```typescript
-import { APIError } from 'lucidicai';
+import { LucidicAI, APIError } from 'lucidicai';
 
 try {
-  await lai.init({ sessionName: "My Session" });
+    const client = new LucidicAI({ apiKey: '...' });
+
+    await client.sessions.create({ sessionName: 'My Session' }, async () => {
+        // Your workflow
+    });
 } catch (error) {
-  if (error instanceof APIError) {
-    console.error("API key verification failed:", error.message);
-  }
+    if (error instanceof APIError) {
+        console.error('API error:', error.message);
+    }
 }
 ```
 
@@ -157,6 +157,7 @@ try {
 
 - `LUCIDIC_API_KEY` - Your API key for authentication
 - `LUCIDIC_AGENT_ID` - Your agent identifier
+- `LUCIDIC_PRODUCTION_MONITORING` - Enable production mode
 
 ## See Also
 

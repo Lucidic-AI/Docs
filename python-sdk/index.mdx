@@ -5,7 +5,7 @@ description: 'Complete reference for all Lucidic Python SDK functions'
 
 ## Overview
 
-The Lucidic Python SDK provides a comprehensive set of functions to track, monitor, and analyze AI agent workflows. These functions handle session management, step tracking, event logging, and integration with various LLM providers.
+The Lucidic Python SDK provides a comprehensive set of functions to track, monitor, and analyze AI agent workflows. These functions handle session management, event tracking, and integration with various LLM providers.
 
 ## Installation
 
@@ -16,36 +16,31 @@ pip install lucidicai
 ## Quick Start
 
 ```python
-import lucidicai as lai
+from lucidicai import LucidicAI
 
-# Initialize a session
-lai.init(session_name="My AI Agent", providers=["openai"])
+# Initialize client
+client = LucidicAI(api_key="...", providers=["openai"])
 
-# Create a step
-lai.create_step(state="Processing", action="Generate response")
+# Use context manager for session lifecycle
+with client.sessions.create(session_name="My AI Agent"):
+    # LLM calls are automatically tracked as events
+    response = openai.chat.completions.create(...)
 
-# Your AI operations are automatically tracked
-# ...
-
-# End the step and session
-lai.end_step()
-lai.end_session()
-
-# Recommended: self-contained session using a context manager
-with lai.session(session_name="My AI Agent 2", providers=["openai"]):
-    # Your AI operations are automatically tracked
-    lai.create_step()
-    # ... your logic ...
-    lai.end_step()
+    # Manual events for custom operations
+    client.events.emit(
+        name="Custom operation",
+        input={"key": "value"},
+        output={"result": "success"}
+    )
 ```
 
 ## Session Management
 
 <CardGroup cols={2}>
-  <Card title="init" icon="play" href="/python-sdk/init">
+  <Card title="init / sessions.create" icon="play" href="/python-sdk/init">
     Initialize a new Lucidic session
   </Card>
-  <Card title="end_session" icon="stop" href="/python-sdk/end_session">
+  <Card title="end_session / sessions.end" icon="stop" href="/python-sdk/end_session">
     End the current session
   </Card>
   <Card title="update_session" icon="pen" href="/python-sdk/update_session">
@@ -56,31 +51,20 @@ with lai.session(session_name="My AI Agent 2", providers=["openai"]):
   </Card>
 </CardGroup>
 
-## Step Management
-
-<CardGroup cols={2}>
-  <Card title="create_step" icon="plus" href="/python-sdk/create_step">
-    Create a new step in the workflow
-  </Card>
-  <Card title="update_step" icon="pen" href="/python-sdk/update_step">
-    Update an existing step
-  </Card>
-  <Card title="end_step" icon="check" href="/python-sdk/end_step">
-    End the current step
-  </Card>
-</CardGroup>
-
 ## Event Management
 
 <CardGroup cols={2}>
-  <Card title="create_event" icon="bolt" href="/python-sdk/create_event">
-    Create a new event within a step
+  <Card title="events.create / acreate" icon="plus" href="/python-sdk/events/create">
+    Create events synchronously or asynchronously
   </Card>
-  <Card title="update_event" icon="pen" href="/python-sdk/update_event">
-    Update an existing event
+  <Card title="events.emit" icon="bolt" href="/python-sdk/events/emit">
+    Zero-latency background event emission
   </Card>
-  <Card title="end_event" icon="flag-checkered" href="/python-sdk/end_event">
-    End an event
+  <Card title="@client.event()" icon="at" href="/python-sdk/events/decorator">
+    Decorator for automatic function call tracking
+  </Card>
+  <Card title="Event Overview" icon="list" href="/python-sdk/events/index">
+    Overview of event management
   </Card>
 </CardGroup>
 
@@ -90,19 +74,19 @@ with lai.session(session_name="My AI Agent 2", providers=["openai"]):
   <Card title="get_prompt" icon="message" href="/python-sdk/get_prompt">
     Retrieve prompts from the database
   </Card>
-  <Card title="create_mass_sim" icon="layer-group" href="/python-sdk/create_mass_sim">
-    Create a mass simulation
+  <Card title="Datasets" icon="database" href="/python-sdk/datasets">
+    Work with test datasets
+  </Card>
+  <Card title="Experiments" icon="flask" href="/python-sdk/working-with-experiments">
+    Work with experiments
   </Card>
 </CardGroup>
 
 ## Decorators
 
 <CardGroup cols={2}>
-  <Card title="@step" icon="at" href="/python-sdk/decorators#the-step-decorator">
-    Automatically wrap functions with step tracking
-  </Card>
-  <Card title="@event" icon="at" href="/python-sdk/decorators#the-event-decorator">
-    Create events from function calls
+  <Card title="@client.event()" icon="at" href="/python-sdk/events/decorator">
+    Track function calls as events automatically
   </Card>
 </CardGroup>
 
@@ -139,33 +123,26 @@ with lai.session(session_name="My AI Agent 2", providers=["openai"]):
 
 ### Session Lifecycle
 
-1. **Initialization**: Use `init()` to start a new session or resume with `init(session_id=...)`
-2. **Updates**: Modify session data with `update_session()`
-3. **Completion**: End with `end_session()` including final evaluation
-
-### Step Management
-
-1. **Creation**: Use `create_step()` to begin tracking a unit of work
-2. **Progress**: Update step data with `update_step()`
-3. **Completion**: Finish with `end_step()` including evaluation
-4. **Decorators**: Use `@step` decorator for automatic management
+1. **Initialization**: Use `client.sessions.create()` to start a new session
+2. **Updates**: Modify session data with `client.sessions.update()` or `update_session()`
+3. **Completion**: End with `client.sessions.end()` including final evaluation
 
 ### Event Tracking
 
 1. **Automatic**: LLM calls through instrumented providers create events automatically
-2. **Manual**: Use `create_event()` for custom events
-3. **Updates**: Modify events with `update_event()` and `end_event()`
-4. **Decorators**: Use `@event` decorator for function-level tracking
+2. **Manual**: Use `client.events.create()` or `.emit()` for custom events
+3. **Decorators**: Use `@client.event()` for function-level tracking
 
 ### Utilities
 
-1. **Prompts**: Centralized prompt management with `get_prompt()`
-2. **Mass Simulations**: Batch operations with `create_mass_sim()`
+1. **Prompts**: Centralized prompt management with `client.prompts.get()`
+2. **Datasets**: Work with test datasets for systematic validation
 
 ### Context Managers
 
-Use these for async/thread-safe session handling, similar to the TypeScript SDK:
+Use these for async/thread-safe session handling:
 
+- `client.sessions.create(...)` — full lifecycle within a context manager
 - `session(...)` — full lifecycle within a context
 - `session_async(...)` — async variant
 - `bind_session(session_id)` — bind only (no end)
@@ -176,14 +153,9 @@ Use these for async/thread-safe session handling, similar to the TypeScript SDK:
 
 See the dedicated pages under Context Managers in the sidebar.
 
-### Decorators
-
-1. **@step**: Wrap functions with automatic step tracking
-2. **@event**: Create events from function calls automatically
-
 ## Provider Support
 
-The SDK automatically instruments these providers when specified in `init()`:
+The SDK automatically instruments these providers when specified:
 
 - **OpenAI** - `providers=["openai"]`
 - **Anthropic** - `providers=["anthropic"]`
@@ -198,11 +170,11 @@ The SDK automatically instruments these providers when specified in `init()`:
 
 ## Best Practices
 
-1. **Prefer Context Managers**: Use `with lai.session(...)` for self-sufficient workflows that start and end within one block
-2. **Bind Existing Sessions**: Use `with lai.bind_session(session_id)` to attribute work to an existing session without ending it
-3. **Concurrent Safety**: Rely on context-bound sessions instead of globals in multi-threaded/async code
-4. **Ensure Cleanup**: Context managers handle cleanup; otherwise call `lai.end_session()` explicitly when not using contexts
-5. **Evaluation Tracking**: Use `eval_score` and `eval_description` on steps where helpful; avoid manual overrides at scale
+1. **Prefer Context Managers**: Use `with client.sessions.create(...)` for self-sufficient workflows
+2. **Use `.emit()` for Hot Paths**: Zero-latency tracking for high-frequency events
+3. **Decorate Key Functions**: Use `@client.event()` for important operations
+4. **Concurrent Safety**: Rely on context-bound sessions instead of globals in multi-threaded/async code
+5. **Ensure Cleanup**: Context managers handle cleanup; otherwise call `client.sessions.end()` explicitly
 
 ## Error Handling
 
@@ -215,11 +187,13 @@ from lucidicai.errors import (
 )
 
 try:
-    lai.init(session_name="My Session")
+    client = LucidicAI(api_key="...")
+    with client.sessions.create(session_name="My Session"):
+        ...
 except APIKeyVerificationError:
     print("Check your API credentials")
 except InvalidOperationError:
-    print("Session already active")
+    print("Invalid operation")
 ```
 
 ## Environment Variables
@@ -231,6 +205,6 @@ except InvalidOperationError:
 
 ## See Also
 
-- [Getting Started Guide](/getting-started/python)
-- [Core Concepts](/core-concepts/sessions)
+- [Getting Started Guide](/getting-started/quickstart)
+- [Core Concepts](/feature-overview/sessions)
 - [Integration Examples](/integrations/openai)

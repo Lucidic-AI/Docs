@@ -1,0 +1,288 @@
+---
+title: Experiments
+description: Complete guide to creating, managing, and analyzing experiments in Lucidic. Group related sessions for bulk analysis with powerful analytics and insights.
+---
+
+# Experiments
+
+**Experiments** let you group related sessions together for bulk analysis, providing powerful analytics and insights across multiple agent runs.
+
+Instead of analyzing individual sessions, experiments help you **identify patterns, compare variants, and detect systematic issues** across many sessions at once.
+
+---
+
+## Why Use Experiments?
+
+Experiments help you:
+
+* Group sessions for systematic analysis
+* Run A/B tests with statistical validation
+* Track performance across model or prompt changes
+* Identify common failure patterns
+* Compare different configurations side-by-side
+* Establish performance baselines
+
+### Use Cases
+
+* **A/B Testing**: Compare different prompts, models, or configurations
+* **Regression Testing**: Validate changes don't break existing behavior
+* **Performance Benchmarking**: Establish and track performance metrics
+* **Failure Analysis**: Identify systematic issues across sessions
+* **Model Comparison**: Evaluate different LLM providers or versions
+
+---
+
+## Creating Experiments
+
+Experiments are created through the Lucidic Dashboard.
+
+### In the Dashboard
+
+1. **Navigate to Session History**
+   - Open your agent in the dashboard
+   - Click the "Session History" tab
+
+2. **Select Sessions** (Optional)
+   - Use checkboxes to select existing sessions to include
+   - Leave empty to create an empty experiment
+
+3. **Open Creation Dialog**
+   - Click the **"Create Experiment"** button
+   - Configure name, description, and tags
+
+### Adding Sessions via SDK
+
+<Tabs>
+  <Tab title="Python">
+```python
+from lucidicai import LucidicAI
+
+client = LucidicAI(api_key="...", providers=["openai"])
+
+# Add sessions to an experiment
+with client.sessions.create(
+    session_name="A/B Test - Variant A",
+    experiment_id="exp-id-from-dashboard",
+    tags=["variant:a", "version:2.0"]
+):
+    # Run your agent
+    result = run_agent()
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+import { LucidicAI } from 'lucidicai';
+
+const client = new LucidicAI({ apiKey: '...', providers: ['openai'] });
+
+await client.sessions.create({
+    sessionName: 'A/B Test - Variant A',
+    experimentId: 'exp-id-from-dashboard',
+    tags: ['variant:a', 'version:2.0']
+});
+
+// Run your agent
+const result = await runAgent();
+
+await client.sessions.end();
+```
+  </Tab>
+</Tabs>
+
+---
+
+## Experiment Dashboard
+
+After creation, access the experiment dashboard with comprehensive analytics.
+
+### Overview Section
+
+**Key Metrics**:
+- **Total Sessions**: Count of all sessions in the experiment
+- **Success Rate**: Percentage of sessions marked as successful
+- **Average Cost**: Mean cost per session
+- **Average Duration**: Mean execution time
+
+> _![Experiment Sessions View](/images/exp-sessions.png)_
+
+### Navigation Tabs
+
+1. **Sessions** - Detailed session list and management
+2. **Analytics** - Visualizations and insights
+3. **Failure Analysis** - Pattern detection and grouping
+4. **Rubric Results** - Evaluation outcomes
+
+---
+
+## Analytics Tab
+
+The Analytics tab provides rich visualizations of experiment data.
+
+> _![Experiment Analytics Dashboard](/images/exp-analytics.png)_
+
+### Completion Metrics
+
+**Success/Failure Distribution**
+- Pie chart showing session outcomes
+- Hover for exact counts
+- Click segments to filter session list
+
+### Cost Analysis
+
+**Cost Distribution Histogram**
+- Bell curve of session costs
+- Identifies outliers
+- Shows cost consistency
+
+**Cumulative Cost Over Time**
+- Track total spending
+- Project future costs
+- Identify cost spikes
+
+### Performance Metrics
+
+**Duration Trends**
+- Line graph of execution times
+- Identify performance degradation
+- Spot improvements from optimizations
+
+---
+
+## Failure Analysis
+
+One of the most powerful features for identifying systematic issues.
+
+### Running Analysis
+
+1. **Trigger Analysis**
+   - Click "Run Failure Analysis" button
+   - Confirms credit cost (1 credit per 10 sessions)
+
+2. **Processing**
+   - System analyzes all failed events
+   - Groups similar failures using AI
+   - Generates descriptive categories
+
+3. **Results Display**
+   - Shows failure groups with:
+     - Group name and icon
+     - Detailed description
+     - Number of occurrences
+     - Affected sessions list
+
+### Acting on Insights
+
+Use failure analysis to:
+1. **Prioritize Fixes** - Address most common issues first
+2. **Identify Root Causes** - Understand why failures occur
+3. **Track Improvements** - Re-run analysis after fixes
+4. **Prevent Regressions** - Monitor for returning issues
+
+---
+
+## Using Datasets with Experiments
+
+Datasets provide systematic test cases for experiments:
+
+<Tabs>
+  <Tab title="Python">
+```python
+# Get your dataset items
+dataset_items = client.datasets.get_items(dataset_id="validation_suite")
+
+# Run each test case as part of the experiment
+for item in dataset_items:
+    with client.sessions.create(
+        session_name=f"Dataset Test: {item['name']}",
+        experiment_id="exp-id-from-dashboard",
+        dataset_item_id=item['id'],
+        tags=["dataset_test", f"test_case:{item['name']}"]
+    ):
+        # Run your agent with the test input
+        result = run_agent(item['input'])
+
+        # Validate against expected output
+        if item.get('expected_output'):
+            success = validate(result, item['expected_output'])
+            client.sessions.end(is_successful=success)
+```
+  </Tab>
+  <Tab title="TypeScript">
+```typescript
+const datasetItems = await client.datasets.getItems({ datasetId: 'validation_suite' });
+
+for (const item of datasetItems) {
+    await client.sessions.create({
+        sessionName: `Dataset Test: ${item.name}`,
+        experimentId: 'exp-id-from-dashboard',
+        datasetItemId: item.id,
+        tags: ['dataset_test', `test_case:${item.name}`]
+    });
+
+    const result = await runAgent(item.input);
+
+    const success = item.expectedOutput
+        ? validate(result, item.expectedOutput)
+        : true;
+
+    await client.sessions.end({ isSuccessful: success });
+}
+```
+  </Tab>
+</Tabs>
+
+See [Datasets](/feature-overview/datasets) for more information on creating and managing test datasets.
+
+---
+
+## Evolutionary Simulations Integration
+
+Experiments are automatically created by [Evolutionary Simulations](/feature-overview/evolutionary-simulations) when testing different configurations:
+
+**How It Works**:
+1. Each configuration variation creates a separate experiment
+2. Results are automatically tracked and compared
+3. Statistical validation is performed across experiments
+4. The best configuration is identified based on your criteria
+
+See [Evolutionary Simulations](/feature-overview/evolutionary-simulations) for automated agent optimization.
+
+---
+
+## Best Practices
+
+### Experiment Design
+
+**Scope Definition**
+- One clear objective per experiment
+- Consistent test conditions
+- Adequate sample size (50+ sessions)
+
+**Naming Conventions**
+```
+[Type]_[Feature]_[Version]_[Date]
+Examples:
+- "ABTest_Login_v2.0_2024Q1"
+- "Regression_Checkout_Baseline"
+```
+
+### Session Management
+
+**Consistent Naming**
+- Use templates for session names
+- Include relevant identifiers
+- Make searchable
+
+**Proper Evaluation**
+- Set is_successful appropriately
+- Provide eval scores
+- Include failure reasons
+
+---
+
+## Related Features
+
+- [Rubrics](/feature-overview/rubrics) - Evaluation configuration
+- [Workflow Sandbox](/feature-overview/workflow-sandbox) - Visual debugging
+- [Datasets](/feature-overview/datasets) - Systematic test cases
+- [Evolutionary Simulations](/feature-overview/evolutionary-simulations) - Automated optimization
