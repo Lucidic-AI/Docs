@@ -99,6 +99,32 @@ Add and select which parameters to optimize using the Parameter Blocks.
 - Test arbitrary configuration values
 - Create complex parameter spaces
 
+**Context & Memory**
+
+Control what contextual data is available to your agent during optimization testing.
+
+<Frame>
+  <img src="/images/evolutionary-context-memory.png" alt="Context and Memory configuration showing categorized data sources" />
+</Frame>
+
+- Organize data sources into logical categories
+- Toggle individual data sources on/off within each category
+- Test how different context availability affects agent performance
+- Categories can include customer data, conversation history, policy information, and domain-specific knowledge bases
+
+**Examples**
+
+Provide input/output pairs as few-shot examples to guide agent behavior.
+
+<Frame>
+  <img src="/images/evolutionary-examples.png" alt="Examples configuration showing input/output pairs organized by scenario" />
+</Frame>
+
+- Organize examples by scenario type relevant to your domain
+- Each example includes a description and is tagged as "Input/Output pair"
+- Enable/disable specific examples to test behavior variations
+- Test how different example combinations affect agent responses
+
 ### Select Datasets
 
 Choose test datasets for consistent evaluation:
@@ -148,30 +174,105 @@ Set when the optimization should stop:
 
 ## Understanding Results
 
-### Best Configuration
+### Optimization Analytics
 
-The system identifies the optimal configuration based on your criteria.
-
-**Results Include**:
-- Winning hyperparameter values
-- Performance improvements vs baseline
-- Statistical confidence levels
-- Cost savings achieved
-- Implementation recommendations
-
-### Configuration Comparison
-
-Compare different configurations side-by-side:
+Track overall progress and resource usage across your optimization run.
 
 <Frame>
-  <img src="/images/evolutionary-comparison.png" alt="Configuration comparison table with metrics" />
+  <img src="/images/evolutionary-results-graph.png" alt="Configuration Optimization Analytics showing metrics over iterations" />
+</Frame>
+
+**Summary Metrics**:
+- **Total Cost**: Cumulative spend across all test runs
+- **Training Time**: Total optimization duration
+- **Iterations**: Number of optimization cycles completed
+- **Models Tested**: Count of different models evaluated
+- **Configurations Tested**: Total unique configurations tried
+- **Adjustments Made**: Number of hyperparameter changes
+
+**Iteration Progress Graph**:
+- Visualize how your custom metrics evolve across iterations
+- Track multiple metrics simultaneously on a single chart
+- Identify when optimization converges or plateaus
+- Toggle between "Overall" summary and "Details" views
+
+---
+
+### Best Configuration
+
+The system identifies the optimal configuration based on your defined criteria.
+
+<Frame>
+  <img src="/images/evolutionary-best-config.png" alt="Best Configuration results showing metrics, insights, and next steps" />
+</Frame>
+
+**Key Metrics**:
+- Iteration number where best config was found
+- Model used in the winning configuration
+- Overall score and your custom metric values
+- Direct comparison against baseline performance
+
+**Insights**
+
+AI-generated learnings discovered during the optimization process:
+
+- Pattern analysis across successful and failed configurations
+- Identified issues that consistently caused problems
+- Recommendations for prompt structure and content
+- Observations about model behavior and limitations
+
+> **Pro tip:** Insights are based on analyzing all sessions in the optimization — they surface patterns you might not notice manually.
+
+**Next Steps**
+
+Actionable recommendations for improvements beyond agent configuration:
+
+- Suggested experiments to address remaining gaps
+- Identified edge cases that need attention
+- Structural improvements for tools or data sources
+- Checkbox interface for tracking follow-up tasks
+
+---
+
+### Configuration Overview
+
+Browse and compare all tested configurations in a sortable table.
+
+<Frame>
+  <img src="/images/evolutionary-config-overview.png" alt="Configuration Overview table with searchable configurations and metrics" />
+</Frame>
+
+**Table Features**:
+- **Search**: Filter configurations by name or properties
+- **Sort**: Click column headers to sort by any metric
+- **Color Coding**: Green values indicate good performance, red indicates areas needing improvement
+- **Baseline Row**: Always visible for easy comparison against your starting point
+
+**Selecting for Comparison**:
+- Use checkboxes to select 2-3 configurations
+- Click "Select 2 or 3 Configurations" button to open detailed comparison view
+
+---
+
+### Hyperparameter Comparison
+
+Compare selected configurations side-by-side to understand what changed.
+
+<Frame>
+  <img src="/images/evolutionary-comparison-detail.png" alt="Hyperparameter Comparison showing side-by-side configuration differences" />
 </Frame>
 
 **Comparison Features**:
-- Baseline vs variations
-- Statistical significance indicators
-- Performance deltas
-- Cost-benefit analysis
+- **Header Metrics**: Quick performance comparison (score, key metrics)
+- **Model Comparison**: See which model each configuration used
+- **Prompt Differences**: Side-by-side view of prompt sections with diff indicators
+- **Change Indicators**: Shows additions and removals (e.g., +15 -6) highlighting what changed
+
+**How to Use**:
+1. From Configuration Overview, select 2-3 configurations using checkboxes
+2. Click the comparison button to open this view
+3. Analyze differences to understand what drove performance changes
+4. Use insights to inform future optimization strategies
 
 ---
 

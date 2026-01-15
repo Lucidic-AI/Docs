@@ -35,6 +35,7 @@
               "feature-overview/rubrics",
               "feature-overview/datasets",
               "feature-overview/evolutionary-simulations",
+              "feature-overview/evolutionary-simulations-api",
               "feature-overview/prompt-db",
               "feature-overview/time-travel",
               "feature-overview/production-monitoring"
