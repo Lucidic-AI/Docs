@@ -12,7 +12,7 @@ This document describes the REST API endpoints for programmatically creating, ru
 ## Base URL
 
 ```
-https://api.lucidic.ai/v1
+https://backend.lucidic.ai/v1
 ```
 
 ---
@@ -54,8 +54,8 @@ POST /evosims
       {"prompt_id": "prompt_v2", "enabled": true}
     ],
     "models": [
-      {"provider": "openai", "model": "gpt-4", "enabled": true},
-      {"provider": "anthropic", "model": "claude-3-5-sonnet", "enabled": true}
+      {"provider": "openai", "model": "gpt-4.1-mini", "enabled": true},
+      {"provider": "anthropic", "model": "claude-4-5-sonnet", "enabled": true}
     ],
     "context": [
       {"category_id": "customer_data", "items": ["crm_record", "loyalty_tier"]},
@@ -112,7 +112,7 @@ POST /evosims
 **Example**
 
 ```bash
-curl -X POST https://api.lucidic.ai/v1/evosims \
+curl -X POST https://backend.lucidic.ai/v1/evosims \
   -H "Authorization: Bearer $LUCIDIC_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -164,7 +164,7 @@ GET /evosims/{evosim_id}
 **Example**
 
 ```bash
-curl https://api.lucidic.ai/v1/evosims/evosim_xyz789 \
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789 \
   -H "Authorization: Bearer $LUCIDIC_API_KEY"
 ```
 
@@ -198,7 +198,7 @@ POST /evosims/{evosim_id}/run
 **Example**
 
 ```bash
-curl -X POST https://api.lucidic.ai/v1/evosims/evosim_xyz789/run \
+curl -X POST https://backend.lucidic.ai/v1/evosims/evosim_xyz789/run \
   -H "Authorization: Bearer $LUCIDIC_API_KEY"
 ```
 
@@ -232,7 +232,7 @@ POST /evosims/{evosim_id}/stop
 **Example**
 
 ```bash
-curl -X POST https://api.lucidic.ai/v1/evosims/evosim_xyz789/stop \
+curl -X POST https://backend.lucidic.ai/v1/evosims/evosim_xyz789/stop \
   -H "Authorization: Bearer $LUCIDIC_API_KEY"
 ```
 
@@ -281,7 +281,7 @@ GET /evosims/{evosim_id}/status
 **Example**
 
 ```bash
-curl https://api.lucidic.ai/v1/evosims/evosim_xyz789/status \
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/status \
   -H "Authorization: Bearer $LUCIDIC_API_KEY"
 ```
 
@@ -342,7 +342,7 @@ GET /evosims/{evosim_id}/results
 **Example**
 
 ```bash
-curl https://api.lucidic.ai/v1/evosims/evosim_xyz789/results \
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/results \
   -H "Authorization: Bearer $LUCIDIC_API_KEY"
 ```
 
@@ -396,7 +396,7 @@ GET /evosims/{evosim_id}/best-config
 **Example**
 
 ```bash
-curl https://api.lucidic.ai/v1/evosims/evosim_xyz789/best-config \
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/best-config \
   -H "Authorization: Bearer $LUCIDIC_API_KEY"
 ```
 
@@ -460,7 +460,7 @@ GET /evosims/{evosim_id}/insights
 **Example**
 
 ```bash
-curl https://api.lucidic.ai/v1/evosims/evosim_xyz789/insights \
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/insights \
   -H "Authorization: Bearer $LUCIDIC_API_KEY"
 ```
 
@@ -521,7 +521,7 @@ GET /evosims/{evosim_id}/next-steps
 **Example**
 
 ```bash
-curl https://api.lucidic.ai/v1/evosims/evosim_xyz789/next-steps \
+curl https://backend.lucidic.ai/v1/evosims/evosim_xyz789/next-steps \
   -H "Authorization: Bearer $LUCIDIC_API_KEY"
 ```
 
@@ -567,7 +567,7 @@ POST /evosims/{evosim_id}/compare
       "iteration": 0,
       "model": {
         "provider": "openai",
-        "model": "gpt-4"
+        "model": "gpt-4.1-mini"
       },
       "metrics": {
         "overall_score": 38.20,
@@ -617,7 +617,7 @@ POST /evosims/{evosim_id}/compare
 **Example**
 
 ```bash
-curl -X POST https://api.lucidic.ai/v1/evosims/evosim_xyz789/compare \
+curl -X POST https://backend.lucidic.ai/v1/evosims/evosim_xyz789/compare \
   -H "Authorization: Bearer $LUCIDIC_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

@@ -1,26 +1,26 @@
 ---
 title: Introduction
-description: Get started with understanding how and why our agent observability platform works.
+description: Get started with Lucidic AI - the research-based platform for statistically improving your AI agents.
 mode: "wide"
 ---
 
-Lucidic is the **complete agentic engineering** platform that helps you understand, test, and improve your AI agents. We provide full observability into multi-step workflows and custom evaluations, letting you pinpoint why agents succeed or fail. We make debugging and performance tuning fast, systematic, and scalable.
+Lucidic is the **agent auto-improvement platform** that helps you systematically optimize your AI agents through research-based, statistical methods. We combine evolutionary algorithms with comprehensive observability to help you discover optimal configurations, validate improvements with statistical rigor, and continuously evolve your agents' performance.
 
 <Columns cols={3}>
-    <Card title="Tracing" icon="chart-gantt" href="/feature-overview/workflow-sandbox">
-        + Visualize trace logs
-        + Session replays
-        + Iterate with Time Travels
+    <Card title="Evolutionary Simulations" icon="dna" href="/feature-overview/evolutionary-simulations">
+        + Auto-optimize prompts & configs
+        + Statistical validation
+        + Intelligent hyperparameter search
     </Card>
     <Card title="Evaluations" icon="chart-line" href="/feature-overview/rubrics">
         + Custom Rubric evaluations
         + Track experiments and changes
         + Monitor performance in real time
     </Card>
-    <Card title="Prompts" icon="folder-open" href="/feature-overview/prompt-db">
-        + Version control
-        + Edit and test instantly
-        + Insert Variables at runtime
+    <Card title="Observability" icon="chart-gantt" href="/feature-overview/observability-overview">
+        + Full trace visibility
+        + Session replays
+        + Debug with Time Travel
     </Card>
 </Columns>
 
@@ -46,71 +46,72 @@ Lucidic is the **complete agentic engineering** platform that helps you understa
     </Card>
 </Columns>
 
-## Why Observability Matters
+## Why Statistical Improvement Matters
 
-Running an agent once doesn't tell you how it behaves.
+Building reliable AI agents requires more than running individual tests.
 
-- Agents are **non-deterministic**
-- They're made of **chained actions**, not just outputs
-- A single successful session can hide dozens of edge cases
+- Agents are **non-deterministic** — the same input can produce different outputs
+- Configuration spaces are **vast** — countless combinations of prompts, models, and parameters exist
+- Manual optimization is **slow and biased** — humans miss patterns that algorithms find
+- Single successes can **hide systematic failures** — edge cases only emerge at scale
 
-To build agents you can trust, you need to see what they're doing — and why.
+To build agents you can trust, you need **data-driven optimization** backed by statistical validation.
 
 ## What This Platform Does
 
 We help you:
 
-- Analyze individual [Sessions](/feature-overview/workflow-sandbox) of agent behavior
-- Inspect each [Event](/feature-overview/events) within your session trace
-- Run [Experiments](/feature-overview/experiments) to observe variability at scale
-- Define structured, flexible [Rubric Evaluations](/feature-overview/rubrics)
-- Version and experiment with prompts via [Prompt DB](/feature-overview/prompt-db)
-- Debug stuck logic using [Time Travel](/feature-overview/time-travel)
+- **[Evolutionary Simulations](/feature-overview/evolutionary-simulations)** — Automatically discover optimal configurations using intelligent algorithms
+- **[Experiments](/feature-overview/experiments)** — Run controlled tests with statistical rigor
+- **[Rubric Evaluations](/feature-overview/rubrics)** — Define structured criteria for consistent scoring
+- **[Datasets](/feature-overview/datasets)** — Build reproducible test sets for validation
+- **[Prompt Database](/feature-overview/prompt-db)** — Version and evolve your prompts
+- **[Full Observability](/feature-overview/observability-overview)** — Trace, debug, and understand every agent action
 
 ---
 
-## Automatic Instrumentation
+## How It Works
 
-Lucidic is designed to be as **non-intrusive** as possible. With just a few lines of code, you get:
+Lucidic combines two powerful capabilities:
 
-- **Auto Event Creation**: LLM calls from supported providers (OpenAI, Anthropic, LangChain, PydanticAI) are automatically captured
-- **Auto Session Ending**: Sessions automatically end when your script exits via an `atexit` handler
-- **Auto Cost Tracking**: Token usage and costs are calculated automatically for each LLM call
-- **Auto Error Handling**: Failed operations are tracked without breaking your workflow
+### 1. Evolutionary Optimization
 
-### How It Works
+Our **research-based algorithms** systematically explore configuration spaces to find optimal settings:
 
-When you initialize Lucidic with a provider:
+1. **Establish baseline** — Measure current agent performance
+2. **Generate hypotheses** — AI identifies promising improvement areas
+3. **Test variations** — Run experiments in parallel
+4. **Validate statistically** — Ensure improvements are real, not noise
+5. **Evolve iteratively** — Best performers seed the next generation
+
+### 2. Deep Observability
+
+Every agent run is captured with **full trace visibility**:
 
 ```python
 from lucidicai import LucidicAI
 
 client = LucidicAI(api_key="...", providers=["openai"])
 
-with client.sessions.create(session_name="My Session"):
-    # All OpenAI calls are automatically tracked as events
+with client.sessions.create(session_name="My Agent"):
+    # all LLM calls automatically tracked
     response = openai.chat.completions.create(...)
 ```
 
-The SDK:
-1. **Instruments the provider** using OpenTelemetry under the hood
-2. **Intercepts all API calls** to track inputs, outputs, tokens, and timing
-3. **Creates events automatically** as your code runs
-4. **Handles cleanup gracefully** even if your script crashes
-
-This means you can add Lucidic to existing codebases with minimal refactoring!
+The SDK automatically instruments your LLM providers, capturing inputs, outputs, costs, and timing with minimal code changes.
 
 ---
 
 ## Next Steps
 
-Ready to dive in?
+Ready to improve your agents?
 
-- **[Get Started in the UI](/getting-started/dashboard)** — Run your first Session and view the dashboard
-- **[Quick Start](/getting-started/quickstart)** — Add a few lines of code to track your agents
-- **[Use the TypeScript SDK](/typescript-sdk/overview)** — Full observability for your TypeScript/JavaScript applications
+- **[Get Started in the UI](/getting-started/dashboard)** — Set up your project and run your first session
+- **[Evolutionary Simulations](/feature-overview/evolutionary-simulations)** — Learn about auto-improvement
+- **[Quick Start](/getting-started/quickstart)** — Add tracking to your agent in minutes
+- **[Observability Overview](/feature-overview/observability-overview)** — Understand tracing and debugging
 
-We're excited to help you build agents that are **observable**, **debuggable**, and **production-ready**.
+We're excited to help you build agents that are **optimized**, **validated**, and **production-ready**.
 
 ---
 

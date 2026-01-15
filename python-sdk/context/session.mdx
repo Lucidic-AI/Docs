@@ -46,7 +46,7 @@ openai_client = OpenAI()
 
 with client.sessions.create(session_name="Process Order"):
     resp = openai_client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4.1-mini",
         messages=[{"role": "user", "content": "Summarize the order"}],
     )
 # Session auto-ends when context exits

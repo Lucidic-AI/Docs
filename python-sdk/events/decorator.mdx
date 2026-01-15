@@ -141,7 +141,7 @@ def analyze_document(doc: str) -> dict:
 @client.event()
 def extract_entities(text: str) -> list:
     response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-5.2",
         messages=[{"role": "user", "content": f"Extract entities: {text}"}]
     )
     return parse_entities(response)
@@ -151,7 +151,7 @@ def extract_entities(text: str) -> list:
 # └── Event: analyze_document (Function Call)
 #     ├── Event: GPT-4 call (LLM Generation)
 #     └── Event: extract_entities (Function Call)
-#         └── Event: GPT-3.5 call (LLM Generation)
+#         └── Event: GPT-5.2 call (LLM Generation)
 ```
 
 ---

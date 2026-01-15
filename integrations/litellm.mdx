@@ -23,7 +23,7 @@ litellm.set_verbose = False
 
 with client.sessions.create(session_name="LiteLLM Demo"):
     response = litellm.completion(
-        model="gpt-4o-mini",
+        model="gpt-4.1-mini",
         messages=[{"role": "user", "content": "Say 'hello from litellm'"}]
     )
 # Session auto-ends when context exits

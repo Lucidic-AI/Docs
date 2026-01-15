@@ -17,33 +17,29 @@
             "group": "Getting Started",
             "pages": [
               "getting-started/introduction",
-              "getting-started/dashboard"
+              "getting-started/dashboard",
+              "feature-overview/evolutionary-simulations"
             ]
           },
           {
-            "group": "Core Concepts",
+            "group": "EvoSim Utilities",
             "pages": [
-              "feature-overview/sessions",
-              "feature-overview/events"
-            ]
-          },
-          {
-            "group": "Features",
-            "pages": [
+              "feature-overview/evolutionary-simulations-api",
               "feature-overview/workflow-sandbox",
               "feature-overview/experiments",
               "feature-overview/rubrics",
               "feature-overview/datasets",
-              {
-                "group": "Evolutionary Simulations",
-                "pages": [
-                  "feature-overview/evolutionary-simulations",
-                  "feature-overview/evolutionary-simulations-api"
-                ]
-              },
               "feature-overview/prompt-db",
               "feature-overview/time-travel",
               "feature-overview/production-monitoring"
+            ]
+          },
+          {
+            "group": "Observability Concepts",
+            "pages": [
+              "feature-overview/observability-overview",
+              "feature-overview/sessions",
+              "feature-overview/events"
             ]
           }
         ]

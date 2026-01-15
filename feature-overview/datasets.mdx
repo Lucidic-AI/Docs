@@ -155,7 +155,7 @@ Datasets work seamlessly with experiments for A/B testing:
 
 ```python
 # Run dataset with different model versions
-for model in ["gpt-4", "gpt-3.5-turbo"]:
+for model in ["gpt-4.1-mini", "gpt-5.2", "claude-4-5-sonnet"]:
     for item in dataset_items:
         with client.sessions.create(
             session_name=f"Test: {item['name']}",

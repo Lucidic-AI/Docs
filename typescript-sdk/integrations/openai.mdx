@@ -52,7 +52,7 @@ await client.sessions.create({ sessionName: 'OpenAI Demo' }, async () => {
 For every OpenAI API call:
 
 - **Input**: Messages, prompts, and system instructions
-- **Model**: The model used (gpt-4, gpt-3.5-turbo, etc.)
+- **Model**: The model used (gpt-4, gpt-5.2, etc.)
 - **Output**: Complete response including function calls
 - **Token Usage**: Input and output token counts
 - **Cost**: Calculated based on current pricing
@@ -203,7 +203,7 @@ The SDK includes built-in pricing for all OpenAI models:
 |-------|------------|-------------|
 | gpt-4 | $0.03/1K | $0.06/1K |
 | gpt-4-turbo | $0.01/1K | $0.03/1K |
-| gpt-3.5-turbo | $0.0005/1K | $0.0015/1K |
+| gpt-5.2 | $0.0005/1K | $0.0015/1K |
 | o1-preview | $0.015/1K | $0.06/1K |
 | o1-mini | $0.003/1K | $0.012/1K |
 
@@ -265,7 +265,7 @@ The SDK uses built-in pricing data. For custom models or pricing:
 // Manually create event with custom cost
 await client.events.create({
     name: 'Custom model call',
-    model: 'ft:gpt-3.5-turbo-custom',
+    model: 'ft:gpt-5.2-custom',
     cost: 0.05
 });
 ```
